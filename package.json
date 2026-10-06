@@ -1,0 +1,18 @@
+{
+  "name": "ironlog",
+  "version": "1.0.0",
+  "description": "Web app de musculation locale",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/unit/*.test.js tests/integration/*.test.js"
+  },
+  "dependencies": {
+    "express": "4.18.3",
+    "better-sqlite3": "13.0.3"
+  },
+  "devDependencies": {
+    "supertest": "7.0.0"
+  }
+}

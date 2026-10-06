@@ -1,0 +1,14 @@
+EXEMPLE DE PROMPT DE DEV POUR L'UTILISATEUR HUMAIN
+
+
+
+
+Lis AGENT.md en entier, puis TASKS.md pour voir l'état des tâches.
+
+Implémente uniquement la prochaine tâche non réalisé, dans l'ordre,
+en suivant le fichier associé à cette tâche dans docs/plan/tasks/.
+
+Quand c'est fait et que les tests passent, coche la tache dans
+TASKS.md et arrête-toi.
+
+Enfin, dis moi comment je dois tester si jamais il faut le faire.

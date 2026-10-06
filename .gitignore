@@ -1,0 +1,84 @@
+# ── Dépendances ──────────────────────────────────────────────
+node_modules/
+
+# ── Données locales (jamais versionnées) ─────────────────────
+data/
+# Autoriser le dossier data/ mais ignorer son contenu
+!data/.gitkeep
+
+# ── Variables d'environnement ─────────────────────────────────
+.env
+# .env.example est versionné intentionnellement
+
+# ── Vendors téléchargés (régénérables via download-vendors.js) ─
+public/vendor/
+
+# ── Images d'exercices (volumineuses, régénérables via import) ─
+public/exercises/images/
+# Autoriser le dossier vide
+!public/exercises/images/.gitkeep
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ── Système d'exploitation ───────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ── Éditeurs ─────────────────────────────────────────────────
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# JetBrains
+.idea/
+*.iml
+
+# Vim / Neovim
+*.swp
+*.swo
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+auto-save-list
+tramp
+.\#*
+
+# ── Couverture de tests ───────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Fichiers temporaires ─────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# ── Exports générés ──────────────────────────────────────────
+workoutbuddy-export-*.json
+*.export.csv
