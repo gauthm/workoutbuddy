@@ -1,5 +1,5 @@
 {
-  "name": "ironlog",
+  "name": "workoutbuddy",
   "version": "1.0.0",
   "description": "Web app de musculation locale",
   "main": "server.js",

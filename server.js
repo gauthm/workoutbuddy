@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url'
 import { getDb } from './src/db/database.js'
 import { migrate } from './src/db/migrate.js'
 import { seedExercises } from './src/seed/seed.js'
+import exercisesRouter from './src/routes/exercises.js'
+import equipmentRouter from './src/routes/equipment.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -12,8 +14,8 @@ app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
 // ── Montage des routes (à compléter tâche par tâche) ──────────
-// import exercisesRouter from './src/routes/exercises.js'
-// app.use('/api/v1/exercises', exercisesRouter)
+app.use('/api/v1/exercises', exercisesRouter)
+app.use('/api/v1/equipment', equipmentRouter)
 
 // ── Fallback SPA ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {
@@ -34,7 +36,7 @@ async function bootstrap() {
   const host = hostRow ? JSON.parse(hostRow.value) : '127.0.0.1'
 
   app.listen(port, host, () => {
-    console.log(`IronLog démarré → http://${host}:${port}`)
+    console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
   })
 }
 

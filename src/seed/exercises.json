@@ -1,0 +1,137 @@
+[
+  {
+    "id": "bench_press_barbell",
+    "name_fr": "Développé couché barre",
+    "name_en": "Barbell Bench Press",
+    "category": "strength",
+    "force": "push",
+    "mechanic": "compound",
+    "movement_pattern": "push_horizontal",
+    "primary_muscles": ["chest"],
+    "secondary_muscles": ["triceps", "shoulders"],
+    "equipment_required": ["barbell", "bench"],
+    "instructions_fr": [
+      "Allongez-vous sur le banc, pieds à plat au sol.",
+      "Saisissez la barre à largeur d'épaules, légèrement plus large.",
+      "Descendez la barre vers le milieu de la poitrine en contrôlant.",
+      "Poussez la barre vers le haut jusqu'à extension complète des bras."
+    ],
+    "instructions_en": [
+      "Lie flat on a bench, feet flat on the floor.",
+      "Grip the bar slightly wider than shoulder width.",
+      "Lower the bar to mid-chest under control.",
+      "Press the bar up to full arm extension."
+    ],
+    "image_paths": ["bench_press_barbell/0.jpg", "bench_press_barbell/1.jpg"],
+    "is_custom": 0,
+    "is_unilateral": 0
+  },
+  {
+    "id": "squat_barbell",
+    "name_fr": "Squat barre",
+    "name_en": "Barbell Squat",
+    "category": "strength",
+    "force": "push",
+    "mechanic": "compound",
+    "movement_pattern": "squat",
+    "primary_muscles": ["quads"],
+    "secondary_muscles": ["glutes", "hamstrings"],
+    "equipment_required": ["barbell", "rack"],
+    "instructions_fr": [
+      "Placez la barre sur la partie haute du trapèze.",
+      "Écartez les pieds à largeur d'épaules, orteils légèrement ouverts.",
+      "Descendez en gardant le dos droit jusqu'à ce que les cuisses soient parallèles au sol.",
+      "Remontez en poussant sur les talons jusqu'à extension complète."
+    ],
+    "instructions_en": [
+      "Place the bar on your upper traps.",
+      "Stand shoulder-width apart, toes slightly out.",
+      "Descend keeping your back straight until thighs are parallel.",
+      "Drive up through your heels to full extension."
+    ],
+    "image_paths": ["squat_barbell/0.jpg", "squat_barbell/1.jpg"],
+    "is_custom": 0,
+    "is_unilateral": 0
+  },
+  {
+    "id": "deadlift_barbell",
+    "name_fr": "Soulevé de terre barre",
+    "name_en": "Barbell Deadlift",
+    "category": "strength",
+    "force": "pull",
+    "mechanic": "compound",
+    "movement_pattern": "hinge",
+    "primary_muscles": ["hamstrings"],
+    "secondary_muscles": ["back", "glutes", "traps"],
+    "equipment_required": ["barbell"],
+    "instructions_fr": [
+      "Placez-vous debout, pieds à largeur de hanches, barre au-dessus des pieds.",
+      "Penchez-vous et saisissez la barre en prise pronation.",
+      "Gardez le dos plat, chest out, poussez le sol du talon.",
+      "Montez en gardant la barre proche du corps jusqu'à extension complète."
+    ],
+    "instructions_en": [
+      "Stand with feet hip-width apart, bar over mid-foot.",
+      "Hinge at the hips and grip the bar with an overhand grip.",
+      "Keep a flat back, chest up, push the floor away.",
+      "Drive hips forward keeping the bar close until lockout."
+    ],
+    "image_paths": ["deadlift_barbell/0.jpg", "deadlift_barbell/1.jpg"],
+    "is_custom": 0,
+    "is_unilateral": 0
+  },
+  {
+    "id": "pullup_bodyweight",
+    "name_fr": "Traction",
+    "name_en": "Pull-Up",
+    "category": "strength",
+    "force": "pull",
+    "mechanic": "compound",
+    "movement_pattern": "pull_vertical",
+    "primary_muscles": ["back"],
+    "secondary_muscles": ["biceps"],
+    "equipment_required": ["pullup_bar"],
+    "instructions_fr": [
+      "Saisissez la barre en pronation, mains légèrement plus larges que les épaules.",
+      "Partez d'une position suspendue, bras tendus.",
+      "Tirez votre menton au-dessus de la barre en serrant les omoplates.",
+      "Redescendez lentement à la position de départ."
+    ],
+    "instructions_en": [
+      "Grip the bar overhand, slightly wider than shoulder-width.",
+      "Start from a dead hang with arms fully extended.",
+      "Pull your chin above the bar, squeezing shoulder blades together.",
+      "Lower slowly back to dead hang."
+    ],
+    "image_paths": ["pullup_bodyweight/0.jpg", "pullup_bodyweight/1.jpg"],
+    "is_custom": 0,
+    "is_unilateral": 0
+  },
+  {
+    "id": "overhead_press_barbell",
+    "name_fr": "Développé militaire barre",
+    "name_en": "Barbell Overhead Press",
+    "category": "strength",
+    "force": "push",
+    "mechanic": "compound",
+    "movement_pattern": "push_vertical",
+    "primary_muscles": ["shoulders"],
+    "secondary_muscles": ["triceps", "traps"],
+    "equipment_required": ["barbell"],
+    "instructions_fr": [
+      "Tenez-vous debout, barre posée sur les deltoïdes avant.",
+      "Saisissez la barre légèrement plus large que les épaules.",
+      "Poussez la barre verticalement au-dessus de la tête.",
+      "Rentrez la tête entre les bras au point haut, abaissez sous contrôle."
+    ],
+    "instructions_en": [
+      "Stand upright with the bar resting on your front deltoids.",
+      "Grip slightly wider than shoulder-width.",
+      "Press the bar straight overhead.",
+      "Thread your head through at the top, lower under control."
+    ],
+    "image_paths": ["overhead_press_barbell/0.jpg", "overhead_press_barbell/1.jpg"],
+    "is_custom": 0,
+    "is_unilateral": 0
+  }
+]

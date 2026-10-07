@@ -28,13 +28,13 @@
 | ID   | Tâche                              | Dépendances | Fichier de tâche                        | Statut |
 |------|------------------------------------|-------------|-----------------------------------------|--------|
 | T1.1 | Scaffolding projet                 | —           | `tasks/T1.1_scaffolding.md`             | [x]    |
-| T1.2 | Base de données et migrations      | T1.1        | `tasks/T1.2_database.md`               | [ ]    |
-| T1.3 | Seed des exercices                 | T1.2        | `tasks/T1.3_seed.md`                   | [ ]    |
-| T1.4 | API Exercices                      | T1.3        | `tasks/T1.4_api_exercises.md`          | [ ]    |
-| T1.5 | Service calcul charges + API Équipement | T1.2   | `tasks/T1.5_equipment_calc.md`         | [ ]    |
-| T1.6 | Scaffold frontend Vue 3            | T1.1        | `tasks/T1.6_frontend_scaffold.md`      | [ ]    |
-| T1.7 | Écrans Exercices + Équipement      | T1.4, T1.5, T1.6 | `tasks/T1.7_screens_exercises.md` | [ ]    |
-| T1.8 | PWA (manifest + service worker)    | T1.6        | `tasks/T1.8_pwa.md`                    | [ ]    |
+| T1.2 | Base de données et migrations      | T1.1        | `tasks/T1.2_database.md`               | [x]    |
+| T1.3 | Seed des exercices                 | T1.2        | `tasks/T1.3_seed.md`                   | [x]    |
+| T1.4 | API Exercices                      | T1.3        | `tasks/T1.4_api_exercises.md`          | [x]    |
+| T1.5 | Service calcul charges + API Équipement | T1.2   | `tasks/T1.5_equipment_calc.md`         | [x]    |
+| T1.6 | Scaffold frontend Vue 3            | T1.1        | `tasks/T1.6_frontend_scaffold.md`      | [x]    |
+| T1.7 | Écrans Exercices + Équipement      | T1.4, T1.5, T1.6 | `tasks/T1.7_screens_exercises.md` | [x]    |
+| T1.8 | PWA (manifest + service worker)    | T1.6        | `tasks/T1.8_pwa.md`                    | [x]    |
 
 ---
 

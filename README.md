@@ -1,4 +1,4 @@
-# IronLog
+# WorkoutBuddy
 
 Web app de musculation locale. Un utilisateur, aucun cloud.
 
@@ -11,8 +11,8 @@ Web app de musculation locale. Un utilisateur, aucun cloud.
 ### Installation et lancement
 
 ```bash
-git clone <repo> ironlog
-cd ironlog
+git clone <repo> workoutbuddy
+cd workoutbuddy
 npm install
 node scripts/download-vendors.js
 npm start
@@ -34,5 +34,5 @@ npm test
 
 ### Sauvegarde
 
-La base de données est dans `data/ironlog.db`. Copier ce fichier suffit.
+La base de données est dans `data/workoutbuddy.db`. Copier ce fichier suffit.
 Export complet : Paramètres > Données > Exporter JSON.

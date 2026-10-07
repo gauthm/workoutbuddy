@@ -3,12 +3,9 @@ EXEMPLE DE PROMPT DE DEV POUR L'UTILISATEUR HUMAIN
 
 
 
-Lis AGENT.md en entier, puis TASKS.md pour voir l'état des tâches.
-
-Implémente uniquement la prochaine tâche non réalisé, dans l'ordre,
-en suivant le fichier associé à cette tâche dans docs/plan/tasks/.
-
-Quand c'est fait et que les tests passent, coche la tache dans
-TASKS.md et arrête-toi.
-
-Enfin, dis moi comment je dois tester si jamais il faut le faire.
+Lis AGENT.md en entier.
+Lis TASKS.md et identifie la première tâche non cochée dont toutes les dépendances sont ✅.
+Charge le fichier docs/plan/tasks/<fichier de cette tâche>.
+Implémente exactement ce que le fichier décrit.
+Quand npm test passe, coche la tâche dans TASKS.md et arrête-toi.
+Ne passe pas à la tâche suivante sans instruction.
