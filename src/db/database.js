@@ -4,15 +4,26 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DATA_DIR = path.join(__dirname, '..', '..', 'data')
-const DB_PATH = path.join(DATA_DIR, 'workoutbuddy.db')
+const ROOT_DIR = path.join(__dirname, '..', '..')
+
+// Charge le fichier .env à la racine s'il existe (Node >= 20.6, aucune dépendance)
+try { process.loadEnvFile(path.join(ROOT_DIR, '.env')) } catch (_) { /* absent : ignoré */ }
+
+// DB_PATH surchargeable via l'environnement (défaut : ./data/workoutbuddy.db)
+const DB_PATH = process.env.DB_PATH
+  ? path.resolve(process.cwd(), process.env.DB_PATH)
+  : path.join(ROOT_DIR, 'data', 'workoutbuddy.db')
 
 let instance = null
+
+export function getDbPath() {
+  return DB_PATH
+}
 
 export function getDb() {
   if (instance) return instance
 
-  fs.mkdirSync(DATA_DIR, { recursive: true })
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
   instance = new Database(DB_PATH)
   instance.pragma('journal_mode = WAL')
   instance.pragma('foreign_keys = ON')

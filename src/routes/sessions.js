@@ -1,7 +1,7 @@
 import express from 'express'
 import fs from 'fs'
 import path from 'path'
-import { getDb } from '../db/database.js'
+import { getDb, getDbPath } from '../db/database.js'
 
 const router = express.Router()
 const db = getDb()
@@ -24,15 +24,13 @@ function estimate1RM(weightKg, reps, formula = 'epley') {
 function autoBackup() {
   try {
     const today = new Date().toISOString().slice(0, 10)
-    const backupDir = path.join(process.cwd(), 'data', 'backups')
+    const src = getDbPath()
+    const backupDir = path.join(path.dirname(src), 'backups')
     fs.mkdirSync(backupDir, { recursive: true })
 
     const dest = path.join(backupDir, `workoutbuddy_${today}.db`)
     if (!fs.existsSync(dest)) {
-      fs.copyFileSync(
-        path.join(process.cwd(), 'data', 'workoutbuddy.db'),
-        dest
-      )
+      fs.copyFileSync(src, dest)
     }
 
     // Garder seulement les 7 plus récents

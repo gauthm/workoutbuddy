@@ -38,11 +38,12 @@ async function bootstrap() {
   migrate(db)
   seedExercises(db)
 
-  // Lire host et port depuis les settings (table créée par migrate)
+  // Précédence : variables d'environnement > table settings > défauts
   const portRow = db.prepare("SELECT value FROM settings WHERE key='network_port'").get()
   const hostRow = db.prepare("SELECT value FROM settings WHERE key='network_host'").get()
-  const port = portRow ? JSON.parse(portRow.value) : 3000
-  const host = hostRow ? JSON.parse(hostRow.value) : '127.0.0.1'
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10)
+    : portRow ? JSON.parse(portRow.value) : 3000
+  const host = process.env.HOST || (hostRow ? JSON.parse(hostRow.value) : '127.0.0.1')
 
   app.listen(port, host, () => {
     console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
