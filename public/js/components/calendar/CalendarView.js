@@ -181,8 +181,9 @@ export default {
     // ── Actions séance ────────────────────────────────────────────
     async function startSession(session) {
       try {
-        await api.start(session.id)
-        store.setActiveSession(session)
+        const startRes = await api.start(session.id)
+        store.setActiveSession(startRes)
+        store.setPendingAdjustments(startRes.adjustments || [])
         router.push('#/session')
       } catch (err) {
         store.showToast(err.message, 'error')

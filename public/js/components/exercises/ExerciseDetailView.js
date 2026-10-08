@@ -37,7 +37,10 @@ export default {
       }
     }
 
-    onMounted(load)
+    onMounted(() => {
+      window.scrollTo(0, 0)
+      load()
+    })
 
     // RM estimé depuis la dernière performance
     function lastRM() {

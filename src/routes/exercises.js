@@ -16,6 +16,8 @@ function parseExercise(row) {
     image_paths:        JSON.parse(row.image_paths        || '[]'),
     is_custom:    row.is_custom    === 1,
     is_unilateral: row.is_unilateral === 1,
+    is_excluded:        (row.is_excluded || 0) === 1,
+    exclusion_reason:   row.exclusion_reason || null,
   }
 }
 
@@ -31,6 +33,11 @@ router.get('/', (req, res) => {
     if (req.query.custom !== undefined) {
       sql += ' AND is_custom = ?'
       params.push(parseInt(req.query.custom))
+    }
+    if (req.query.excluded !== undefined) {
+      // Pas de paramètre → tous (exclus compris) ; excluded=0 → disponibles ; excluded=1 → exclus
+      sql += ' AND is_excluded = ?'
+      params.push(parseInt(req.query.excluded))
     }
     if (req.query.muscle) {
       // Filtre JSON : primary_muscles est '["chest","triceps"]'
@@ -233,6 +240,38 @@ router.get('/:id/rm-history', (req, res) => {
     res.json({ exercise_id: req.params.id, history })
   } catch (err) {
     console.error('[GET /exercises/:id/rm-history]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// Déclarée AVANT /:id pour éviter qu'Express interprète "toggle-exclusion" comme un :id
+router.put('/:id/toggle-exclusion', (req, res) => {
+  try {
+    const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)
+    if (!exercise) return res.status(404).json({ error: 'EXERCISE_NOT_FOUND' })
+
+    const { is_excluded, exclusion_reason } = req.body
+    if (is_excluded === undefined || is_excluded === null) {
+      return res.status(400).json({ error: 'MISSING_IS_EXCLUDED' })
+    }
+
+    const newValue = (is_excluded === true || is_excluded === 1) ? 1 : 0
+
+    db.prepare(`
+      UPDATE exercise
+      SET is_excluded      = ?,
+          exclusion_reason = ?
+      WHERE id = ?
+    `).run(
+      newValue,
+      newValue === 1 ? (exclusion_reason || null) : null,
+      req.params.id
+    )
+
+    const updated = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)
+    res.json(parseExercise(updated))
+  } catch (err) {
+    console.error('[PUT /exercises/:id/toggle-exclusion]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
 })

@@ -42,8 +42,9 @@ export default {
         const sessionRes = await sessionsApi.fromTemplate(next.template_id, {
           scheduled_date: next.suggested_date
         })
-        await sessionsApi.start(sessionRes.id)
-        store.setActiveSession(sessionRes)
+        const startRes   = await sessionsApi.start(sessionRes.id)
+        store.setActiveSession(startRes)
+        store.setPendingAdjustments(startRes.adjustments || [])
         router.push('#/session')
       } catch (err) { store.showToast(err.message, 'error') }
     }

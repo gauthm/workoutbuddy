@@ -47,6 +47,9 @@ export default {
           </button>
         </EmptyState>
         <div v-else>
+          <div v-if="state.programs.length > 1" class="program-list-notice">
+            ℹ️ {{ t('programs.unique_notice') }}
+          </div>
           <ProgramCard
             v-for="p in state.programs" :key="p.id"
             :program="p"

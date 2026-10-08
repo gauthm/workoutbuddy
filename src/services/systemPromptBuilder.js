@@ -33,10 +33,18 @@ export function buildSystemPrompt(db) {
   const activeAdvice = db.prepare(
     "SELECT signal_type, exercise_id, advice_text FROM equipment_advice WHERE status='active' LIMIT 5"
   ).all()
+  const excludedExercises = db.prepare(
+    "SELECT id, name_fr, exclusion_reason FROM exercise WHERE is_excluded = 1 LIMIT 20"
+  ).all()
 
   // ── Sections de contexte ──────────────────────────────────
   const profileText = buildProfileSection(profile)
   const equipText   = buildEquipmentSection(equipment, db)
+  const excludedText = excludedExercises.length === 0
+    ? 'Aucun exercice exclu.'
+    : excludedExercises.map(e =>
+        `- ${e.name_fr} (${e.id})${e.exclusion_reason ? ' — ' + e.exclusion_reason : ''}`
+      ).join('\n')
   const progText    = buildProgramSection(program, progStates)
   const perfText    = buildPerformanceSection(sessions)
   const recordsText = buildRecordsSection(records)
@@ -76,6 +84,12 @@ ${profileText}
 ## 🏋️ ÉQUIPEMENT DISPONIBLE
 
 ${equipText}
+
+---
+
+## 🚫 EXERCICES EXCLUS (ne jamais les proposer)
+
+${excludedText}
 
 ---
 
@@ -189,6 +203,7 @@ Plusieurs blocs peuvent être émis à la suite. Chaque bloc est présenté à l
 | \`update_progression_state\` | Ajuster manuellement la charge d'un exercice |
 | \`update_settings\` | Modifier des paramètres de l'application |
 | \`trigger_deload\` | Déclencher une semaine de déload |
+| \`exclude_exercises\` | Exclure (désactiver) des exercices : \`{ "exercise_ids": ["id1","id2"], "reason": "..." }\` |
 
 ---
 
@@ -311,7 +326,23 @@ Sois chaleureux, encourageant et professionnel.
    les objectifs secondaires, et le sport pratiqué si applicable
 4. **asking_schedule** → Combien de séances/semaine, durée par séance,
    préférence de variation des exercices (oui/non)
-5. **asking_health** → Blessures, douleurs ou limitations à connaître (peuvent répondre "aucune")
+5. **asking_health** → **deux questions distinctes** :
+   a. "As-tu des blessures, douleurs chroniques ou limitations physiques ?"
+      Si oui → préciser quelle zone (épaule, genou, dos bas, poignet, hanche, cheville)
+      → Chercher dans la DB les exercices correspondants (movement_pattern + muscles)
+      → Émettre l'action \`exclude_exercises\` avec la liste et la raison
+   b. "Y a-t-il des exercices que tu n'aimes pas ou que tu refuses de faire ?"
+      Si oui → les identifier dans la DB (chercher par nom_fr approchant)
+      → Émettre l'action \`exclude_exercises\`
+
+   Guide coach — mapping zones → mouvements à exclure :
+   - Épaule     : push_vertical (overhead press, pike push-up)
+   - Genou      : squat (squat lourd, leg press, fente), lunge
+   - Dos bas    : hinge (soulevé de terre conventionnel)
+   - Poignet    : mouvements de flexion/extension lourds (wrist curl)
+   - Hanche     : hinge, squat profond
+   → Le coach identifie les exercices les plus courants de la zone concernée
+     et émet \`exclude_exercises\`
 6. **asking_equipment** → Quel matériel dispose-t-il ? (liste ce qu'il a)
 7. **completing** → Récapituler tout, émettre les actions :
    a. \`complete_user_profile\` avec toutes les données collectées

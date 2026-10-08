@@ -59,7 +59,10 @@ export function findRotationCandidates(baseExercise, allExercises, equipmentItem
     return musclesA.some(m => musclesB.includes(m))
   }
 
-  const candidates = allExercises.filter(ex =>
+  // Les exercices exclus ne sont jamais candidats à la rotation
+  const available = allExercises.filter(ex => !ex.is_excluded)
+
+  const candidates = available.filter(ex =>
     ex.id !== baseExercise.id &&
     ex.movement_pattern === baseExercise.movement_pattern &&
     hasOverlap(ex.primary_muscles, baseExercise.primary_muscles) &&

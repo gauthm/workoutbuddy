@@ -11,12 +11,13 @@ import ErrorBanner   from '../common/ErrorBanner.js'
 import ConfirmModal  from '../common/ConfirmModal.js'
 import ExerciseBlock from './ExerciseBlock.js'
 import SessionTimer  from './SessionTimer.js'
+import SessionAdjustmentBanner from './SessionAdjustmentBanner.js'
 
 export default {
   name: 'SessionActiveView',
   components: {
     PageHeader, LoadingSpinner, EmptyState, ErrorBanner,
-    ConfirmModal, ExerciseBlock, SessionTimer
+    ConfirmModal, ExerciseBlock, SessionTimer, SessionAdjustmentBanner
   },
 
   setup() {
@@ -29,6 +30,8 @@ export default {
       exercises: [],    // [{ sessionExercise, exerciseDetail, history, target }]
       showCompleteConfirm: false,
       completing: false,
+      adjustments: [],      // ajustements retournés par POST /start
+      showAdjustments: true,
     })
 
     async function load() {
@@ -87,7 +90,12 @@ export default {
       }
     }
 
-    onMounted(load)
+    onMounted(() => {
+      // Les ajustements coach arrivent de POST /sessions/:id/start (store, non persistant)
+      state.adjustments = store.pendingAdjustments || []
+      store.clearPendingAdjustments()
+      load()
+    })
 
     return { state, load, completeSession, router, t }
   },
@@ -113,6 +121,12 @@ export default {
       </header>
 
       <div class="view__content">
+        <SessionAdjustmentBanner
+          v-if="state.adjustments.length && state.showAdjustments"
+          :adjustments="state.adjustments"
+          @dismiss="state.showAdjustments = false"
+        />
+
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
 

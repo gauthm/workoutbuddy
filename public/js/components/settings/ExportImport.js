@@ -120,6 +120,29 @@ export default {
       }
     }
 
+    // ── Réinitialisation stats/historique ─────────────────────
+    const resetStatsState = reactive({ show: false, confirmText: '', resetting: false })
+
+    async function confirmResetStats() {
+      // Double confirmation : l'utilisateur doit taper "RESET"
+      if (resetStatsState.confirmText !== 'RESET') {
+        store.showToast(t('settings.reset_stats_type_reset'), 'error')
+        return
+      }
+      resetStatsState.resetting = true
+      try {
+        await api.resetStats()
+        store.showToast(t('settings.reset_stats_done'), 'success')
+        resetStatsState.show        = false
+        resetStatsState.confirmText = ''
+        setTimeout(() => window.location.reload(), 1200)
+      } catch (err) {
+        store.showToast(err.message, 'error')
+      } finally {
+        resetStatsState.resetting = false
+      }
+    }
+
     // ── Helper téléchargement ─────────────────────────────────
     function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob)
@@ -132,7 +155,8 @@ export default {
 
     return {
       state, exportJson, exportCsv, onFileSelected,
-      confirmImport, backupNow, confirmReset, t,
+      confirmImport, backupNow, confirmReset,
+      resetStatsState, confirmResetStats, t,
     }
   },
 
@@ -205,6 +229,23 @@ export default {
         </button>
       </div>
 
+      <!-- Réinitialiser stats uniquement -->
+      <div class="export-import__row export-import__row--danger">
+        <div>
+          <div class="export-import__label" style="color:var(--color-warning)">
+            {{ t('settings.reset_stats') }}
+          </div>
+          <div class="export-import__hint">
+            {{ t('settings.reset_stats_hint') }}
+          </div>
+        </div>
+        <button class="btn btn--secondary export-import__btn"
+          style="color:var(--color-warning);border-color:var(--color-warning)"
+          @click="resetStatsState.show = true">
+          📊🗑
+        </button>
+      </div>
+
       <!-- Réinitialiser -->
       <div class="export-import__row export-import__row--danger">
         <div>
@@ -242,6 +283,42 @@ export default {
         @confirm="confirmReset()"
         @cancel="state.showResetConfirm = false"
       />
+
+      <!-- Modale de double confirmation stats -->
+      <div v-if="resetStatsState.show" class="modal-overlay"
+        @click.self="resetStatsState.show = false; resetStatsState.confirmText = ''">
+        <div class="modal">
+          <h2 class="modal__title" style="color:var(--color-warning)">
+            ⚠️ {{ t('settings.reset_stats') }}
+          </h2>
+          <p class="settings-reset-stats__desc">
+            {{ t('settings.reset_stats_desc') }}
+          </p>
+          <div class="form-group">
+            <label class="form-label">
+              {{ t('settings.reset_stats_prompt', { word: 'RESET' }) }}
+            </label>
+            <input
+              class="form-input settings-reset-stats__input"
+              type="text"
+              v-model="resetStatsState.confirmText"
+              placeholder="RESET"
+              autocomplete="off"
+            />
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--secondary"
+              @click="resetStatsState.show = false; resetStatsState.confirmText = ''">
+              {{ t('common.cancel') }}
+            </button>
+            <button class="btn btn--danger"
+              :disabled="resetStatsState.confirmText !== 'RESET' || resetStatsState.resetting"
+              @click="confirmResetStats()">
+              {{ resetStatsState.resetting ? t('common.loading') : t('settings.reset_stats_confirm_btn') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `
 }

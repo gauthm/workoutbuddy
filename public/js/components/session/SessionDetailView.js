@@ -1,18 +1,23 @@
-import { reactive, onMounted } from '/vendor/vue.esm-browser.prod.js'
+import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { sessions as api } from '../../api.js'
-import { formatDuration } from '../../utils/date.js'
+import { formatDuration, formatDate } from '../../utils/date.js'
 import { t } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
+import ConfirmModal   from '../common/ConfirmModal.js'
 
 export default {
   name: 'SessionDetailView',
   props: { id: { type: String, required: true } },
-  components: { PageHeader, LoadingSpinner, ErrorBanner },
+  components: { PageHeader, LoadingSpinner, ErrorBanner, ConfirmModal },
 
   setup(props) {
+    const router = inject('router')
+    const store  = inject('store')
+
     const state = reactive({ loading: false, error: null, session: null })
+    const deleteState = reactive({ show: false, deleting: false })
 
     async function load() {
       state.loading = true; state.error = null
@@ -21,8 +26,22 @@ export default {
       finally { state.loading = false }
     }
 
+    async function doDelete() {
+      deleteState.deleting = true
+      try {
+        await api.delete(props.id)
+        store.showToast(t('session.deleted'), 'success')
+        router.push('#/session/history')
+      } catch (err) {
+        store.showToast(err.message, 'error')
+      } finally {
+        deleteState.deleting = false
+        deleteState.show     = false
+      }
+    }
+
     onMounted(load)
-    return { state, load, formatDuration, t }
+    return { state, load, deleteState, doDelete, formatDuration, formatDate, t }
   },
 
   template: `
@@ -65,8 +84,26 @@ export default {
               </div>
             </div>
           </div>
+
+          <button
+            v-if="state.session && state.session.status !== 'in_progress'"
+            class="btn btn--danger btn--full"
+            style="margin:1rem"
+            @click="deleteState.show = true">
+            🗑 {{ t('session.delete') }}
+          </button>
         </template>
       </div>
+
+      <ConfirmModal
+        v-if="deleteState.show"
+        :title="t('session.delete_confirm_title')"
+        :body="t('session.delete_confirm_body', { name: state.session?.name, date: formatDate(state.session?.scheduled_date) })"
+        :danger="true"
+        :confirm-text="t('common.delete')"
+        @confirm="doDelete()"
+        @cancel="deleteState.show = false"
+      />
     </div>
   `
 }

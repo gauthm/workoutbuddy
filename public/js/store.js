@@ -5,6 +5,7 @@ export const store = reactive({
   settings:      null,       // objet settings chargé depuis GET /settings
   activeSession: null,       // session en cours (status='in_progress')
   pendingAction: null,       // action IA en attente de confirmation
+  pendingAdjustments: [],    // ajustements coach retournés par POST /sessions/:id/start
   toast:         null,       // { id, message, type:'success'|'error'|'info'|'warning' }
   _toastTimer:   null,
 
@@ -34,6 +35,14 @@ export const store = reactive({
 
   clearPendingAction() {
     this.pendingAction = null
+  },
+
+  setPendingAdjustments(adjustments) {
+    this.pendingAdjustments = adjustments || []
+  },
+
+  clearPendingAdjustments() {
+    this.pendingAdjustments = []
   },
 
   setSettings(settings) {

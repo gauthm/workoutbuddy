@@ -1,6 +1,7 @@
 import express from 'express'
 import { getDb } from '../db/database.js'
 import { generateProgram } from '../services/programGenerator.js'
+import { scheduleWeeks } from '../services/sessionScheduler.js'
 
 const router = express.Router()
 const db = getDb()
@@ -268,7 +269,14 @@ router.post('/:id/activate', (req, res) => {
       db.prepare("UPDATE program SET is_active = 1 WHERE id = ?").run(req.params.id)
     })()
 
-    res.json({ message: 'Programme activé', program_id: parseInt(req.params.id) })
+    const created = scheduleWeeks(db, parseInt(req.params.id))
+    console.log(`[scheduler] ${created} séance(s) planifiée(s) à l'activation`)
+
+    res.json({
+      message:            'Programme activé',
+      program_id:         parseInt(req.params.id),
+      sessions_scheduled: created,
+    })
   } catch (err) {
     console.error('[POST /programs/:id/activate]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })

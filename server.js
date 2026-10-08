@@ -16,6 +16,7 @@ import settingsRouter from './src/routes/settings.js'
 import userProfileRouter from './src/routes/userProfile.js'
 import aiRouter from './src/routes/ai.js'
 import exportImportRouter from './src/routes/exportImport.js'
+import { scheduleWeeks } from './src/services/sessionScheduler.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -49,6 +50,16 @@ async function bootstrap() {
   const db = getDb()
   migrate(db)
   seedExercises(db)
+
+  try {
+    const scheduled = scheduleWeeks(db)
+    if (scheduled > 0) {
+      console.log(`[scheduler] ${scheduled} séance(s) planifiée(s) au démarrage`)
+    }
+  } catch (err) {
+    console.warn('[scheduler] Erreur planification au démarrage :', err.message)
+    // Non bloquant
+  }
 
   // Précédence : variables d'environnement > table settings > défauts
   const portRow = db.prepare("SELECT value FROM settings WHERE key='network_port'").get()

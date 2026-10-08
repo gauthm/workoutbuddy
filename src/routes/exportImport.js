@@ -429,6 +429,57 @@ router.get('/export/csv/:table', (req, res) => {
   }
 })
 
+// ── POST /reset-stats ─────────────────────────────────────────
+// Efface uniquement les données d'activité (séances, séries, poids, records,
+// état de progression) sans toucher aux programmes, exercices, équipement,
+// paramètres.
+router.post('/reset-stats', (req, res) => {
+  try {
+    // Sauvegarder avant d'effacer
+    autoBackup()
+
+    db.transaction(() => {
+      // Ordre FK-safe
+      db.prepare('DELETE FROM set_log').run()
+      db.prepare('DELETE FROM session_exercise').run()
+      db.prepare('DELETE FROM session').run()
+      db.prepare('DELETE FROM body_weight').run()
+      db.prepare('DELETE FROM personal_record').run()
+      db.prepare('DELETE FROM equipment_advice').run()
+
+      // Remettre les états de progression à zéro
+      // (garder les lignes — elles sont liées aux template_exercises)
+      db.prepare(`
+        UPDATE progression_state
+        SET current_weight_kg    = 0,
+            current_target_reps  = NULL,
+            consecutive_failures = 0,
+            last_session_id      = NULL,
+            last_updated         = datetime('now')
+      `).run()
+
+      // Remettre la semaine courante des programmes à 1
+      db.prepare(`
+        UPDATE program
+        SET current_week     = 1,
+            is_in_deload     = 0,
+            last_deload_date = NULL,
+            updated_at       = datetime('now')
+      `).run()
+    })()
+
+    res.json({
+      message: 'Statistiques et historique réinitialisés.',
+      cleared: ['sessions', 'set_logs', 'body_weights',
+                'personal_records', 'equipment_advice',
+                'progression_states (reset to 0)'],
+    })
+  } catch (err) {
+    console.error('[POST /reset-stats]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
 // ── POST /backup ──────────────────────────────────────────────
 router.post('/backup', (req, res) => {
   try {

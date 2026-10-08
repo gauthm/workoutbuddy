@@ -17,6 +17,7 @@ function validateAction(action, db) {
     'complete_user_profile', 'create_program', 'update_program', 'activate_program',
     'create_session', 'schedule_sessions', 'add_equipment', 'swap_exercise',
     'update_progression_state', 'update_settings', 'trigger_deload',
+    'exclude_exercises',
   ]
   if (!VALID_ACTIONS.includes(action.action)) {
     errors.push(`Action "${action.action}" inconnue. Valides : ${VALID_ACTIONS.join(', ')}.`)
@@ -110,6 +111,20 @@ function validateAction(action, db) {
     case 'trigger_deload':
       if (!d.program_id) errors.push('"data.program_id" obligatoire.')
       else if (!db.prepare('SELECT id FROM program WHERE id=?').get(d.program_id)) errors.push(`Programme ${d.program_id} introuvable.`)
+      break
+
+    case 'exclude_exercises':
+      if (!Array.isArray(d.exercise_ids) || d.exercise_ids.length === 0) {
+        errors.push('"data.exercise_ids" doit être un tableau non vide de strings.')
+        break
+      }
+      for (const eid of d.exercise_ids) {
+        const found = db.prepare('SELECT id FROM exercise WHERE id = ?').get(eid)
+        if (!found) errors.push(`exercise_id "${eid}" introuvable en DB.`)
+      }
+      if (d.reason !== undefined && typeof d.reason !== 'string') {
+        errors.push('"data.reason" doit être une chaîne.')
+      }
       break
   }
 
@@ -273,6 +288,20 @@ function applyAction(action, db) {
       }
       return { type: 'program_update', program_id: d.program_id, changes: results.length }
     })()
+  }
+
+  if (type === 'exclude_exercises') {
+    const stmt = db.prepare(`
+      UPDATE exercise SET is_excluded = 1, exclusion_reason = ? WHERE id = ?
+    `)
+    const excluded = []
+    db.transaction(() => {
+      for (const eid of d.exercise_ids) {
+        stmt.run(d.reason || null, eid)
+        excluded.push(eid)
+      }
+    })()
+    return { type: 'exclude_exercises', excluded, count: excluded.length }
   }
 
   throw new Error(`Action "${type}" non implémentée.`)

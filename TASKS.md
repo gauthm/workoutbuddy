@@ -99,10 +99,10 @@
 | ID   | Tâche                                                         | Dépendances              | Fichier de tâche                              | Statut |
 |------|---------------------------------------------------------------|--------------------------|-----------------------------------------------|--------|
 | T7.1 | Suggestion premier essai + bulle progression + colonne 10RM   | T3.1, T5.2, T2.4         | `tasks/T7.1_smart_setrow.md`                  | [x]    |
-| T7.2 | Génération automatique séances (semaine courante + suivante)   | T2.1, T2.2               | `tasks/T7.2_session_scheduler.md`             | [ ]    |
-| T7.3 | Ajustement coach au lancement de séance                        | T7.1, T7.2               | `tasks/T7.3_session_adjustment.md`            | [ ]    |
-| T7.4 | Historique enrichi, suppression séance, reset stats            | T2.2, T4.1, T6.2         | `tasks/T7.4_history_delete_reset.md`          | [ ]    |
-| T7.5 | Bibliothèque exercices dans nav, exclusion, programme unique   | T1.4, T1.6, T5.3         | `tasks/T7.5_exercise_library_exclusion.md`    | [ ]    |
+| T7.2 | Génération automatique séances (semaine courante + suivante)   | T2.1, T2.2               | `tasks/T7.2_session_scheduler.md`             | [x]    |
+| T7.3 | Ajustement coach au lancement de séance                        | T7.1, T7.2               | `tasks/T7.3_session_adjustment.md`            | [x]    |
+| T7.4 | Historique enrichi, suppression séance, reset stats            | T2.2, T4.1, T6.2         | `tasks/T7.4_history_delete_reset.md`          | [x]    |
+| T7.5 | Bibliothèque exercices dans nav, exclusion, programme unique   | T1.4, T1.6, T5.3         | `tasks/T7.5_exercise_library_exclusion.md`    | [x]    |
 
 
 **Ordre d'exécution recommandé :**

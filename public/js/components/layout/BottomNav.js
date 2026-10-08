@@ -8,11 +8,12 @@ export default {
     const store  = inject('store')
 
     const tabs = [
-      { hash: '#/',        icon: '🏠', labelKey: 'nav.home',     routes: ['DashboardView'] },
-      { hash: '#/session', icon: '🏋️', labelKey: 'nav.session',  routes: ['SessionActiveView','SessionHistoryView'] },
-      { hash: '#/stats',   icon: '📊', labelKey: 'nav.stats',    routes: ['StatsDashboardView','ExerciseProgressView','BodyWeightView'] },
-      { hash: '#/coach',   icon: '🤖', labelKey: 'nav.coach',    routes: ['CoachView'] },
-      { hash: '#/settings',icon: '⚙️', labelKey: 'nav.settings', routes: ['SettingsView'] },
+      { hash: '#/',        icon: '🏠', labelKey: 'nav.home',      routes: ['DashboardView'] },
+      { hash: '#/session', icon: '🏋️', labelKey: 'nav.session',   routes: ['SessionActiveView','SessionHistoryView','SessionDetailView'] },
+      { hash: '#/exercises', icon: '📖', labelKey: 'nav.exercises', routes: ['ExerciseListView','ExerciseDetailView','ExerciseFormView','ExerciseEditView'] },
+      { hash: '#/stats',   icon: '📊', labelKey: 'nav.stats',     routes: ['StatsDashboardView','ExerciseProgressView','BodyWeightView'] },
+      { hash: '#/coach',   icon: '🤖', labelKey: 'nav.coach',     routes: ['CoachView'] },
+      { hash: '#/settings',icon: '⚙️', labelKey: 'nav.settings',  routes: ['SettingsView'] },
     ]
 
     function isActive(tab) {

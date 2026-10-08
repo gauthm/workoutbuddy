@@ -114,6 +114,9 @@ function isEquipmentAvailable(equipmentRequired, equipmentItems) {
 export function generateProgram(params, allExercises, equipmentItems) {
   const { goal, level, days_per_week, duration_weeks, priority_muscles = [] } = params
 
+  // Exclure les exercices désactivés en premier — avant toute autre logique
+  const availableExercises = allExercises.filter(ex => !ex.is_excluded)
+
   const splitKey = selectSplit(days_per_week, goal, level)
   const templateDefs = SPLIT_TEMPLATES[splitKey]
 
@@ -131,7 +134,7 @@ export function generateProgram(params, allExercises, equipmentItems) {
     const usedExercises = new Set()
 
     for (const muscle of muscles) {
-      const candidates = allExercises.filter(ex =>
+      const candidates = availableExercises.filter(ex =>
         ex.primary_muscles.includes(muscle) &&
         isEquipmentAvailable(ex.equipment_required, equipmentItems) &&
         !usedExercises.has(ex.id)

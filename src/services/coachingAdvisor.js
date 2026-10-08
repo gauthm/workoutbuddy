@@ -100,7 +100,7 @@ export function runAllSignalChecks(db, settings) {
   // Signal 3 : Aucun exercice pour un muscle
   for (const muscle of ALL_MUSCLES) {
     if (isOnCooldown('no_exercise_available', null, muscle, activeAdvice, cooldownDays)) continue
-    const candidates = db.prepare("SELECT * FROM exercise WHERE primary_muscles LIKE ? AND category='strength'").all(`%"${muscle}"%`)
+    const candidates = db.prepare("SELECT * FROM exercise WHERE primary_muscles LIKE ? AND category='strength' AND is_excluded = 0").all(`%"${muscle}"%`)
     const feasible = candidates.filter(ex => {
       const req = JSON.parse(ex.equipment_required || '[]')
       if (!req.length) return true

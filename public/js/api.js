@@ -31,6 +31,7 @@ export const exercises = {
   delete:    (id)          => request('DELETE', `/exercises/${id}`),
   history:   (id, params)  => request('GET', `/exercises/${id}/history?` + new URLSearchParams(params)),
   rmHistory: (id, params)  => request('GET', `/exercises/${id}/rm-history?` + new URLSearchParams(params)),
+  toggleExclusion: (id, body) => request('PUT', `/exercises/${id}/toggle-exclusion`, body),
 }
 
 // ── Équipement ────────────────────────────────────────────────
@@ -136,6 +137,9 @@ export const exportImport = {
 
   // Import JSON
   importJson: (body) => request('POST', '/import', body),
+
+  // Reset partiel : stats et historique uniquement
+  resetStats: () => request('POST', '/reset-stats'),
 
   // Backup manuel
   backup: () => request('POST', '/backup'),
