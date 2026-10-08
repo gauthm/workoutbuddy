@@ -143,7 +143,7 @@
   "movement.other":           "Other",
   "programs.title":            "Programs",
   "programs.new":              "New program",
-  "programs.generate":         "Auto-generate",
+  "programs.generate":         "Generate with AI coach",
   "programs.no_programs":      "No programs yet. Create one!",
   "programs.create_via_coach": "Create a program with the AI coach",
   "programs.unique_notice":    "Only one program can be active at a time. The others are archived and viewable here.",

@@ -13,6 +13,8 @@ import ExerciseFormView     from '../exercises/ExerciseForm.js'
 import EquipmentView        from '../equipment/EquipmentView.js'
 import ProgramListView      from '../programs/ProgramListView.js'
 import ProgramDetailView    from '../programs/ProgramDetailView.js'
+import ProgramForm          from '../programs/ProgramForm.js'
+import ProgramGenerator     from '../programs/ProgramGenerator.js'
 import SessionActiveView    from '../session/SessionActiveView.js'
 import SessionHistoryView   from '../session/SessionHistoryView.js'
 import SessionDetailView    from '../session/SessionDetailView.js'
@@ -41,6 +43,8 @@ const VIEW_MAP = {
   // Jalons suivants — placeholders pour l'instant :
   ProgramListView,
   ProgramDetailView,
+  ProgramForm,
+  ProgramGenerator,
   SessionActiveView,
   SessionHistoryView,
   SessionDetailView,

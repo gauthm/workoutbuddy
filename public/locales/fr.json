@@ -143,7 +143,7 @@
   "movement.other":           "Autre",
   "programs.title":            "Programmes",
   "programs.new":              "Nouveau programme",
-  "programs.generate":         "Générer automatiquement",
+  "programs.generate":         "Générer avec le coach IA",
   "programs.no_programs":      "Aucun programme. Créez-en un !",
   "programs.create_via_coach": "Créer un programme avec le coach IA",
   "programs.unique_notice":    "Un seul programme peut être actif à la fois. Les autres sont archivés et consultables ici.",

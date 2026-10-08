@@ -1,15 +1,16 @@
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { programs as api } from '../api.js'
 import { t } from '../i18n.js'
+import EmptyState from '../components/common/EmptyState.js'
 
 export default {
   name: 'DashboardView',
+  components: { EmptyState },
   setup() {
     const router = inject('router')
     const store  = inject('store')
     const state = reactive({ loading: true, activeProgram: null })
 
-    // Un seul programme actif : on l'affiche directement (pas de liste, pas de sélecteur)
     async function load() {
       state.loading = true
       try {
@@ -24,13 +25,7 @@ export default {
 
     onMounted(load)
 
-    // Ouvre le coach en lançant directement la création de programme
-    function startCoachProgram() {
-      store.coachAutoStart = true
-      router.push('#/coach')
-    }
-
-    return { state, router, startCoachProgram, t }
+    return { state, router, t }
   },
   template: `
     <div class="view">
@@ -45,13 +40,15 @@ export default {
             <span class="badge badge--custom">{{ t('dashboard.active_program') }}</span>
           </div>
         </div>
-        <div v-else-if="!state.loading" class="program-list-notice"
-          @click="startCoachProgram" style="cursor:pointer">
-          ℹ️ {{ t('dashboard.no_program') }}
-        </div>
-        <p style="padding:1.5rem;text-align:center;color:var(--color-text-muted)">
-          {{ t('dashboard.welcome') }}
-        </p>
+        <EmptyState
+          v-else-if="!state.loading"
+          icon="🏋️"
+          :message="t('session.no_program')">
+          <button class="btn btn--primary" style="margin-top:1rem"
+            @click="router.push('#/programs/new')">
+            {{ t('session.create_program') }}
+          </button>
+        </EmptyState>
       </main>
     </div>
   `

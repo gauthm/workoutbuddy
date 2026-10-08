@@ -148,7 +148,7 @@ export default {
             {{ t('session.go_program') }}
           </button>
           <button v-else class="btn btn--primary" style="margin-top:1rem"
-            @click="router.push('#/coach')">
+            @click="router.push('#/programs/new')">
             {{ t('session.create_program') }}
           </button>
         </EmptyState>

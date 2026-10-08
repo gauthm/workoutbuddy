@@ -4,12 +4,11 @@ import { t } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
-import EmptyState     from '../common/EmptyState.js'
 import ProgramCard    from './ProgramCard.js'
 
 export default {
   name: 'ProgramListView',
-  components: { PageHeader, LoadingSpinner, ErrorBanner, EmptyState, ProgramCard },
+  components: { PageHeader, LoadingSpinner, ErrorBanner, ProgramCard },
 
   setup() {
     const router = inject('router')
@@ -20,6 +19,10 @@ export default {
       try {
         const data = await api.list()
         state.programs = data.programs
+        if (!state.programs.length) {
+          router.replace('#/programs/new')
+          return
+        }
       } catch (err) { state.error = err.message }
       finally { state.loading = false }
     }
@@ -34,13 +37,6 @@ export default {
       <div class="view__content">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
-        <EmptyState    v-else-if="!state.programs.length"
-          icon="📋" :message="t('programs.no_programs')">
-          <button class="btn btn--primary" style="margin-top:1rem"
-            @click="router.push('#/coach')">
-            {{ t('programs.create_via_coach') }}
-          </button>
-        </EmptyState>
         <div v-else>
           <ProgramCard
             v-for="p in state.programs" :key="p.id"
