@@ -285,3 +285,71 @@
   cursor: pointer; padding: 0.25rem;
 }
 .icon-btn--danger { color: var(--color-danger); }
+
+/* ── Programmes (T2.3) ─────────────────────────────────────── */
+.program-card {
+  padding: 1rem; border-bottom: 1px solid var(--color-border);
+  cursor: pointer; transition: background 0.1s;
+}
+.program-card:active { background: var(--color-surface-2); }
+.program-card--active { border-left: 3px solid var(--color-primary); }
+.program-card__header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.program-card__name   { font-weight: 600; flex: 1; }
+.program-card__meta   { display: flex; gap: 0.5rem; font-size: 0.85rem; color: var(--color-text-muted); }
+.badge--active { background: var(--color-primary); color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; }
+
+.template-block { margin-bottom: 1rem; background: var(--color-surface-2); border-radius: var(--radius-md); padding: 0.75rem; }
+.template-block__name { font-weight: 600; margin-bottom: 0.4rem; }
+.template-block__exercise { font-size: 0.85rem; color: var(--color-text-muted); padding: 0.2rem 0; }
+
+.exercise-selector { max-height: 60dvh; display: flex; flex-direction: column; }
+.exercise-selector__list { overflow-y: auto; flex: 1; }
+.exercise-selector__item {
+  display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; padding: 0.75rem 1rem; border: none; border-bottom: 1px solid var(--color-border);
+  background: none; color: var(--color-text); cursor: pointer; text-align: left; gap: 0.2rem;
+}
+.exercise-selector__item:active { background: var(--color-surface-2); }
+
+/* ── Séance active (T2.4) ──────────────────────────────────── */
+.set-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1rem; border-bottom: 1px solid var(--color-border);
+  min-height: 48px;
+}
+.set-row--done { background: rgba(39,174,96,0.08); }
+.set-row__num  { width: 28px; font-size: 0.8rem; color: var(--color-text-muted); flex-shrink: 0; }
+.set-row__input {
+  width: 64px; background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm); color: var(--color-text); font-size: 1rem;
+  padding: 0.3rem 0.4rem; text-align: center;
+}
+.set-row__input:disabled { opacity: 0.6; }
+.set-row__input--reps { width: 48px; }
+.set-row__input--rpe  { width: 52px; font-size: 0.85rem; }
+.set-row__unit { font-size: 0.75rem; color: var(--color-text-muted); flex-shrink: 0; }
+.set-row__btn {
+  margin-left: auto; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--color-primary); border: none; color: #fff;
+  font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+}
+.set-row__btn:disabled { opacity: 0.5; }
+.set-row__done { margin-left: auto; color: var(--color-success); font-size: 1.2rem; }
+
+.exercise-block { border: 1px solid var(--color-border); border-radius: var(--radius-md); margin: 0.75rem 1rem; overflow: hidden; }
+.exercise-block__header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--color-surface-2); }
+.exercise-block__name   { font-weight: 600; font-size: 1rem; }
+.exercise-block__target { padding: 0.3rem 1rem; font-size: 0.8rem; color: var(--color-primary); background: rgba(230,126,34,0.08); }
+.exercise-block__add-set { width: 100%; padding: 0.6rem; border: none; background: none; color: var(--color-text-muted); font-size: 0.85rem; cursor: pointer; border-top: 1px dashed var(--color-border); }
+.exercise-block__add-set:disabled { opacity: 0.4; }
+
+.session-history-row { padding: 0.85rem 1rem; border-bottom: 1px solid var(--color-border); cursor: pointer; }
+.session-history-row:active { background: var(--color-surface-2); }
+.session-history-row__name { font-weight: 500; margin-bottom: 0.2rem; }
+.session-history-row__meta { font-size: 0.8rem; color: var(--color-text-muted); }
+.session-timer { font-variant-numeric: tabular-nums; font-size: 0.95rem; color: var(--color-text-muted); }
+
+.rest-timer {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0.5rem;
+}

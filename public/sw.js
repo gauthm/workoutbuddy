@@ -12,6 +12,7 @@ const PRECACHE_URLS = [
   '/js/i18n.js',
   '/js/api.js',
   '/js/timer-worker.js',
+  '/js/timer-worker-singleton.js',
   '/js/utils/rm.js',
   '/js/utils/weight.js',
   '/js/utils/date.js',

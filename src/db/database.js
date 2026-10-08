@@ -16,5 +16,6 @@ export function getDb() {
   instance = new Database(DB_PATH)
   instance.pragma('journal_mode = WAL')
   instance.pragma('foreign_keys = ON')
+  instance.pragma('busy_timeout = 5000')
   return instance
 }

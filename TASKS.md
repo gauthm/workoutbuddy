@@ -42,11 +42,11 @@
 
 | ID   | Tâche                                   | Dépendances      | Fichier de tâche                        | Statut |
 |------|-----------------------------------------|------------------|-----------------------------------------|--------|
-| T2.1 | API Programmes et Templates             | T1.2, T1.4       | `tasks/T2.1_api_programs.md`            | [ ]    |
-| T2.2 | API Sessions et Sets                    | T2.1             | `tasks/T2.2_api_sessions.md`            | [ ]    |
-| T2.3 | Écrans Programmes (liste + détail + création) | T2.1, T1.6  | `tasks/T2.3_screens_programs.md`        | [ ]    |
-| T2.4 | Écran séance active + validation séries | T2.2, T1.6       | `tasks/T2.4_screen_session_active.md`   | [ ]    |
-| T2.5 | Timers (Web Worker + sons + Wake Lock)  | T2.4             | `tasks/T2.5_timers.md`                  | [ ]    |
+| T2.1 | API Programmes et Templates             | T1.2, T1.4       | `tasks/T2.1_api_programs.md`            | [x]    |
+| T2.2 | API Sessions et Sets                    | T2.1             | `tasks/T2.2_api_sessions.md`            | [x]    |
+| T2.3 | Écrans Programmes (liste + détail + création) | T2.1, T1.6  | `tasks/T2.3_screens_programs.md`        | [x]    |
+| T2.4 | Écran séance active + validation séries | T2.2, T1.6       | `tasks/T2.4_screen_session_active.md`   | [x]    |
+| T2.5 | Timers (Web Worker + sons + Wake Lock)  | T2.4             | `tasks/T2.5_timers.md`                  | [x]    |
 
 ---
 

@@ -6,6 +6,10 @@ import { migrate } from './src/db/migrate.js'
 import { seedExercises } from './src/seed/seed.js'
 import exercisesRouter from './src/routes/exercises.js'
 import equipmentRouter from './src/routes/equipment.js'
+import programsRouter from './src/routes/programs.js'
+import { templatesRouter, templateExercisesRouter } from './src/routes/templates.js'
+import sessionsRouter from './src/routes/sessions.js'
+import setsRouter from './src/routes/sets.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -16,6 +20,11 @@ app.use(express.static(path.join(__dirname, 'public')))
 // ── Montage des routes (à compléter tâche par tâche) ──────────
 app.use('/api/v1/exercises', exercisesRouter)
 app.use('/api/v1/equipment', equipmentRouter)
+app.use('/api/v1/programs', programsRouter)
+app.use('/api/v1/templates', templatesRouter)
+app.use('/api/v1/template-exercises', templateExercisesRouter)
+app.use('/api/v1/sessions', sessionsRouter)
+app.use('/api/v1', setsRouter)
 
 // ── Fallback SPA ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {

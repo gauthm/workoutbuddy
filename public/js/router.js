@@ -9,6 +9,7 @@ const ROUTE_DEFS = [
   { re: /^#\/exercises$/,                  name: 'ExerciseListView',      params: [] },
   { re: /^#\/equipment$/,                  name: 'EquipmentView',         params: [] },
   { re: /^#\/programs\/new$/,              name: 'ProgramCreateView',     params: [] },
+  { re: /^#\/programs\/generate$/,         name: 'ProgramGenerateView',   params: [] },
   { re: /^#\/programs\/([^/]+)\/edit$/,    name: 'ProgramEditView',       params: ['id'] },
   { re: /^#\/programs\/([^/]+)$/,          name: 'ProgramDetailView',     params: ['id'] },
   { re: /^#\/programs$/,                   name: 'ProgramListView',       params: [] },
