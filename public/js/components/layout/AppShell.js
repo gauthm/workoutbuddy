@@ -18,6 +18,7 @@ import ProgramGenerator     from '../programs/ProgramGenerator.js'
 import SessionActiveView    from '../session/SessionActiveView.js'
 import SessionHistoryView   from '../session/SessionHistoryView.js'
 import SessionDetailView    from '../session/SessionDetailView.js'
+import CalendarView         from '../calendar/CalendarView.js'
 
 // Placeholder pour les vues non encore implémentées
 const Placeholder = (name) => ({
@@ -43,7 +44,7 @@ const VIEW_MAP = {
   SessionActiveView,
   SessionHistoryView,
   SessionDetailView,
-  CalendarView:          Placeholder('CalendarView'),
+  CalendarView,
   StatsDashboardView:    Placeholder('StatsDashboardView'),
   ExerciseProgressView:  Placeholder('ExerciseProgressView'),
   BodyWeightView:        Placeholder('BodyWeightView'),

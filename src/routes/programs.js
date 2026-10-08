@@ -341,4 +341,48 @@ router.get('/:id/next-session', (req, res) => {
   }
 })
 
+// ── POST /programs/:id/deload (déclenchement manuel) ─────────────────
+router.post('/:id/deload', (req, res) => {
+  try {
+    const program = db.prepare('SELECT id FROM program WHERE id = ?').get(req.params.id)
+    if (!program) return res.status(404).json({ error: 'PROGRAM_NOT_FOUND' })
+
+    db.prepare(`
+      UPDATE program
+      SET is_in_deload = 1, last_deload_date = date('now'), updated_at = datetime('now')
+      WHERE id = ?
+    `).run(req.params.id)
+
+    res.json({
+      message: 'Deload activé manuellement.',
+      program_id: parseInt(req.params.id),
+    })
+  } catch (err) {
+    console.error('[POST /programs/:id/deload]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// ── POST /programs/:id/end-deload ─────────────────────────────────────
+router.post('/:id/end-deload', (req, res) => {
+  try {
+    const program = db.prepare('SELECT id FROM program WHERE id = ?').get(req.params.id)
+    if (!program) return res.status(404).json({ error: 'PROGRAM_NOT_FOUND' })
+
+    db.prepare(`
+      UPDATE program
+      SET is_in_deload = 0, updated_at = datetime('now')
+      WHERE id = ?
+    `).run(req.params.id)
+
+    res.json({
+      message: 'Deload terminé.',
+      program_id: parseInt(req.params.id),
+    })
+  } catch (err) {
+    console.error('[POST /programs/:id/end-deload]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
 export default router

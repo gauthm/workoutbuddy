@@ -71,6 +71,7 @@ export const sessions = {
   fromTemplate: (tplId, body) => request('POST', `/sessions/from-template/${tplId}`, body),
   start:        (id)          => request('POST', `/sessions/${id}/start`),
   complete:     (id)          => request('POST', `/sessions/${id}/complete`),
+  skip:         (id)          => request('POST', `/sessions/${id}/skip`),
   update:       (id, body)    => request('PUT', `/sessions/${id}`, body),
   delete:       (id)          => request('DELETE', `/sessions/${id}`),
   target:       (id, teId)    => request('GET', `/sessions/${id}/target/${teId}`),

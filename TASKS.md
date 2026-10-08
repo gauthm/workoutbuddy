@@ -55,10 +55,10 @@
 
 | ID   | Tâche                          | Dépendances  | Fichier de tâche                        | Statut |
 |------|--------------------------------|--------------|-----------------------------------------|--------|
-| T3.1 | Moteur de progression          | T1.5, T2.2   | `tasks/T3.1_progression_engine.md`      | [ ]    |
-| T3.2 | Détection de plateau + deload  | T3.1         | `tasks/T3.2_plateau_deload.md`          | [ ]    |
-| T3.3 | Rotation d'exercices           | T3.1, T2.2   | `tasks/T3.3_rotation.md`                | [ ]    |
-| T3.4 | Calendrier (API + écran)       | T2.2, T1.6   | `tasks/T3.4_calendar.md`                | [ ]    |
+| T3.1 | Moteur de progression          | T1.5, T2.2   | `tasks/T3.1_progression_engine.md`      | [x]    |
+| T3.2 | Détection de plateau + deload  | T3.1         | `tasks/T3.2_plateau_deload.md`          | [x]    |
+| T3.3 | Rotation d'exercices           | T3.1, T2.2   | `tasks/T3.3_rotation.md`                | [x]    |
+| T3.4 | Calendrier (API + écran)       | T2.2, T1.6   | `tasks/T3.4_calendar.md`                | [x]    |
 
 ---
 

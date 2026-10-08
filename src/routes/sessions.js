@@ -2,24 +2,17 @@ import express from 'express'
 import fs from 'fs'
 import path from 'path'
 import { getDb, getDbPath } from '../db/database.js'
+import { computeNextState, resolveProgressionModel } from '../services/progressionEngine.js'
+import { calculateAchievableLoads } from '../services/equipmentCalc.js'
+import { estimate1RM }              from '../services/rmCalculator.js'
+import { shouldDeload }             from '../services/deloadEngine.js'
+import { detectPlateau }            from '../services/plateauDetector.js'
+import { getExerciseForWeek }       from '../services/rotationEngine.js'
+import { runAllSignalChecks }       from '../services/coachingAdvisor.js'
+import { generatePendingAdviceTexts } from '../services/adviceTextGenerator.js'
 
 const router = express.Router()
 const db = getDb()
-
-function getFormula(db) {
-  const row = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
-  return row ? JSON.parse(row.value) : 'epley'
-}
-
-function estimate1RM(weightKg, reps, formula = 'epley') {
-  if (!weightKg || weightKg <= 0 || !reps || reps <= 0) return 0
-  if (reps === 1) return weightKg
-  if (formula === 'epley')   return weightKg * (1 + reps / 30)
-  if (formula === 'brzycki') return reps >= 37 ? weightKg : weightKg * 36 / (37 - reps)
-  if (formula === 'lander')  return 100 * weightKg / (101.3 - 2.67123 * reps)
-  if (formula === 'oconner') return weightKg * (1 + 0.025 * reps)
-  return weightKg * (1 + reps / 30) // fallback Epley
-}
 
 function autoBackup() {
   try {
@@ -73,7 +66,7 @@ router.post('/from-template/:templateId', (req, res) => {
     const tpl = db.prepare('SELECT * FROM workout_template WHERE id = ?').get(req.params.templateId)
     if (!tpl) return res.status(404).json({ error: 'TEMPLATE_NOT_FOUND' })
 
-    const { scheduled_date } = req.body
+    const { scheduled_date, apply_rotation } = req.body
     if (!scheduled_date) return res.status(400).json({ error: 'MISSING_DATE' })
 
     const templateExercises = db.prepare(
@@ -83,6 +76,22 @@ router.post('/from-template/:templateId', (req, res) => {
     const program = tpl.program_id
       ? db.prepare('SELECT * FROM program WHERE id = ?').get(tpl.program_id)
       : null
+
+    // Préparer la rotation hors transaction
+    const useRotation = apply_rotation === true
+    let allExercises = []
+    let equipmentItems = []
+
+    if (useRotation) {
+      const raw = db.prepare('SELECT * FROM exercise').all()
+      allExercises = raw.map(ex => ({
+        ...ex,
+        primary_muscles:    JSON.parse(ex.primary_muscles    || '[]'),
+        secondary_muscles:  JSON.parse(ex.secondary_muscles  || '[]'),
+        equipment_required: JSON.parse(ex.equipment_required || '[]'),
+      }))
+      equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
+    }
 
     const sessionId = db.transaction(() => {
       const sResult = db.prepare(`
@@ -97,10 +106,17 @@ router.post('/from-template/:templateId', (req, res) => {
 
       for (let i = 0; i < templateExercises.length; i++) {
         const te = templateExercises[i]
+        let exerciseId = te.exercise_id
+
+        if (useRotation && te.rotation_group) {
+          const weekNumber = program?.current_week || 1
+          exerciseId = getExerciseForWeek(te, weekNumber, allExercises, equipmentItems, db)
+        }
+
         db.prepare(`
           INSERT INTO session_exercise (session_id, exercise_id, template_exercise_id, order_index)
           VALUES (?,?,?,?)
-        `).run(sid, te.exercise_id, te.id, i)
+        `).run(sid, exerciseId, te.id, i)
       }
       return sid
     }).immediate()
@@ -255,6 +271,124 @@ router.post('/:id/complete', (req, res) => {
       }
     }).immediate()
 
+    // ── Mise à jour de la progression après complétion ────────────────────
+    // Récupérer le programme et ses settings
+    const program = session.program_id
+      ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
+      : null
+
+    const settingsRows = db.prepare('SELECT key, value FROM settings').all()
+    const settings = {}
+    for (const r of settingsRows) {
+      settings[r.key] = JSON.parse(r.value)
+    }
+    const progressionSettings = {
+      progression_failure_threshold:   settings.progression_failure_threshold  || 2,
+      progression_weight_reduction_pct: settings.progression_weight_reduction_pct || 10,
+    }
+
+    const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
+
+    // Pour chaque session_exercise rattaché à un template_exercise
+    const sessionExercises = db.prepare(
+      'SELECT * FROM session_exercise WHERE session_id = ? AND template_exercise_id IS NOT NULL'
+    ).all(req.params.id)
+
+    for (const se of sessionExercises) {
+      const te = db.prepare('SELECT * FROM template_exercise WHERE id = ?').get(se.template_exercise_id)
+      if (!te) continue
+
+      const state = db.prepare(
+        'SELECT * FROM progression_state WHERE template_exercise_id = ?'
+      ).get(te.id)
+      if (!state) continue
+
+      const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(se.exercise_id)
+      if (!exercise) continue
+
+      // Séries de travail complétées
+      const workSets = db.prepare(`
+        SELECT * FROM set_log
+        WHERE session_exercise_id = ?
+          AND is_warmup = 0
+          AND is_completed = 1
+        ORDER BY set_number
+      `).all(se.id)
+
+      if (workSets.length === 0) continue
+
+      // Calculer les charges atteignables
+      const exerciseForCalc = {
+        equipment_required: JSON.parse(exercise.equipment_required || '[]'),
+        is_unilateral: exercise.is_unilateral,
+      }
+      const loadsResult = calculateAchievableLoads(equipmentItems, exerciseForCalc)
+      const achievable  = loadsResult.loads_kg.length > 0
+        ? loadsResult.loads_kg
+        : [state.current_weight_kg || 0]
+
+      const nextState = computeNextState(
+        state, workSets, te, program, achievable, progressionSettings
+      )
+
+      db.prepare(`
+        UPDATE progression_state
+        SET current_weight_kg    = ?,
+            current_target_reps  = ?,
+            consecutive_failures = ?,
+            last_session_id      = ?,
+            last_updated         = datetime('now')
+        WHERE template_exercise_id = ?
+      `).run(
+        nextState.current_weight_kg,
+        nextState.current_target_reps ?? state.current_target_reps,
+        nextState.consecutive_failures,
+        parseInt(req.params.id),
+        te.id
+      )
+    }
+    // ── fin mise à jour progression ───────────────────────────────────────
+
+    // ── Vérification deload ───────────────────────────────────────────────
+    let deloadTriggered = false
+    let deloadReason    = null
+
+    if (program) {
+      const settingsForDeload = {
+        plateau_detection_sessions: settings.plateau_detection_sessions || 4,
+        deload_min_sets: settings.deload_min_sets || 2,
+      }
+      const deloadCheck = shouldDeload(program, settingsForDeload, db)
+
+      if (deloadCheck.should) {
+        db.prepare(`
+          UPDATE program
+          SET is_in_deload = 1,
+              last_deload_date = date('now'),
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).run(program.id)
+        deloadTriggered = true
+        deloadReason    = deloadCheck.reason
+      }
+    }
+    // ── fin vérification deload ───────────────────────────────────────────
+
+    // ── Signaux coaching (non bloquant) ───────────────────────────
+    try {
+      const newAdvice = runAllSignalChecks(db, settings)
+      if (newAdvice > 0) {
+        // Génération LLM en arrière-plan
+        generatePendingAdviceTexts(db).catch(e =>
+          console.warn('[advice] génération arrière-plan:', e.message)
+        )
+      }
+    } catch (err) {
+      console.warn('[coaching] Erreur signaux:', err.message)
+      // Non bloquant
+    }
+    // ── fin signaux coaching ──────────────────────────────────────────────
+
     autoBackup()
 
     // Retourner session complète
@@ -268,7 +402,12 @@ router.post('/:id/complete', (req, res) => {
       ).all(se.id)
     }
 
-    res.json({ ...updated, exercises, deload_triggered: false })
+    res.json({
+      ...updated,
+      exercises,
+      deload_triggered: deloadTriggered,
+      deload_reason:    deloadReason,
+    })
   } catch (err) {
     console.error('[POST /sessions/:id/complete]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
@@ -321,6 +460,29 @@ router.delete('/:id', (req, res) => {
   }
 })
 
+// ── POST /sessions/:id/skip ───────────────────────────────────
+router.post('/:id/skip', (req, res) => {
+  try {
+    const session = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
+    if (!session) return res.status(404).json({ error: 'SESSION_NOT_FOUND' })
+    if (session.status === 'completed') {
+      return res.status(409).json({ error: 'SESSION_ALREADY_COMPLETED' })
+    }
+    if (session.status === 'in_progress') {
+      return res.status(409).json({ error: 'CANNOT_SKIP_IN_PROGRESS_SESSION' })
+    }
+    db.prepare(`
+      UPDATE session
+      SET status = 'skipped', updated_at = datetime('now')
+      WHERE id = ?
+    `).run(req.params.id)
+    res.json(db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id))
+  } catch (err) {
+    console.error('[POST /sessions/:id/skip]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
 // ── GET /sessions/:id/target/:templateExerciseId ──────────────
 router.get('/:id/target/:teId', (req, res) => {
   try {
@@ -334,17 +496,38 @@ router.get('/:id/target/:teId', (req, res) => {
       'SELECT * FROM progression_state WHERE template_exercise_id = ?'
     ).get(req.params.teId)
 
-    const weight = state?.current_weight_kg || 0
-    const explanation = weight === 0
-      ? 'Premier entraînement — commencez léger.'
-      : `Charge précédente : ${weight} kg.`
+    const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(te.exercise_id)
+    const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
+
+    const exerciseForCalc = {
+      equipment_required: JSON.parse(exercise?.equipment_required || '[]'),
+      is_unilateral: exercise?.is_unilateral || 0,
+    }
+    const loadsResult = calculateAchievableLoads(equipmentItems, exerciseForCalc)
+
+    const weight      = state?.current_weight_kg || 0
+    const targetReps  = state?.current_target_reps || te.target_reps_min
+
+    let explanation
+    if (weight === 0) {
+      explanation = 'Premier entraînement — commencez léger pour trouver votre charge.'
+    } else {
+      const program = session.program_id
+        ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
+        : null
+      const model = resolveProgressionModel(te, program)
+      explanation = `Modèle : ${model}. Charge précédente : ${weight} kg × ${targetReps} reps.`
+      if (state?.consecutive_failures > 0) {
+        explanation += ` (${state.consecutive_failures} échec(s) consécutif(s))`
+      }
+    }
 
     res.json({
-      weight_kg:       weight,
-      reps_min:        te.target_reps_min,
-      reps_max:        te.target_reps_max,
+      weight_kg:           weight,
+      reps_min:            targetReps,
+      reps_max:            te.target_reps_max,
       explanation,
-      achievable_loads_kg: [weight], // sera enrichi en T3.1
+      achievable_loads_kg: loadsResult.loads_kg,
     })
   } catch (err) {
     console.error('[GET /sessions/:id/target/:teId]', err.message)
