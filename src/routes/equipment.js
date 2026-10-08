@@ -6,9 +6,13 @@ const router = express.Router()
 const db = getDb()
 
 const VALID_CATEGORIES = [
-  'barbell', 'ez_bar', 'plate', 'dumbbell_fixed', 'dumbbell_adjustable',
-  'kettlebell', 'resistance_band', 'bench', 'rack', 'pullup_bar',
-  'cable_machine', 'smith_machine', 'other'
+  'barbell', 'ez_bar',
+  'plate', 'dumbbell_plate',
+  'dumbbell_fixed', 'dumbbell_adjustable', 'dumbbell_loadable',
+  'kettlebell',
+  'resistance_band',
+  'bench', 'bench_adjustable',
+  'rack', 'pullup_bar', 'cable_machine', 'smith_machine', 'other',
 ]
 
 // Déclaré AVANT les routes paramétrées : sinon 'achievable-loads' serait pris comme :id
@@ -56,31 +60,67 @@ router.post('/', (req, res) => {
       resistance_min_kg, resistance_max_kg, notes
     } = req.body
 
+    // Validation catégorie
     if (!VALID_CATEGORIES.includes(category)) {
-      return res.status(400).json({ error: 'INVALID_CATEGORY' })
+      return res.status(400).json({
+        error:  'INVALID_CATEGORY',
+        detail: `Catégories valides : ${VALID_CATEGORIES.join(', ')}`,
+      })
     }
-    if (!name || !name.trim()) {
+
+    // Validation nom
+    if (!name?.trim()) {
       return res.status(400).json({ error: 'MISSING_NAME' })
     }
-    const itemCount = count ?? 1
-    if (category === 'plate' && (itemCount % 2 !== 0 || itemCount < 2)) {
-      return res.status(400).json({ error: 'PLATE_COUNT_MUST_BE_EVEN' })
+
+    // Validation count pair pour plate et dumbbell_plate
+    if (['plate', 'dumbbell_plate'].includes(category)) {
+      const n = parseInt(count) || 1
+      if (n < 2 || n % 2 !== 0) {
+        return res.status(400).json({
+          error:  'PLATE_COUNT_MUST_BE_EVEN',
+          detail: 'Les disques doivent être en quantité paire (minimum 2).',
+        })
+      }
     }
 
-    const info = db.prepare(`
+    // dumbbell_loadable : count toujours 2
+    const effectiveCount =
+      category === 'dumbbell_loadable' ? 2 : (parseInt(count) || 1)
+
+    // Validation champs haltères réglables
+    if (category === 'dumbbell_adjustable') {
+      if (!weight_min_kg || !weight_max_kg || !weight_step_kg) {
+        return res.status(400).json({
+          error:  'MISSING_ADJUSTABLE_FIELDS',
+          detail: 'weight_min_kg, weight_max_kg et weight_step_kg sont requis pour dumbbell_adjustable.',
+        })
+      }
+      if (parseFloat(weight_min_kg) >= parseFloat(weight_max_kg)) {
+        return res.status(400).json({ error: 'INVALID_WEIGHT_RANGE' })
+      }
+    }
+
+    const result = db.prepare(`
       INSERT INTO equipment_item
-        (category, name, weight_kg, count,
-         weight_min_kg, weight_max_kg, weight_step_kg,
-         resistance_min_kg, resistance_max_kg, notes)
+        (category, name, weight_kg, count, weight_min_kg, weight_max_kg,
+         weight_step_kg, resistance_min_kg, resistance_max_kg, notes)
       VALUES (?,?,?,?,?,?,?,?,?,?)
     `).run(
-      category, name.trim(), weight_kg ?? null, itemCount,
-      weight_min_kg ?? null, weight_max_kg ?? null, weight_step_kg ?? null,
-      resistance_min_kg ?? null, resistance_max_kg ?? null, notes ?? null
+      category, name.trim(),
+      weight_kg   ? parseFloat(weight_kg)   : null,
+      effectiveCount,
+      weight_min_kg       ? parseFloat(weight_min_kg)       : null,
+      weight_max_kg       ? parseFloat(weight_max_kg)       : null,
+      weight_step_kg      ? parseFloat(weight_step_kg)      : null,
+      resistance_min_kg   ? parseFloat(resistance_min_kg)   : null,
+      resistance_max_kg   ? parseFloat(resistance_max_kg)   : null,
+      notes || null,
     )
 
-    const created = db.prepare('SELECT * FROM equipment_item WHERE id = ?').get(info.lastInsertRowid)
-    res.status(201).json(created)
+    res.status(201).json(
+      db.prepare('SELECT * FROM equipment_item WHERE id = ?').get(result.lastInsertRowid)
+    )
   } catch (err) {
     console.error('[POST /equipment]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })

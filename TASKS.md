@@ -35,6 +35,7 @@
 | T1.6 | Scaffold frontend Vue 3            | T1.1        | `tasks/T1.6_frontend_scaffold.md`      | [x]    |
 | T1.7 | Écrans Exercices + Équipement      | T1.4, T1.5, T1.6 | `tasks/T1.7_screens_exercises.md` | [x]    |
 | T1.8 | PWA (manifest + service worker)    | T1.6        | `tasks/T1.8_pwa.md`                    | [x]    |
+| T1.9 | Haltères à disques, disques haltères, banc inclinable        | T1.5, T1.7       | `tasks/T1.9_equipment_enhancements.md`      | [x]    |
 
 ---
 
@@ -71,15 +72,15 @@
 
 ---
 
-## Jalon 5 — Coach IA et conseils d'achat
+## Jalon 5 — Coach IA expert et conseils
 
-| ID   | Tâche                                    | Dépendances      | Fichier de tâche                        | Statut |
-|------|------------------------------------------|------------------|-----------------------------------------|--------|
-| T5.1 | Service AI provider                      | T1.2             | `tasks/T5.1_ai_provider.md`             | [ ]    |
-| T5.2 | Détecteur de signaux équipement          | T1.5, T3.2       | `tasks/T5.2_equipment_advisor.md`       | [ ]    |
-| T5.3 | API Chat IA (SSE) + apply-action         | T5.1, T5.2, T2.1 | `tasks/T5.3_api_chat.md`                | [ ]    |
-| T5.4 | Génération et affichage conseils d'achat | T5.1, T5.2, T5.3 | `tasks/T5.4_advice.md`                  | [ ]    |
-| T5.5 | Interface Coach Chat                     | T5.3, T1.6       | `tasks/T5.5_screen_coach.md`            | [ ]    |
+| ID   | Tâche                                          | Dépendances           | Fichier de tâche                          | Statut |
+|------|------------------------------------------------|-----------------------|-------------------------------------------|--------|
+| T5.1 | Service AI Provider + Settings IA              | T1.2                  | `tasks/T5.1_ai_provider.md`               | [ ]    |
+| T5.2 | Profil utilisateur + migration DB              | T1.2                  | `tasks/T5.2_user_profile.md`              | [ ]    |
+| T5.3 | API Chat expert + actions enrichies            | T5.1, T5.2, T2.1      | `tasks/T5.3_api_chat_expert.md`           | [ ]    |
+| T5.4 | Conseiller coaching + génération conseils      | T5.1, T5.3, T3.2      | `tasks/T5.4_coaching_advisor.md`          | [ ]    |
+| T5.5 | Interface Coach + Onboarding conversationnel   | T5.3, T5.4, T1.6      | `tasks/T5.5_screen_coach.md`              | [ ]    |
 
 ---
 
@@ -97,13 +98,13 @@
 
 | Jalon | Thème                        | Tâches | Prérequis         |
 |-------|------------------------------|--------|-------------------|
-| J1    | Socle, exercices, équipement | 8      | —                 |
+| J1    | Socle, exercices, équipement | 9      | —                 |
 | J2    | Programmes, séance, timers   | 5      | J1 complet        |
 | J3    | Progression, deload, calendrier | 4   | J2 complet        |
 | J4    | Stats et courbes             | 3      | J3 complet        |
 | J5    | Coach IA, conseils achat     | 5      | J3 + J4 complets  |
 | J6    | Paramètres, export/import    | 3      | J5 complet        |
-| **Total** |                         | **28** |                   |
+| **Total** |                         | **29** |                   |
 
 ---
 
