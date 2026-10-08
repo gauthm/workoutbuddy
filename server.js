@@ -10,6 +10,11 @@ import programsRouter from './src/routes/programs.js'
 import { templatesRouter, templateExercisesRouter } from './src/routes/templates.js'
 import sessionsRouter from './src/routes/sessions.js'
 import setsRouter from './src/routes/sets.js'
+import statsRouter from './src/routes/stats.js'
+import bodyweightRouter from './src/routes/bodyweight.js'
+import settingsRouter from './src/routes/settings.js'
+import userProfileRouter from './src/routes/userProfile.js'
+import aiRouter from './src/routes/ai.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -25,6 +30,11 @@ app.use('/api/v1/templates', templatesRouter)
 app.use('/api/v1/template-exercises', templateExercisesRouter)
 app.use('/api/v1/sessions', sessionsRouter)
 app.use('/api/v1', setsRouter)
+app.use('/api/v1/stats',       statsRouter)
+app.use('/api/v1/bodyweight',  bodyweightRouter)
+app.use('/api/v1/settings',    settingsRouter)
+app.use('/api/v1/user-profile', userProfileRouter)
+app.use('/api/v1/ai', aiRouter)
 
 // ── Fallback SPA ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {

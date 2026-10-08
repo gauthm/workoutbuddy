@@ -66,9 +66,9 @@
 
 | ID   | Tâche                   | Dépendances  | Fichier de tâche                        | Statut |
 |------|-------------------------|--------------|-----------------------------------------|--------|
-| T4.1| API Stats + streaks     | T2.2, T3.1   | `tasks/T4.1_api_stats.md`               | [ ]    |
-| T4.2| Poids de corps          | T1.6, T4.1   | `tasks/T4.2_bodyweight.md`              | [ ]    |
-| T4.3| Écrans statistiques     | T4.1, T4.2   | `tasks/T4.3_screens_stats.md`           | [ ]    |
+| T4.1 | API Stats + streaks     | T2.2, T3.1   | `tasks/T4.1_api_stats.md`               | [x]    |
+| T4.2 | Poids de corps          | T1.6, T4.1   | `tasks/T4.2_bodyweight.md`              | [x]    |
+| T4.3 | Écrans statistiques     | T4.1, T4.2   | `tasks/T4.3_screens_stats.md`           | [x]    |
 
 ---
 
@@ -76,11 +76,11 @@
 
 | ID   | Tâche                                          | Dépendances           | Fichier de tâche                          | Statut |
 |------|------------------------------------------------|-----------------------|-------------------------------------------|--------|
-| T5.1 | Service AI Provider + Settings IA              | T1.2                  | `tasks/T5.1_ai_provider.md`               | [ ]    |
-| T5.2 | Profil utilisateur + migration DB              | T1.2                  | `tasks/T5.2_user_profile.md`              | [ ]    |
-| T5.3 | API Chat expert + actions enrichies            | T5.1, T5.2, T2.1      | `tasks/T5.3_api_chat_expert.md`           | [ ]    |
-| T5.4 | Conseiller coaching + génération conseils      | T5.1, T5.3, T3.2      | `tasks/T5.4_coaching_advisor.md`          | [ ]    |
-| T5.5 | Interface Coach + Onboarding conversationnel   | T5.3, T5.4, T1.6      | `tasks/T5.5_screen_coach.md`              | [ ]    |
+| T5.1 | Service AI Provider + Settings IA              | T1.2                  | `tasks/T5.1_ai_provider.md`               | [x]    |
+| T5.2 | Profil utilisateur + migration DB              | T1.2                  | `tasks/T5.2_user_profile.md`              | [x]    |
+| T5.3 | API Chat expert + actions enrichies            | T5.1, T5.2, T2.1      | `tasks/T5.3_api_chat_expert.md`           | [x]    |
+| T5.4 | Conseiller coaching + génération conseils      | T5.1, T5.3, T3.2      | `tasks/T5.4_coaching_advisor.md`          | [x]    |
+| T5.5 | Interface Coach + Onboarding conversationnel   | T5.3, T5.4, T1.6      | `tasks/T5.5_screen_coach.md`              | [x]    |
 
 ---
 

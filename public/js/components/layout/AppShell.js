@@ -22,6 +22,7 @@ import CalendarView         from '../calendar/CalendarView.js'
 import BodyWeightView       from '../stats/BodyWeightView.js'
 import StatsDashboardView   from '../stats/StatsDashboardView.js'
 import ExerciseProgressView from '../stats/ExerciseProgressView.js'
+import CoachView            from '../coach/CoachView.js'
 
 // Placeholder pour les vues non encore implémentées
 const Placeholder = (name) => ({
@@ -51,7 +52,7 @@ const VIEW_MAP = {
   StatsDashboardView,
   ExerciseProgressView,
   BodyWeightView,
-  CoachView:             Placeholder('CoachView'),
+  CoachView,
   SettingsView:          Placeholder('SettingsView'),
 }
 
