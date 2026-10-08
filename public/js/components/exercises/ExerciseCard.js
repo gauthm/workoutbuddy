@@ -1,14 +1,13 @@
 import { inject } from '/vendor/vue.esm-browser.prod.js'
-import { t } from '../../i18n.js'
+import { t, tm } from '../../i18n.js'
 
 export default {
   name: 'ExerciseCard',
   props: {
     exercise: { type: Object, required: true }
-    // exercise: Exercise (avec primary_muscles[], equipment_required[], is_custom bool)
   },
   emits: ['click'],
-  setup() { return { t } },
+  setup() { return { t, tm } },
   template: `
     <div class="exercise-card" @click="$emit('click')">
       <div class="exercise-card__main">
@@ -19,7 +18,7 @@ export default {
       </div>
       <div class="exercise-card__meta">
         <span class="exercise-card__muscles">
-          {{ exercise.primary_muscles.map(m => t('muscles.' + m) || m).join(', ') }}
+          {{ exercise.primary_muscles.map(m => tm(m)).join(', ') }}
         </span>
         <span class="exercise-card__arrow">›</span>
       </div>

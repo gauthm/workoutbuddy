@@ -17,11 +17,13 @@ seedExercises(getDb())
 const { app } = await import('../../server.js')
 
 async function planifierSeance({ goal, level, exerciseId, targetSets, repsMin, repsMax }) {
-  const pRes = await request(app).post('/api/v1/programs').send({
-    name: `Programme ${exerciseId}`, goal, level, days_per_week: 3
-  })
+  const db = getDb()
+  const pRes = db.prepare(
+    "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES (?, ?, ?, 3, 'double_progression')"
+  ).run(`Programme ${exerciseId}`, goal, level)
+  const programId = pRes.lastInsertRowid
   const tRes = await request(app)
-    .post(`/api/v1/programs/${pRes.body.id}/templates`)
+    .post(`/api/v1/programs/${programId}/templates`)
     .send({ name: 'Template' })
   const teRes = await request(app)
     .post(`/api/v1/templates/${tRes.body.id}/exercises`)
@@ -32,7 +34,7 @@ async function planifierSeance({ goal, level, exerciseId, targetSets, repsMin, r
   const sRes = await request(app)
     .post(`/api/v1/sessions/from-template/${tRes.body.id}`)
     .send({ scheduled_date: new Date().toISOString().slice(0, 10) })
-  return { programId: pRes.body.id, templateId: tRes.body.id, teId: teRes.body.id, sessionId: sRes.body.id }
+  return { programId, templateId: tRes.body.id, teId: teRes.body.id, sessionId: sRes.body.id }
 }
 
 describe('T7.3 — Ajustements au lancement de séance', () => {

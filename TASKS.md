@@ -130,7 +130,7 @@ T8.3, T8.4 (indépendants de T8.1/T8.2, exécutables en parallèle)
 ⚠️ Tâches touchant public/ : bump CACHE_NAME dans sw.js — incrémenter
    d'une unité au-dessus de la valeur courante au moment du commit
    (les tâches peuvent se suivre dans n'importe quel ordre).
-```
+```/new
 
 ---
 

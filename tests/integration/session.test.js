@@ -36,10 +36,11 @@ describe('T2.2 — Séance complète bout en bout', () => {
   })
 
   it('1. Crée un programme et un template', async () => {
-    const pRes = await request(app).post('/api/v1/programs').send({
-      name: 'Test', goal: 'strength', level: 'beginner', days_per_week: 3
-    })
-    programId = pRes.body.id
+    const db = getDb()
+    const pRes = db.prepare(
+      "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES ('Test', 'strength', 'beginner', 3, 'linear')"
+    ).run()
+    programId = pRes.lastInsertRowid
 
     const tRes = await request(app)
       .post(`/api/v1/programs/${programId}/templates`)

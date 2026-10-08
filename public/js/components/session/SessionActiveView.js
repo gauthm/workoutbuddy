@@ -1,7 +1,8 @@
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import {
   sessions as sessionsApi,
-  exercises as exercisesApi
+  exercises as exercisesApi,
+  programs as programsApi
 } from '../../api.js'
 import { t } from '../../i18n.js'
 import PageHeader    from '../layout/PageHeader.js'
@@ -32,11 +33,18 @@ export default {
       completing: false,
       adjustments: [],      // ajustements retournés par POST /start
       showAdjustments: true,
+      activeProgram: null,
     })
 
     async function load() {
       state.loading = true; state.error = null
       try {
+        // Charger le programme actif
+        try {
+          const progData = await programsApi.list()
+          state.activeProgram = progData.programs.find(p => p.is_active) || null
+        } catch { state.activeProgram = null }
+
         // Chercher une séance in_progress
         const data = await sessionsApi.list({ status: 'in_progress', limit: 1 })
         if (!data.sessions.length) {
@@ -134,10 +142,14 @@ export default {
         <EmptyState
           v-else-if="!state.session"
           icon="🏋️"
-          :message="t('session.no_active')">
-          <button class="btn btn--primary" style="margin-top:1rem"
-            @click="router.push('#/programs')">
-            {{ t('session.start_button') }}
+          :message="state.activeProgram ? t('session.no_active') : t('session.no_program')">
+          <button v-if="state.activeProgram" class="btn btn--primary" style="margin-top:1rem"
+            @click="router.push('#/programs/' + state.activeProgram.id)">
+            {{ t('session.go_program') }}
+          </button>
+          <button v-else class="btn btn--primary" style="margin-top:1rem"
+            @click="router.push('#/coach')">
+            {{ t('session.create_program') }}
           </button>
         </EmptyState>
 

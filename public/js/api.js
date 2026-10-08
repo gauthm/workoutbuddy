@@ -56,11 +56,9 @@ export const settings = {
 export const programs = {
   list:       (params = {}) => request('GET', '/programs?' + new URLSearchParams(params)),
   get:        (id)          => request('GET', `/programs/${id}`),
-  create:     (body)        => request('POST', '/programs', body),
   update:     (id, body)    => request('PUT', `/programs/${id}`, body),
   delete:     (id)          => request('DELETE', `/programs/${id}`),
   activate:   (id)          => request('POST', `/programs/${id}/activate`),
-  generate:   (body)        => request('POST', '/programs/generate', body),
   nextSession:(id)          => request('GET', `/programs/${id}/next-session`),
 }
 

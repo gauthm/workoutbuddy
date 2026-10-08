@@ -1,7 +1,7 @@
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { exercises as api } from '../../api.js'
 import { estimate1RM, rmTable } from '../../utils/rm.js'
-import { t } from '../../i18n.js'
+import { t, tm } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -55,7 +55,7 @@ export default {
       return { rm: estimate1RM(bestSet.weight_kg, bestSet.reps, formula), set: bestSet }
     }
 
-    return { state, load, router, t, lastRM }
+    return { state, load, router, t, tm, lastRM }
   },
 
   template: `
@@ -99,10 +99,10 @@ export default {
           <!-- Muscles -->
           <section class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.primary') }}</h3>
-            <p>{{ state.exercise.primary_muscles.map(m => t('muscles.' + m) || m).join(', ') }}</p>
+            <p>{{ state.exercise.primary_muscles.map(m => tm(m)).join(', ') }}</p>
             <template v-if="state.exercise.secondary_muscles.length">
               <h3 class="detail-section__title" style="margin-top:0.5rem">{{ t('exercises.secondary') }}</h3>
-              <p>{{ state.exercise.secondary_muscles.map(m => t('muscles.' + m) || m).join(', ') }}</p>
+              <p>{{ state.exercise.secondary_muscles.map(m => tm(m)).join(', ') }}</p>
             </template>
           </section>
 

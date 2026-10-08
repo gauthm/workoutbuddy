@@ -53,7 +53,7 @@ export default {
       try {
         await api.delete(props.id)
         store.showToast(t('programs.deleted'), 'success')
-        router.push('#/programs')
+        router.push('#/coach')
       } catch (err) {
         store.showToast(err.message, 'error')
         state.showDeleteConfirm = false
@@ -66,15 +66,7 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="state.program?.name || '…'" :show-back="true">
-        <template #actions>
-          <button class="btn btn--secondary"
-            style="padding:0.4rem 0.75rem;font-size:0.85rem"
-            @click="router.push('#/programs/' + id + '/edit')">
-            {{ t('common.edit') }}
-          </button>
-        </template>
-      </PageHeader>
+      <PageHeader :title="state.program?.name || '…'" :show-back="true" />
       <div class="view__content" style="padding:1rem">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />

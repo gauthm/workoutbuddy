@@ -274,6 +274,62 @@
   font-size: 0.8rem; cursor: pointer;
 }
 
+/* ── Exercise tabs (Exercices / Douleurs) ───────────────────── */
+.exercise-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.exercise-tabs__btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.65rem 1rem; background: none; border: none;
+  color: var(--color-text-muted); font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.exercise-tabs__btn--active {
+  color: var(--color-primary); border-bottom-color: var(--color-primary);
+}
+.exercise-tabs__badge {
+  background: var(--color-surface-2); color: var(--color-text-muted);
+  font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+}
+.exercise-tabs__badge--active { background: var(--color-danger); color: #fff; }
+
+/* ── Pain bar ──────────────────────────────────────────────── */
+.exercise-pain-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.45rem 1rem; background: rgba(231,76,60,0.07);
+  border-bottom: 1px solid var(--color-border); font-size: 0.8rem;
+}
+.exercise-pain-bar__btn {
+  background: none; border: none; color: var(--color-primary);
+  font-size: 0.8rem; cursor: pointer;
+}
+
+/* ── Pain tab ───────────────────────────────────────────────── */
+.pain-section { padding: 1rem; }
+.pain-section__hint {
+  font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 1rem; line-height: 1.4;
+}
+.pain-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;
+}
+.pain-chip {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.75rem; border-radius: var(--radius-md);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  cursor: pointer; font-size: 0.88rem; transition: all 0.15s;
+}
+.pain-chip--active {
+  background: rgba(231,76,60,0.15); border-color: var(--color-danger);
+}
+.pain-chip input { width: 18px; height: 18px; accent-color: var(--color-danger); }
+.pain-summary {
+  margin-top: 1.5rem; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+}
+.pain-summary p { font-size: 0.88rem; color: var(--color-text-muted); }
+.pain-empty { margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
+
 /* ── Programme unique (T7.5) ────────────────────────────────── */
 .program-list-notice {
   padding: 0.6rem 1rem; background: rgba(41,128,185,0.1);
@@ -335,6 +391,45 @@
   cursor: pointer; padding: 0.25rem;
 }
 .icon-btn--danger { color: var(--color-danger); }
+
+/* ── Equipment sections (dumbbells) ─────────────────────────── */
+.btn--sm { padding: 0.35rem 0.65rem; font-size: 0.82rem; }
+.equip-section {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+.equip-section__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1rem 0.5rem;
+}
+.equip-section__title {
+  font-size: 1rem; font-weight: 600;
+}
+.equip-empty {
+  padding: 0.6rem 1rem; font-size: 0.85rem; color: var(--color-text-muted);
+}
+.equip-inline-form {
+  padding: 0 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;
+}
+.equip-inline-form__row {
+  display: flex; gap: 0.5rem;
+}
+.equip-inline-form__row .form-input { flex: 1; }
+.equip-inline-form__actions {
+  display: flex; gap: 0.5rem; justify-content: flex-end;
+}
+.equip-row {
+  display: flex; align-items: center; padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--color-border); flex-wrap: wrap;
+}
+.equip-row__info { flex: 1; }
+.equip-row__name { font-weight: 500; display: block; }
+.equip-row__detail { font-size: 0.85rem; color: var(--color-text-muted); }
+.equip-row__actions { display: flex; gap: 0.5rem; }
+.equip-row__edit {
+  display: flex; gap: 0.5rem; flex: 1; flex-wrap: wrap;
+}
+.equip-row__edit .form-input { flex: 1; min-width: 80px; }
 
 /* ── Programmes (T2.3) ─────────────────────────────────────── */
 .program-card {
@@ -790,7 +885,7 @@
 .action-preview__actions .btn { flex: 1; }
 
 .coach-view { display: flex; flex-direction: column; height: 100dvh; padding-bottom: 0; }
-.coach-view__content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+.coach-view__content { flex: 1; overflow-y: auto; padding-bottom: 140px; }
 .coach-view__advice-section { margin-bottom: 0.25rem; }
 .coach-view__messages { padding: 0.5rem 0; }
 

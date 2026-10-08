@@ -37,5 +37,15 @@ export function t(key, params = {}) {
   return str.replace(/\{\{(\w+)\}\}/g, (_, k) => params[k] ?? `{{${k}}}`)
 }
 
+// tm('chest') → t('muscles.chest'), fallback sur le nom brut si introuvable
+export function tm(muscle) {
+  const key = 'muscles.' + muscle
+  const dict = locales[currentLocale] || locales['fr'] || {}
+  let str = dict[key]
+  if (str === undefined) str = locales['fr']?.[key]
+  if (str === undefined) return muscle
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => '')
+}
+
 // Initialisation : charger fr dès le démarrage
 loadLocale('fr')

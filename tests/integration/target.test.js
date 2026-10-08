@@ -23,10 +23,11 @@ describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
   let sessionId, teId
 
   before(async () => {
-    const pRes = await request(app).post('/api/v1/programs').send({
-      name: PROG_NAME, goal: 'strength', level: 'beginner', days_per_week: 3
-    })
-    const programId = pRes.body.id
+    const db = getDb()
+    const pRes = db.prepare(
+      "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES (?, 'strength', 'beginner', 3, 'linear')"
+    ).run(PROG_NAME)
+    const programId = pRes.lastInsertRowid
 
     const tRes = await request(app)
       .post(`/api/v1/programs/${programId}/templates`)

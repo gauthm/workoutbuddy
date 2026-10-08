@@ -4,8 +4,8 @@ import { t } from '../../i18n.js'
 
 const CATEGORIES = [
   'barbell', 'ez_bar',
-  'plate', 'dumbbell_plate',
-  'dumbbell_fixed', 'dumbbell_adjustable', 'dumbbell_loadable',
+  'plate',
+  'dumbbell_adjustable', 'dumbbell_loadable',
   'kettlebell',
   'resistance_band',
   'bench', 'bench_adjustable',
@@ -16,8 +16,6 @@ const CATEGORY_LABELS = {
   barbell:             'Barre droite',
   ez_bar:              'Barre EZ',
   plate:               'Disque (compatible barre)',
-  dumbbell_plate:      'Disque (spécifique haltère)',
-  dumbbell_fixed:      'Haltère fixe',
   dumbbell_adjustable: 'Haltère réglable (sélecteur)',
   dumbbell_loadable:   'Haltère à disques (poignée)',
   kettlebell:          'Kettlebell',
@@ -69,7 +67,7 @@ export default {
       }
 
       // Validation count pair pour plate et dumbbell_plate
-      if (['plate','dumbbell_plate'].includes(form.category)) {
+      if (['plate'].includes(form.category)) {
         const n = parseInt(form.count) || 0
         if (n < 2 || n % 2 !== 0) {
           store.showToast(t('equipment.plate_count_even_error'), 'error')
@@ -115,9 +113,9 @@ export default {
     }
 
     // Afficher les champs selon la catégorie
-    const showWeight       = () => ['barbell','ez_bar','dumbbell_fixed','dumbbell_loadable','kettlebell'].includes(form.category)
-    const showCount        = () => ['plate','dumbbell_plate','dumbbell_fixed','kettlebell'].includes(form.category)
-    const countMustBePair  = () => ['plate','dumbbell_plate'].includes(form.category)
+    const showWeight       = () => ['barbell','ez_bar','dumbbell_loadable','kettlebell'].includes(form.category)
+    const showCount        = () => ['plate','kettlebell'].includes(form.category)
+    const countMustBePair  = () => ['plate'].includes(form.category)
     const countIsLocked    = () => form.category === 'dumbbell_loadable'
     const showAdjustable   = () => form.category === 'dumbbell_adjustable'
     const showResistance   = () => form.category === 'resistance_band'

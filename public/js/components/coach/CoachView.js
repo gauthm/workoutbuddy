@@ -404,7 +404,7 @@ export default {
               />
             </template>
 
-            <div ref="messagesEndRef" style="height:4px" />
+            <div ref="messagesEndRef" style="height:16px" />
           </div>
         </template>
       </div>

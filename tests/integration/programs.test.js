@@ -26,16 +26,10 @@ describe('T2.1 — API Programmes', () => {
       db.prepare("INSERT INTO equipment_item (category, name) VALUES ('barbell','Barre olympique'), ('bench','Banc plat'), ('rack','Rack à squat'), ('pullup_bar','Barre de traction')")
         .run()
     }
-  })
-
-  it('POST /programs crée un programme', async () => {
-    const res = await request(app).post('/api/v1/programs').send({
-      name: 'Test PPL', goal: 'hypertrophy', level: 'intermediate', days_per_week: 3
-    })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.goal, 'hypertrophy')
-    assert.equal(res.body.is_active, false)
-    programId = res.body.id
+    const p = db.prepare(
+      "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES ('Test PPL', 'hypertrophy', 'intermediate', 3, 'double_progression')"
+    ).run()
+    programId = p.lastInsertRowid
   })
 
   it('GET /programs retourne la liste', async () => {
@@ -65,17 +59,6 @@ describe('T2.1 — API Programmes', () => {
     })
     assert.equal(res.status, 200)
     assert.equal(res.body.description, 'Programme modifié')
-  })
-
-  it('POST /programs/generate crée un programme avec templates', async () => {
-    const res = await request(app).post('/api/v1/programs/generate').send({
-      goal: 'strength', level: 'beginner', days_per_week: 3,
-      priority_muscles: [], equipment_ids: []
-    })
-    assert.equal(res.status, 201)
-    assert.ok(Array.isArray(res.body.templates))
-    assert.ok(res.body.templates.length >= 1)
-    assert.ok(res.body.templates[0].exercises.length >= 1)
   })
 
   it('POST /programs/:id/templates crée un template', async () => {
@@ -121,22 +104,6 @@ describe('T2.1 — API Programmes', () => {
 
     const res = await request(app).delete(`/api/v1/programs/${programId}`)
     assert.equal(res.status, 409)
-  })
-
-  it('POST /programs sans name retourne 400', async () => {
-    const res = await request(app).post('/api/v1/programs').send({
-      goal: 'strength', level: 'beginner', days_per_week: 3
-    })
-    assert.equal(res.status, 400)
-    assert.equal(res.body.error, 'MISSING_NAME')
-  })
-
-  it('POST /programs/generate avec goal invalide retourne 400', async () => {
-    const res = await request(app).post('/api/v1/programs/generate').send({
-      goal: 'invalid', level: 'beginner', days_per_week: 3
-    })
-    assert.equal(res.status, 400)
-    assert.equal(res.body.error, 'INVALID_GOAL')
   })
 
   it('GET /programs/:id inexistant retourne 404', async () => {

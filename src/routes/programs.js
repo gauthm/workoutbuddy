@@ -1,6 +1,5 @@
 import express from 'express'
 import { getDb } from '../db/database.js'
-import { generateProgram } from '../services/programGenerator.js'
 import { scheduleWeeks } from '../services/sessionScheduler.js'
 
 const router = express.Router()
@@ -17,98 +16,6 @@ function parseProgram(row) {
   }
 }
 
-// OBLIGATOIRE : /generate avant /:id
-router.post('/generate', (req, res) => {
-  try {
-    const { goal, level, days_per_week, duration_weeks, priority_muscles, equipment_ids, name } = req.body
-    const VALID_GOALS  = ['strength','hypertrophy','endurance','weight_loss','general_fitness']
-    const VALID_LEVELS = ['beginner','intermediate','advanced']
-    if (!VALID_GOALS.includes(goal))   return res.status(400).json({ error: 'INVALID_GOAL' })
-    if (!VALID_LEVELS.includes(level)) return res.status(400).json({ error: 'INVALID_LEVEL' })
-    const dpw = parseInt(days_per_week)
-    if (!dpw || dpw < 2 || dpw > 6)   return res.status(400).json({ error: 'INVALID_DAYS_PER_WEEK' })
-
-    const allExercisesRaw = db.prepare('SELECT * FROM exercise').all()
-    const allExercises = allExercisesRaw.map(ex => ({
-      ...ex,
-      primary_muscles:    JSON.parse(ex.primary_muscles    || '[]'),
-      secondary_muscles:  JSON.parse(ex.secondary_muscles  || '[]'),
-      equipment_required: JSON.parse(ex.equipment_required || '[]'),
-    }))
-
-    let equipmentItems
-    if (equipment_ids && equipment_ids.length > 0) {
-      const placeholders = equipment_ids.map(() => '?').join(',')
-      equipmentItems = db.prepare(
-        `SELECT * FROM equipment_item WHERE id IN (${placeholders})`
-      ).all(...equipment_ids)
-    } else {
-      equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
-    }
-
-    const draft = generateProgram(
-      { goal, level, days_per_week: dpw, duration_weeks, priority_muscles: priority_muscles || [], name },
-      allExercises,
-      equipmentItems
-    )
-
-    const programId = db.transaction(() => {
-      const pResult = db.prepare(`
-        INSERT INTO program
-          (name, goal, level, days_per_week, duration_weeks, progression_model,
-           use_exercise_rotation, deload_auto_enabled)
-        VALUES (?,?,?,?,?,?,0,0)
-      `).run(
-        draft.name, draft.goal, draft.level, draft.days_per_week,
-        draft.duration_weeks, draft.progression_model
-      )
-      const pid = pResult.lastInsertRowid
-
-      for (let ti = 0; ti < draft.templates.length; ti++) {
-        const tpl = draft.templates[ti]
-        const tResult = db.prepare(`
-          INSERT INTO workout_template (program_id, name, order_index)
-          VALUES (?, ?, ?)
-        `).run(pid, tpl.name, ti)
-        const tid = tResult.lastInsertRowid
-
-        for (let ei = 0; ei < tpl.exercises.length; ei++) {
-          const ex = tpl.exercises[ei]
-          const teResult = db.prepare(`
-            INSERT INTO template_exercise
-              (workout_template_id, exercise_id, order_index,
-               target_sets, target_reps_min, target_reps_max, rest_seconds, progression_model)
-            VALUES (?,?,?,?,?,?,?,?)
-          `).run(tid, ex.exercise_id, ei,
-            ex.target_sets, ex.target_reps_min, ex.target_reps_max,
-            ex.rest_seconds, ex.progression_model || 'inherit')
-
-          db.prepare(`
-            INSERT INTO progression_state (template_exercise_id, current_weight_kg)
-            VALUES (?, 0)
-          `).run(teResult.lastInsertRowid)
-        }
-      }
-      return pid
-    })()
-
-    const program = db.prepare('SELECT * FROM program WHERE id = ?').get(programId)
-    const templates = db.prepare(
-      'SELECT * FROM workout_template WHERE program_id = ? ORDER BY order_index'
-    ).all(programId)
-    for (const tpl of templates) {
-      tpl.exercises = db.prepare(
-        'SELECT * FROM template_exercise WHERE workout_template_id = ? ORDER BY order_index'
-      ).all(tpl.id)
-    }
-
-    res.status(201).json({ ...parseProgram(program), templates })
-  } catch (err) {
-    console.error('[POST /programs/generate]', err.message)
-    res.status(500).json({ error: 'INTERNAL_ERROR' })
-  }
-})
-
 router.get('/', (req, res) => {
   try {
     let sql = 'SELECT * FROM program'
@@ -122,50 +29,6 @@ router.get('/', (req, res) => {
     res.json({ programs: rows.map(parseProgram) })
   } catch (err) {
     console.error('[GET /programs]', err.message)
-    res.status(500).json({ error: 'INTERNAL_ERROR' })
-  }
-})
-
-router.post('/', (req, res) => {
-  try {
-    const {
-      name, description, goal, level, days_per_week, duration_weeks,
-      use_exercise_rotation, rotation_frequency_weeks, progression_model,
-      deload_auto_enabled, deload_frequency_weeks,
-      deload_load_reduction_pct, deload_volume_reduction_pct,
-    } = req.body
-
-    if (!name?.trim()) return res.status(400).json({ error: 'MISSING_NAME' })
-    const VALID_GOALS = ['strength','hypertrophy','endurance','weight_loss','general_fitness']
-    if (!VALID_GOALS.includes(goal)) return res.status(400).json({ error: 'INVALID_GOAL' })
-    const VALID_LEVELS = ['beginner','intermediate','advanced']
-    if (!VALID_LEVELS.includes(level)) return res.status(400).json({ error: 'INVALID_LEVEL' })
-    const dpw = parseInt(days_per_week)
-    if (!dpw || dpw < 2 || dpw > 6) return res.status(400).json({ error: 'INVALID_DAYS_PER_WEEK' })
-
-    const result = db.prepare(`
-      INSERT INTO program
-        (name, description, goal, level, days_per_week, duration_weeks,
-         use_exercise_rotation, rotation_frequency_weeks, progression_model,
-         deload_auto_enabled, deload_frequency_weeks,
-         deload_load_reduction_pct, deload_volume_reduction_pct)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `).run(
-      name.trim(), description || null, goal, level, dpw,
-      duration_weeks || null,
-      use_exercise_rotation ? 1 : 0,
-      rotation_frequency_weeks || 1,
-      progression_model || 'double_progression',
-      deload_auto_enabled ? 1 : 0,
-      deload_frequency_weeks || 6,
-      deload_load_reduction_pct || 20,
-      deload_volume_reduction_pct || 40,
-    )
-
-    const created = db.prepare('SELECT * FROM program WHERE id = ?').get(result.lastInsertRowid)
-    res.status(201).json(parseProgram(created))
-  } catch (err) {
-    console.error('[POST /programs]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
 })

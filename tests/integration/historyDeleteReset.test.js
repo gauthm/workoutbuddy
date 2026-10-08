@@ -112,9 +112,10 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
   })
 
   it('POST /reset-stats conserve les programmes et exercices', async () => {
-    await request(app).post('/api/v1/programs').send({
-      name: 'PPL', goal: 'strength', level: 'beginner', days_per_week: 3
-    })
+    const db = getDb()
+    db.prepare(
+      "INSERT INTO program (name, goal, level, days_per_week) VALUES ('PPL', 'strength', 'beginner', 3)"
+    ).run()
     await request(app).post('/api/v1/reset-stats')
 
     const progRes = await request(app).get('/api/v1/programs')

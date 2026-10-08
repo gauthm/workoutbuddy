@@ -1,9 +1,10 @@
 import { reactive } from '/vendor/vue.esm-browser.prod.js'
-import { t } from '../../i18n.js'
+import { t, tm } from '../../i18n.js'
 
 const MUSCLES = [
   'chest','back','shoulders','biceps','triceps',
-  'quads','hamstrings','glutes','calves','core','traps','forearms'
+  'quads','hamstrings','glutes','calves','core','traps','forearms',
+  'lower_back','inner_thigh','neck'
 ]
 const EQUIPMENT = [
   'barbell','ez_bar','dumbbell_fixed','dumbbell_adjustable','kettlebell',
@@ -37,7 +38,7 @@ export default {
 
     const hasFilters = () => local.muscle || local.equipment || local.movement || local.q
 
-    return { local, update, clearAll, hasFilters, t, MUSCLES, EQUIPMENT, MOVEMENTS }
+    return { local, update, clearAll, hasFilters, t, tm, MUSCLES, EQUIPMENT, MOVEMENTS }
   },
 
   template: `
@@ -55,7 +56,7 @@ export default {
         <select class="form-select form-select--compact"
           :value="local.muscle" @change="update('muscle', $event.target.value)">
           <option value="">{{ t('exercises.filter_muscle') }}</option>
-          <option v-for="m in MUSCLES" :key="m" :value="m">{{ t('muscles.' + m) }}</option>
+          <option v-for="m in MUSCLES" :key="m" :value="m">{{ tm(m) }}</option>
         </select>
         <select class="form-select form-select--compact"
           :value="local.movement" @change="update('movement', $event.target.value)">

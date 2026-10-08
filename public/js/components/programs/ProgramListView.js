@@ -30,26 +30,18 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="t('programs.title')">
-        <template #actions>
-          <button class="btn btn--primary" style="padding:0.4rem 0.75rem;font-size:0.85rem"
-            @click="router.push('#/programs/new')">+</button>
-        </template>
-      </PageHeader>
+      <PageHeader :title="t('programs.title')" />
       <div class="view__content">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
         <EmptyState    v-else-if="!state.programs.length"
           icon="📋" :message="t('programs.no_programs')">
           <button class="btn btn--primary" style="margin-top:1rem"
-            @click="router.push('#/programs/new')">
-            {{ t('programs.new') }}
+            @click="router.push('#/coach')">
+            {{ t('programs.create_via_coach') }}
           </button>
         </EmptyState>
         <div v-else>
-          <div v-if="state.programs.length > 1" class="program-list-notice">
-            ℹ️ {{ t('programs.unique_notice') }}
-          </div>
           <ProgramCard
             v-for="p in state.programs" :key="p.id"
             :program="p"
