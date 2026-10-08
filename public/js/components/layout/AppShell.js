@@ -19,6 +19,9 @@ import SessionActiveView    from '../session/SessionActiveView.js'
 import SessionHistoryView   from '../session/SessionHistoryView.js'
 import SessionDetailView    from '../session/SessionDetailView.js'
 import CalendarView         from '../calendar/CalendarView.js'
+import BodyWeightView       from '../stats/BodyWeightView.js'
+import StatsDashboardView   from '../stats/StatsDashboardView.js'
+import ExerciseProgressView from '../stats/ExerciseProgressView.js'
 
 // Placeholder pour les vues non encore implémentées
 const Placeholder = (name) => ({
@@ -45,9 +48,9 @@ const VIEW_MAP = {
   SessionHistoryView,
   SessionDetailView,
   CalendarView,
-  StatsDashboardView:    Placeholder('StatsDashboardView'),
-  ExerciseProgressView:  Placeholder('ExerciseProgressView'),
-  BodyWeightView:        Placeholder('BodyWeightView'),
+  StatsDashboardView,
+  ExerciseProgressView,
+  BodyWeightView,
   CoachView:             Placeholder('CoachView'),
   SettingsView:          Placeholder('SettingsView'),
 }

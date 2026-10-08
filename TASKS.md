@@ -66,9 +66,9 @@
 
 | ID   | Tâche                   | Dépendances  | Fichier de tâche                        | Statut |
 |------|-------------------------|--------------|-----------------------------------------|--------|
-| T4.1 | API Stats + streaks     | T2.2, T3.1   | `tasks/T4.1_api_stats.md`               | [ ]    |
-| T4.2 | Poids de corps          | T1.6, T4.1   | `tasks/T4.2_bodyweight.md`              | [ ]    |
-| T4.3 | Écrans statistiques     | T4.1, T4.2   | `tasks/T4.3_screens_stats.md`           | [ ]    |
+| T4.1| API Stats + streaks     | T2.2, T3.1   | `tasks/T4.1_api_stats.md`               | [ ]    |
+| T4.2| Poids de corps          | T1.6, T4.1   | `tasks/T4.2_bodyweight.md`              | [ ]    |
+| T4.3| Écrans statistiques     | T4.1, T4.2   | `tasks/T4.3_screens_stats.md`           | [ ]    |
 
 ---
 
