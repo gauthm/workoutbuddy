@@ -7,17 +7,17 @@ const db     = getDb()
 // Champs modifiables avec leurs types et contraintes
 const PROFILE_SCHEMA = {
   display_name:              { type: 'string_nullable' },
-  age:                       { type: 'number', min: 10, max: 100 },
-  sex:                       { type: 'enum', enum: ['male','female','other','prefer_not_to_say'] },
-  weight_kg:                 { type: 'number', min: 20, max: 500 },
-  height_cm:                 { type: 'number', min: 50, max: 280 },
-  fitness_level:             { type: 'enum', enum: ['beginner','intermediate','advanced','athlete'] },
-  primary_goal:              { type: 'enum', enum: ['strength','hypertrophy','endurance','weight_loss','general_fitness','sport_performance'] },
+  age:                       { type: 'number_nullable', min: 10, max: 100 },
+  sex:                       { type: 'enum_nullable', enum: ['male','female','other','prefer_not_to_say'] },
+  weight_kg:                 { type: 'number_nullable', min: 20, max: 500 },
+  height_cm:                 { type: 'number_nullable', min: 50, max: 280 },
+  fitness_level:             { type: 'enum_nullable', enum: ['beginner','intermediate','advanced','athlete'] },
+  primary_goal:              { type: 'enum_nullable', enum: ['strength','hypertrophy','endurance','weight_loss','general_fitness','sport_performance'] },
   secondary_goals:           { type: 'json_array' },
   target_weight_kg:          { type: 'number_nullable', min: 20, max: 500 },
   sport_practiced:           { type: 'string_nullable' },
-  sessions_per_week:         { type: 'number', min: 1, max: 7 },
-  session_duration_min:      { type: 'number', min: 15, max: 240 },
+  sessions_per_week:         { type: 'number_nullable', min: 1, max: 7 },
+  session_duration_min:      { type: 'number_nullable', min: 15, max: 240 },
   prefers_exercise_variation:{ type: 'boolean_int' },
   injury_notes:              { type: 'string_nullable' },
   medical_notes:             { type: 'string_nullable' },
@@ -40,7 +40,7 @@ function validateField(key, value) {
   if (!schema) return { valid: false, error: `Champ inconnu : ${key}` }
 
   if (value === null || value === undefined) {
-    if (['string_nullable','number_nullable'].includes(schema.type)) return { valid: true }
+    if (['string_nullable','number_nullable','enum_nullable'].includes(schema.type)) return { valid: true }
     if (schema.type !== 'json_array') return { valid: false, error: `${key} ne peut pas être null.` }
   }
 
@@ -60,6 +60,10 @@ function validateField(key, value) {
     }
     case 'enum':
       if (!schema.enum.includes(value)) return { valid: false, error: `${key} : valeurs valides = ${schema.enum.join(', ')}.` }
+      break
+    case 'enum_nullable':
+      if (value !== null && !schema.enum.includes(value))
+        return { valid: false, error: `${key} : valeurs valides = ${schema.enum.join(', ')}, null.` }
       break
     case 'boolean_int':
       if (![0, 1, true, false].includes(value)) return { valid: false, error: `${key} doit être 0, 1, true ou false.` }
@@ -118,6 +122,30 @@ router.put('/', (req, res) => {
     res.json(parseProfile(updated))
   } catch (err) {
     console.error('[PUT /user-profile]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// ── DELETE /user-profile ──────────────────────────────────────
+// Reset complet du profil singleton (jamais suppression de la ligne id=1)
+router.delete('/', (req, res) => {
+  try {
+    db.prepare(`
+      UPDATE user_profile SET
+        display_name = NULL, age = NULL, sex = NULL, weight_kg = NULL, height_cm = NULL,
+        fitness_level = NULL, primary_goal = NULL, secondary_goals = '[]',
+        target_weight_kg = NULL, sport_practiced = NULL,
+        sessions_per_week = NULL, session_duration_min = NULL,
+        prefers_exercise_variation = 1,
+        injury_notes = NULL, medical_notes = NULL,
+        onboarding_completed = 0, onboarding_step = 'not_started',
+        updated_at = datetime('now')
+      WHERE id = 1
+    `).run()
+    const row = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
+    res.json(parseProfile(row))
+  } catch (err) {
+    console.error('[DELETE /user-profile]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
 })

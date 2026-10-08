@@ -6,6 +6,7 @@ export const store = reactive({
   activeSession: null,       // session en cours (status='in_progress')
   pendingAction: null,       // action IA en attente de confirmation
   pendingAdjustments: [],    // ajustements coach retournés par POST /sessions/:id/start
+  coachAutoStart:    false,  // true → le coach démarre une conversation automatiquement
   toast:         null,       // { id, message, type:'success'|'error'|'info'|'warning' }
   _toastTimer:   null,
 

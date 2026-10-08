@@ -220,7 +220,15 @@ ${onboardingText}
 7. **Proactivité** : détecte les opportunités d'amélioration et propose des actions concrètes
 8. **Actions** : toute modification de l'app passe par un bloc action + confirmation de l'utilisateur
 9. **Budget** : quand tu recommandes du matériel, donne toujours une fourchette de prix réaliste
-10. **Pas de marques** : recommande des types de matériel, pas des marques spécifiques (sauf demande)`
+10. **Pas de marques** : recommande des types de matériel, pas des marques spécifiques (sauf demande)
+11. **Programme interdit sans profil** : tant que la section PROFIL
+affiche « Profil non complété », il est STRICTEMENT INTERDIT d'émettre
+\`create_program\`, \`update_program\`, \`activate_program\`, \`create_session\`
+ou \`schedule_sessions\`. Si l'utilisateur demande un programme : refuse en une
+phrase — « Je ne peux pas créer ton programme tant que ton profil n'est pas
+complété : réponds d'abord à mes quelques questions. » — puis poursuis
+l'onboarding à l'étape courante. Jamais d'exception, même si l'utilisateur
+insiste.`
 }
 
 // ── Sections du prompt ────────────────────────────────────────
@@ -260,7 +268,7 @@ function buildProfileSection(profile) {
 }
 
 function buildEquipmentSection(items, db) {
-  if (items.length === 0) return 'Aucun équipement configuré.'
+  if (items.length === 0) return 'Aucun matériel enregistré. ⚠️ INTERDIT de proposer des charges chiffrées ou un programme tant que l\'inventaire n\'est pas renseigné. Invite l\'utilisateur à regarder physiquement chez lui ce qu\'il possède (barres et leur poids, disques par type : poids × nombre, haltères, banc, rack...) et à le cocher dans Paramètres > Matériel (tout est coché par défaut, il décoche ce qui manque), ou à le lister ici — puis émet \`add_equipment\` pour chaque élément.'
   const lines = items.map(i => {
     if (i.weight_kg && i.count > 1) return `- ${i.name} ${i.weight_kg}kg ×${i.count}`
     if (i.weight_kg) return `- ${i.name} ${i.weight_kg}kg`
@@ -343,7 +351,14 @@ Sois chaleureux, encourageant et professionnel.
    - Hanche     : hinge, squat profond
    → Le coach identifie les exercices les plus courants de la zone concernée
      et émet \`exclude_exercises\`
-6. **asking_equipment** → Quel matériel dispose-t-il ? (liste ce qu'il a)
+6. **asking_equipment** → Demande-lui de REGARDER PHYSIQUEMENT ce qu'il a
+   chez lui, pièce par pièce : barres (avec leur poids), disques (une ligne
+   par type : poids unitaire × nombre), haltères (poids par haltère et
+   nombre de paires), banc, rack, barre de traction, élastiques, kettlebells.
+   Signale-lui qu'il peut aussi tout cocher/décocher dans
+   **Paramètres > Matériel** (par défaut tout est coché, il décoche ce qui
+   manque chez lui). Attends la liste complète avant de passer à l'étape 7
+   et d'émettre les \`add_equipment\`.
 7. **completing** → Récapituler tout, émettre les actions :
    a. \`complete_user_profile\` avec toutes les données collectées
    b. \`add_equipment\` pour chaque équipement mentionné

@@ -6,6 +6,7 @@ export default {
   name: 'DashboardView',
   setup() {
     const router = inject('router')
+    const store  = inject('store')
     const state = reactive({ loading: true, activeProgram: null })
 
     // Un seul programme actif : on l'affiche directement (pas de liste, pas de sélecteur)
@@ -22,7 +23,14 @@ export default {
     }
 
     onMounted(load)
-    return { state, router, t }
+
+    // Ouvre le coach en lançant directement la création de programme
+    function startCoachProgram() {
+      store.coachAutoStart = true
+      router.push('#/coach')
+    }
+
+    return { state, router, startCoachProgram, t }
   },
   template: `
     <div class="view">
@@ -38,7 +46,7 @@ export default {
           </div>
         </div>
         <div v-else-if="!state.loading" class="program-list-notice"
-          @click="router.push('#/coach')" style="cursor:pointer">
+          @click="startCoachProgram" style="cursor:pointer">
           ℹ️ {{ t('dashboard.no_program') }}
         </div>
         <p style="padding:1.5rem;text-align:center;color:var(--color-text-muted)">

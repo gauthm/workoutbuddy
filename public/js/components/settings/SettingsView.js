@@ -7,12 +7,15 @@ import ErrorBanner      from '../common/ErrorBanner.js'
 import SettingsSection  from './SettingsSection.js'
 import AIProviderForm   from './AIProviderForm.js'
 import ExportImport     from './ExportImport.js'
+import ProfileSettings  from './ProfileSettings.js'
+import EquipmentSettings from './EquipmentSettings.js'
 
 export default {
   name: 'SettingsView',
   components: {
     PageHeader, LoadingSpinner, ErrorBanner,
-    SettingsSection, AIProviderForm, ExportImport,
+    SettingsSection, AIProviderForm, ExportImport, ProfileSettings,
+    EquipmentSettings,
   },
 
   setup() {
@@ -196,6 +199,11 @@ export default {
             </div>
           </SettingsSection>
 
+          <!-- ②b Matériel ───────────────────────────────────── -->
+          <SettingsSection :title="t('settings.section_equipment')">
+            <EquipmentSettings />
+          </SettingsSection>
+
           <!-- ③ Progression ───────────────────────────────── -->
           <SettingsSection :title="t('settings.section_progression')">
             <div class="setting-row">
@@ -292,6 +300,11 @@ export default {
                 :value="state.settings.equipment_advice_plateau_sessions"
                 @change="saveSetting('equipment_advice_plateau_sessions', parseInt($event.target.value))" />
             </div>
+          </SettingsSection>
+
+          <!-- ⑤b Mon profil ─────────────────────────────────── -->
+          <SettingsSection :title="t('settings.section_profile')">
+            <ProfileSettings />
           </SettingsSection>
 
           <!-- ⑥ Coach IA ─────────────────────────────────── -->

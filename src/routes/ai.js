@@ -43,6 +43,9 @@ function validateAction(action, db) {
       break
 
     case 'create_program':
+      if (!db.prepare('SELECT onboarding_completed FROM user_profile WHERE id = 1').get()?.onboarding_completed) {
+        errors.push('Profil incomplet : l\'onboarding doit être terminé avant de créer un programme.')
+      }
       if (!d.name?.trim()) errors.push('"data.name" obligatoire.')
       if (!GOALS.includes(d.goal))   errors.push('"data.goal" invalide.')
       if (!LEVELS.includes(d.level)) errors.push('"data.level" invalide.')
@@ -69,6 +72,9 @@ function validateAction(action, db) {
       break
 
     case 'create_session':
+      if (!db.prepare('SELECT onboarding_completed FROM user_profile WHERE id = 1').get()?.onboarding_completed) {
+        errors.push('Profil incomplet : l\'onboarding doit être terminé avant de planifier des séances.')
+      }
       if (!d.name?.trim()) errors.push('"data.name" obligatoire.')
       if (!d.scheduled_date || !/^\d{4}-\d{2}-\d{2}$/.test(d.scheduled_date)) errors.push('"data.scheduled_date" format YYYY-MM-DD requis.')
       for (const ex of (d.exercises || [])) {
@@ -77,6 +83,9 @@ function validateAction(action, db) {
       break
 
     case 'schedule_sessions':
+      if (!db.prepare('SELECT onboarding_completed FROM user_profile WHERE id = 1').get()?.onboarding_completed) {
+        errors.push('Profil incomplet : l\'onboarding doit être terminé avant de planifier des séances.')
+      }
       if (!Array.isArray(d.sessions) || d.sessions.length === 0) errors.push('"data.sessions" tableau non vide requis.')
       for (const s of (d.sessions || [])) {
         if (!s.name?.trim()) errors.push('Chaque session doit avoir un "name".')
@@ -307,15 +316,170 @@ function applyAction(action, db) {
   throw new Error(`Action "${type}" non implémentée.`)
 }
 
+// ── Conversations ─────────────────────────────────────────────
+
+// GET /ai/conversations — liste complète, tri par activité récente
+router.get('/conversations', (req, res) => {
+  try {
+    const conversations = db.prepare(`
+      SELECT c.*,
+             COUNT(m.id) AS message_count,
+             MAX(m.created_at) AS last_message_at
+      FROM coach_conversation c
+      LEFT JOIN coach_message m ON m.conversation_id = c.id
+      GROUP BY c.id
+      ORDER BY c.is_active DESC, COALESCE(last_message_at, c.created_at) DESC
+    `).all()
+    res.json({ conversations })
+  } catch (err) {
+    console.error('[GET /ai/conversations]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// POST /ai/conversations — crée ET active (déactive les autres)
+router.post('/conversations', (req, res) => {
+  try {
+    const raw = typeof req.body?.title === 'string' ? req.body.title.trim() : ''
+    if (raw.length > 100) return res.status(400).json({ error: 'TITLE_TOO_LONG' })
+    const title = raw || 'Conversation'
+    const result = db.transaction(() => {
+      db.prepare('UPDATE coach_conversation SET is_active = 0').run()
+      return db.prepare('INSERT INTO coach_conversation (title, is_active) VALUES (?,1)').run(title)
+    })()
+    const conv = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(result.lastInsertRowid)
+    res.status(201).json(conv)
+  } catch (err) {
+    console.error('[POST /ai/conversations]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// GET /ai/conversations/:id/messages — détail d'un fil
+router.get('/conversations/:id/messages', (req, res) => {
+  try {
+    const conversation = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(req.params.id)
+    if (!conversation) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND' })
+    const messages = db.prepare(
+      'SELECT id, role, content, created_at FROM coach_message WHERE conversation_id = ? ORDER BY id ASC'
+    ).all(req.params.id)
+    res.json({ conversation, messages })
+  } catch (err) {
+    console.error('[GET /ai/conversations/:id/messages]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// PATCH /ai/conversations/:id — renommage et/ou activation
+// Body : { title?: string, is_active?: boolean } — au moins une clé
+router.patch('/conversations/:id', (req, res) => {
+  try {
+    const conv = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(req.params.id)
+    if (!conv) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND' })
+
+    const { title, is_active } = req.body || {}
+    if (title === undefined && is_active === undefined) {
+      return res.status(400).json({ error: 'NO_FIELDS_TO_UPDATE' })
+    }
+    if (title !== undefined) {
+      const t = typeof title === 'string' ? title.trim() : ''
+      if (!t || t.length > 100) return res.status(400).json({ error: 'INVALID_TITLE' })
+    }
+    if (is_active !== undefined && typeof is_active !== 'boolean') {
+      return res.status(400).json({ error: 'INVALID_IS_ACTIVE' })
+    }
+
+    db.transaction(() => {
+      if (title !== undefined) {
+        db.prepare("UPDATE coach_conversation SET title = ?, updated_at = datetime('now') WHERE id = ?")
+          .run(title.trim(), req.params.id)
+      }
+      if (is_active === true) {
+        db.prepare('UPDATE coach_conversation SET is_active = 0').run()
+        db.prepare("UPDATE coach_conversation SET is_active = 1, updated_at = datetime('now') WHERE id = ?")
+          .run(req.params.id)
+      } else if (is_active === false) {
+        db.prepare('UPDATE coach_conversation SET is_active = 0 WHERE id = ?').run(req.params.id)
+      }
+    })()
+
+    res.json(db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(req.params.id))
+  } catch (err) {
+    console.error('[PATCH /ai/conversations/:id]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// DELETE /ai/conversations/:id — supprime le fil + ses messages (cascade)
+router.delete('/conversations/:id', (req, res) => {
+  try {
+    const conv = db.prepare('SELECT id FROM coach_conversation WHERE id = ?').get(req.params.id)
+    if (!conv) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND' })
+    db.prepare('DELETE FROM coach_conversation WHERE id = ?').run(req.params.id)
+    res.status(204).end()
+  } catch (err) {
+    console.error('[DELETE /ai/conversations/:id]', err.message)
+    res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
 // ── POST /ai/chat ─────────────────────────────────────────────
 router.post('/chat', async (req, res) => {
-  const { message, history = [] } = req.body
+  const { message, conversation_id } = req.body
+  // Le champ "history" du body est volontairement ignoré (contexte depuis la DB)
   if (!message?.trim()) return res.status(400).json({ error: 'MISSING_MESSAGE' })
 
   const aiSettings = getAiSettings(db)
   if (!aiSettings.base_url || !aiSettings.model) {
     return res.status(503).json({ error: 'AI_NOT_CONFIGURED' })
   }
+
+  // ── 1. Résolution de la conversation ──────────────────────
+  let conversation
+  try {
+    conversation = db.transaction(() => {
+      if (conversation_id !== undefined && conversation_id !== null) {
+        const c = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(conversation_id)
+        if (!c) return null
+        if (!c.is_active) {
+          db.prepare('UPDATE coach_conversation SET is_active = 0').run()
+          db.prepare("UPDATE coach_conversation SET is_active = 1, updated_at = datetime('now') WHERE id = ?").run(c.id)
+          return db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(c.id)
+        }
+        return c
+      }
+      let c = db.prepare('SELECT * FROM coach_conversation WHERE is_active = 1 LIMIT 1').get()
+      if (!c) {
+        const n = db.prepare('SELECT COUNT(*) n FROM coach_conversation').get().n + 1
+        db.prepare('INSERT INTO coach_conversation (title, is_active) VALUES (?,1)').run(`Conversation ${n}`)
+        c = db.prepare('SELECT * FROM coach_conversation WHERE id = (SELECT last_insert_rowid())').get()
+      }
+      return c
+    })()
+  } catch (err) {
+    console.error('[POST /ai/chat] résolution conversation', err.message)
+    return res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+  if (!conversation) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND' })
+
+  // ── 2. Insertion du message utilisateur ───────────────────
+  const userMsg = db.prepare('INSERT INTO coach_message (conversation_id, role, content) VALUES (?,\'user\',?)')
+    .run(conversation.id, message.trim())
+
+  // Titre dérivé de la première question (si jamais renommée)
+  const msgCount = db.prepare('SELECT COUNT(*) n FROM coach_message WHERE conversation_id = ?').get(conversation.id).n
+  if (msgCount === 1 && /^Conversation( \d+)?$/.test(conversation.title)) {
+    const derived = message.trim().slice(0, 60)
+    db.prepare("UPDATE coach_conversation SET title = ? WHERE id = ?")
+      .run(message.trim().length > 60 ? derived + '…' : derived, conversation.id)
+  }
+
+  // ── 3. Contexte LLM construit depuis la DB ────────────────
+  const history = db.prepare(`
+    SELECT role, content FROM coach_message
+    WHERE conversation_id = ? AND id < ?
+    ORDER BY id DESC LIMIT 14
+  `).all(conversation.id, userMsg.lastInsertRowid).reverse()
 
   res.writeHead(200, {
     'Content-Type':      'text/event-stream',
@@ -327,7 +491,7 @@ router.post('/chat', async (req, res) => {
   const systemPrompt = buildSystemPrompt(db)
   const messages = [
     { role: 'system', content: systemPrompt },
-    ...history.slice(-12).map(m => ({ role: m.role, content: m.content })),
+    ...history,
     { role: 'user', content: message.trim() },
   ]
 
@@ -341,7 +505,7 @@ router.post('/chat', async (req, res) => {
   try {
     for await (const event of streamChat(messages, aiSettings)) {
       if (event.type === 'error') { sendEvent({ type: 'error', message: event.message }); break }
-      if (event.type === 'done')  { sendEvent({ type: 'done', usage: event.usage, actions_count: pendingActions.length }); break }
+      if (event.type === 'done')  { sendEvent({ type: 'done', usage: event.usage, actions_count: pendingActions.length, conversation_id: conversation.id }); break }
       if (event.type !== 'token') continue
 
       fullContent += event.content
@@ -383,6 +547,18 @@ router.post('/chat', async (req, res) => {
   } catch (err) {
     sendEvent({ type: 'error', message: err.message })
   } finally {
+    // Persistance de la réponse (brute, blocs ```action inclus)
+    try {
+      if (fullContent.trim()) {
+        db.prepare('INSERT INTO coach_message (conversation_id, role, content) VALUES (?,\'assistant\',?)')
+          .run(conversation.id, fullContent)
+      }
+      db.prepare("UPDATE coach_conversation SET updated_at = datetime('now') WHERE id = ?")
+        .run(conversation.id)
+    } catch (err) {
+      console.error('[POST /ai/chat] persistance assistant', err.message)
+      // Non bloquant : le client a déjà reçu le stream
+    }
     res.end()
   }
 })

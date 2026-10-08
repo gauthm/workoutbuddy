@@ -114,6 +114,26 @@ T7.5  (indépendant de T7.1-T7.4, mais à faire avant de lancer le coach)
 
 ---
 
+## Jalon 8 — Historique coach, transparence profil, matériel
+
+| ID   | Tâche                                                          | Dépendances        | Fichier de tâche                              | Statut |
+|------|----------------------------------------------------------------|--------------------|-----------------------------------------------|--------|
+| T8.1 | Conversations coach : migration DB + API CRUD + export/import  | T1.2, T5.3         | `tasks/T8.1_coach_conversations_api.md`       | [x]    |
+| T8.2 | Persistance du chat serveur + historique dans la vue Coach     | T8.1, T5.5         | `tasks/T8.2_chat_persistence_coach_ui.md`     | [x]    |
+| T8.3 | Paramètres : « Mon profil » (édition, reset) + gate coach : pas de programme sans profil, invitation checklist matériel | T5.2, T5.3, T6.2 | `tasks/T8.3_settings_profile.md`              | [x]    |
+| T8.4 | Paramètres : « Matériel » — catalogue par catégories cochables (défaut : tout coché), poids barres/haltères, disques × nombre une ligne par type | T1.7, T6.2 | `tasks/T8.4_settings_equipment.md`            | [x]    |
+
+**Ordre d'exécution recommandé :**
+```
+T8.1 → T8.2
+T8.3, T8.4 (indépendants de T8.1/T8.2, exécutables en parallèle)
+⚠️ Tâches touchant public/ : bump CACHE_NAME dans sw.js — incrémenter
+   d'une unité au-dessus de la valeur courante au moment du commit
+   (les tâches peuvent se suivre dans n'importe quel ordre).
+```
+
+---
+
 ## Récapitulatif des jalons
 
 | Jalon | Thème                        | Tâches | Prérequis         |
@@ -124,7 +144,9 @@ T7.5  (indépendant de T7.1-T7.4, mais à faire avant de lancer le coach)
 | J4    | Stats et courbes             | 3      | J3 complet        |
 | J5    | Coach IA, conseils achat     | 5      | J3 + J4 complets  |
 | J6    | Paramètres, export/import    | 3      | J5 complet        |
-| **Total** |                         | **29** |                   |
+| J7    | Séance intelligente          | 5      | J6 complet        |
+| J8    | Historique coach, profil, matériel | 4  | J5 + J6 complets  |
+| **Total** |                         | **38** |                   |
 
 ---
 

@@ -87,6 +87,30 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
     assert.equal(bwRes.body.entries.length, 0)
   })
 
+  it('POST /reset-stats fonctionne quand un personal_record référence un set_log', async () => {
+    const db = getDb()
+    const ex = db.prepare('SELECT id FROM exercise LIMIT 1').get()
+    const s = db.prepare(
+      "INSERT INTO session (name, scheduled_date, status) VALUES ('Avec PR', '2025-06-05', 'completed')"
+    ).run()
+    const se = db.prepare(
+      'INSERT INTO session_exercise (session_id, exercise_id) VALUES (?, ?)'
+    ).run(s.lastInsertRowid, ex.id)
+    const sl = db.prepare(
+      'INSERT INTO set_log (session_exercise_id, set_number, weight_kg, reps, is_completed) VALUES (?, 1, 100, 5, 1)'
+    ).run(se.lastInsertRowid)
+    db.prepare(
+      'INSERT INTO personal_record (exercise_id, reps, weight_kg, estimated_1rm_kg, achieved_date, set_log_id) VALUES (?, 5, 100, 116.5, ?, ?)'
+    ).run(ex.id, '2025-06-05', sl.lastInsertRowid)
+
+    const res = await request(app).post('/api/v1/reset-stats')
+    assert.equal(res.status, 200)
+
+    assert.equal(db.prepare('SELECT COUNT(*) c FROM personal_record').get().c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) c FROM set_log').get().c, 0)
+    assert.equal(db.prepare('SELECT COUNT(*) c FROM session').get().c, 0)
+  })
+
   it('POST /reset-stats conserve les programmes et exercices', async () => {
     await request(app).post('/api/v1/programs').send({
       name: 'PPL', goal: 'strength', level: 'beginner', days_per_week: 3

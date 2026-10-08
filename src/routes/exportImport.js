@@ -56,6 +56,8 @@ router.get('/export', (req, res) => {
     const body_weights       = db.prepare('SELECT * FROM body_weight').all()
     const personal_records   = db.prepare('SELECT * FROM personal_record').all()
     const equipment_advice   = db.prepare('SELECT * FROM equipment_advice').all()
+    const coach_conversations = db.prepare('SELECT * FROM coach_conversation').all()
+    const coach_messages      = db.prepare('SELECT * FROM coach_message').all()
 
     // Settings (sans ai_api_key)
     const settingsRows = db.prepare(
@@ -81,6 +83,8 @@ router.get('/export', (req, res) => {
         body_weights,
         personal_records,
         equipment_advice,
+        coach_conversations,
+        coach_messages,
         settings,
       }
     }
@@ -128,7 +132,10 @@ router.post('/import', (req, res) => {
     const counts = {}
 
     db.transaction(() => {
-      // Vider dans l'ordre correct (FK-safe)
+      // Vider dans l'ordre correct (FK-safe) : personal_record référence set_log
+      db.prepare('DELETE FROM coach_message').run()
+      db.prepare('DELETE FROM coach_conversation').run()
+      db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM set_log').run()
       db.prepare('DELETE FROM session_exercise').run()
       db.prepare('DELETE FROM session').run()
@@ -137,7 +144,6 @@ router.post('/import', (req, res) => {
       db.prepare('DELETE FROM workout_template').run()
       db.prepare('DELETE FROM program').run()
       db.prepare('DELETE FROM equipment_item').run()
-      db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
       // Supprimer uniquement les exercices custom (garder les built-in)
@@ -367,6 +373,33 @@ router.post('/import', (req, res) => {
         }
         counts.settings = Object.keys(d.settings).length
       }
+
+      if (Array.isArray(d.coach_conversations)) {
+        const stmt = db.prepare(`
+          INSERT OR IGNORE INTO coach_conversation (id, title, is_active, created_at, updated_at)
+          VALUES (@id, @title, @is_active, @created_at, @updated_at)
+        `)
+        for (const c of d.coach_conversations) {
+          stmt.run({ is_active: 0, ...c })  // défauts si champ absent
+          counts.coach_conversations = (counts.coach_conversations || 0) + 1
+        }
+        // Garantir l'invariant : un seul actif
+        const actives = db.prepare('SELECT id FROM coach_conversation WHERE is_active = 1 ORDER BY id DESC').all()
+        if (actives.length > 1) {
+          db.prepare('UPDATE coach_conversation SET is_active = 0 WHERE id != ?').run(actives[0].id)
+        }
+      }
+
+      if (Array.isArray(d.coach_messages)) {
+        const stmt = db.prepare(`
+          INSERT OR IGNORE INTO coach_message (id, conversation_id, role, content, created_at)
+          VALUES (@id, @conversation_id, @role, @content, @created_at)
+        `)
+        for (const m of d.coach_messages) {
+          stmt.run(m)
+          counts.coach_messages = (counts.coach_messages || 0) + 1
+        }
+      }
     })()
 
     res.json({ imported: counts })
@@ -439,12 +472,12 @@ router.post('/reset-stats', (req, res) => {
     autoBackup()
 
     db.transaction(() => {
-      // Ordre FK-safe
+      // Ordre FK-safe : personal_record référence set_log (NO ACTION)
+      db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM set_log').run()
       db.prepare('DELETE FROM session_exercise').run()
       db.prepare('DELETE FROM session').run()
       db.prepare('DELETE FROM body_weight').run()
-      db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM equipment_advice').run()
 
       // Remettre les états de progression à zéro

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v7'
+const CACHE_NAME = 'workoutbuddy-v11'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -58,7 +58,10 @@ const PRECACHE_URLS = [
   '/js/components/session/SessionTimer.js',
   '/js/components/session/SetRow.js',
   '/js/components/settings/AIProviderForm.js',
+  '/js/components/settings/EquipmentSettings.js',
+  '/js/components/settings/equipmentCatalog.js',
   '/js/components/settings/ExportImport.js',
+  '/js/components/settings/ProfileSettings.js',
   '/js/components/settings/SettingsSection.js',
   '/js/components/settings/SettingsView.js',
   '/js/components/stats/BodyWeightView.js',

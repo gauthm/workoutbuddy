@@ -876,6 +876,54 @@
   border: 1px solid var(--color-warning);
 }
 
+/* ── Mon profil (T8.3) ──────────────────────────────────────── */
+.profile-settings__loading {
+  padding: 1rem; text-align: center;
+  color: var(--color-text-muted); font-size: 0.9rem;
+}
+.profile-settings__notice { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+.profile-settings__row-textarea {
+  flex-direction: column; align-items: stretch;
+}
+.profile-settings__row-textarea .setting-row__label { margin-bottom: 0.4rem; }
+.profile-settings__reset { margin-top: 1rem; }
+
+/* ── Matériel : checklist catalogue (T8.4) ──────────────────── */
+.equipment-settings__save { margin-top: 1rem; }
+.equipment-settings__untagged-title {
+  margin: 1.25rem 0 0.5rem; font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+.equip-group { border-bottom: 1px solid var(--color-border); padding: 0.25rem 0; }
+.equip-group__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+}
+.equip-group__toggle {
+  flex: 1; display: flex; align-items: center; gap: 0.5rem;
+  background: none; border: none; color: var(--color-text);
+  font-size: 0.95rem; font-weight: 600; padding: 0.5rem 0; cursor: pointer;
+  text-align: left;
+}
+.equip-group__chevron { font-size: 0.7rem; color: var(--color-text-muted); }
+.equip-group__body { padding-bottom: 0.5rem; }
+.equip-group__add { margin: 0.25rem 0 0.25rem 2rem; font-size: 0.8rem; }
+.equip-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0 0.3rem 0.25rem;
+}
+.equip-row--off .equip-row__name { color: var(--color-text-muted); }
+.equip-row__name { flex: 1; min-width: 8rem; font-size: 0.9rem; }
+.equip-row__remove {
+  background: none; border: none; color: var(--color-danger);
+  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 0.25rem;
+}
+.equip-row__field { display: inline-flex; align-items: center; gap: 0.2rem; }
+.equip-row__input {
+  width: 4.5rem; text-align: center; padding: 0.3rem 0.4rem; font-size: 0.85rem;
+}
+.equip-row__unit { font-size: 0.8rem; color: var(--color-text-muted); }
+.equip-row__unit--label { margin-left: 0.25rem; }
+
 .ai-form { display: flex; flex-direction: column; gap: 0.25rem; }
 
 .ai-models-list {
@@ -956,3 +1004,28 @@
   text-align: center;
 }
 .adjustment-banner__dismiss:active { background: var(--color-surface-2); }
+
+/* ── Panneau historique coach (T8.2) ─────────────────────── */
+.coach-history { max-height: 70vh; overflow-y: auto; }
+.coach-history__empty {
+  padding: 1.5rem; text-align: center;
+  color: var(--color-text-muted); font-size: 0.9rem;
+}
+.coach-history__row {
+  display: flex; align-items: center; gap: 0.25rem;
+  padding: 0.65rem 0.5rem; border-bottom: 1px solid var(--color-border);
+  cursor: pointer; border-radius: var(--radius-sm);
+}
+.coach-history__row:active { background: var(--color-surface-2); }
+.coach-history__row--active { background: var(--color-surface-2); }
+.coach-history__main { flex: 1; min-width: 0; }
+.coach-history__title {
+  font-weight: 500; font-size: 0.9rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.coach-history__meta { font-size: 0.75rem; color: var(--color-text-muted); }
+.coach-history__btn {
+  background: none; border: none; padding: 0.4rem;
+  font-size: 0.9rem; cursor: pointer; opacity: 0.6; flex-shrink: 0;
+}
+.coach-history__btn:active { opacity: 1; }

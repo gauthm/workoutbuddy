@@ -105,8 +105,9 @@ export const bodyweight = {
 
 // ── Profil utilisateur ────────────────────────────────────────
 export const userProfile = {
-  get:  ()       => request('GET', '/user-profile'),
-  save: (fields) => request('PUT', '/user-profile', fields),
+  get:    ()       => request('GET', '/user-profile'),
+  save:   (fields) => request('PUT', '/user-profile', fields),
+  reset:  ()       => request('DELETE', '/user-profile'),
 }
 
 // ── Coach IA ──────────────────────────────────────────────────
@@ -116,6 +117,12 @@ export const coach = {
   purchasedAdvice:     (id)      => request('POST', `/ai/advice/${id}/purchased`),
   applyAction:         (body)    => request('POST', '/ai/apply-action', body),
   generateAdvice:      ()        => request('POST', '/ai/generate-equipment-advice'),
+  conversations:        ()          => request('GET', '/ai/conversations'),
+  messages:             (id)        => request('GET', `/ai/conversations/${id}/messages`),
+  createConversation:   (title)     => request('POST', '/ai/conversations', title ? { title } : {}),
+  activateConversation: (id)        => request('PATCH', `/ai/conversations/${id}`, { is_active: true }),
+  renameConversation:   (id, title) => request('PATCH', `/ai/conversations/${id}`, { title }),
+  deleteConversation:   (id)        => request('DELETE', `/ai/conversations/${id}`),
   // Note : /ai/chat utilise SSE — voir CoachView pour l'implémentation streaming
 }
 

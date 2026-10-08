@@ -9,12 +9,14 @@ import ActionPreview     from './ActionPreview.js'
 import AdviceCard        from './AdviceCard.js'
 import UserProfileCard   from './UserProfileCard.js'
 import OnboardingBanner  from './OnboardingBanner.js'
+import ConfirmModal      from '../common/ConfirmModal.js'
 
 export default {
   name: 'CoachView',
   components: {
     PageHeader, LoadingSpinner,
     ChatMessage, ActionPreview, AdviceCard, UserProfileCard, OnboardingBanner,
+    ConfirmModal,
   },
 
   setup() {
@@ -33,18 +35,15 @@ export default {
       applying:       false,
       notConfigured:  false,
       showProfile:    false,
+      conversationId: null,
+      conversations:  [],
+      showHistory:    false,
+      loadingHistory: false,
+      deleteTarget:   null,   // conversation à supprimer
     })
 
     const inputRef       = ref(null)
     const messagesEndRef = ref(null)
-
-    // ── Historique pour le contexte ────────────────────────────
-    function getHistory() {
-      return state.messages
-        .filter(m => !m.isError)
-        .slice(-14)
-        .map(m => ({ role: m.role, content: m.content }))
-    }
 
     async function scrollToBottom() {
       await nextTick()
@@ -60,8 +59,24 @@ export default {
         ])
         state.profile = profileData
         state.advice  = adviceData.advice
+
+        // Restauration du fil actif
+        const list = await coachApi.conversations()
+        state.conversations = list.conversations
+        const active = list.conversations.find(c => c.is_active === 1)
+        if (active) {
+          state.conversationId = active.id
+          const detail = await coachApi.messages(active.id)
+          state.messages = detail.messages.map(m => ({ role: m.role, content: m.content }))
+        }
       } catch (_) {}
       finally { state.loadingInit = false }
+
+      // Démarrage automatique demandé (ex : "créer mon programme avec le coach")
+      if (store.coachAutoStart) {
+        store.coachAutoStart = false
+        await startOnboarding()
+      }
     })
 
     // ── Démarrage de l'onboarding ──────────────────────────────
@@ -92,7 +107,10 @@ export default {
         const res = await fetch('/api/v1/ai/chat', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ message: trimmed, history: getHistory() }),
+          body:    JSON.stringify({
+            message: trimmed,
+            ...(state.conversationId ? { conversation_id: state.conversationId } : {}),
+          }),
         })
 
         if (!res.ok) {
@@ -137,6 +155,7 @@ export default {
             }
             if (event.type === 'done') {
               assistantMsg.isStreaming = false
+              if (event.conversation_id) state.conversationId = event.conversation_id
             }
           }
         }
@@ -215,6 +234,67 @@ export default {
       state.messages.push({ role: 'assistant', content: t('coach.action_cancelled') })
     }
 
+    // ── Historique des conversations ───────────────────────────
+    async function refreshConversations() {
+      try { state.conversations = (await coachApi.conversations()).conversations } catch (_) {}
+    }
+
+    async function newConversation() {
+      try {
+        const conv = await coachApi.createConversation()
+        state.conversationId = conv.id
+        state.messages       = []
+        state.pendingActions = []
+        state.showHistory    = false
+        await refreshConversations()
+      } catch (err) { store.showToast(err.message, 'error') }
+    }
+
+    async function openHistoryPanel() {
+      state.showHistory = true
+      state.loadingHistory = true
+      await refreshConversations()
+      state.loadingHistory = false
+    }
+
+    async function selectConversation(conv) {
+      if (state.isStreaming) return
+      try {
+        await coachApi.activateConversation(conv.id)
+        const detail = await coachApi.messages(conv.id)
+        state.conversationId = conv.id
+        state.messages       = detail.messages.map(m => ({ role: m.role, content: m.content }))
+        state.pendingActions = []
+        state.showHistory    = false
+        await scrollToBottom()
+      } catch (err) { store.showToast(err.message, 'error') }
+    }
+
+    async function renameConversation(conv) {
+      const title = window.prompt(t('coach.rename_prompt'), conv.title)
+      if (!title?.trim()) return
+      try {
+        await coachApi.renameConversation(conv.id, title.trim())
+        await refreshConversations()
+      } catch (err) { store.showToast(err.message, 'error') }
+    }
+
+    function askDeleteConversation(conv) { state.deleteTarget = conv }
+
+    async function confirmDeleteConversation() {
+      if (!state.deleteTarget) return
+      try {
+        await coachApi.deleteConversation(state.deleteTarget.id)
+        if (state.deleteTarget.id === state.conversationId) {
+          state.conversationId = null
+          state.messages       = []
+        }
+        state.deleteTarget = null
+        store.showToast(t('coach.conversation_deleted'), 'success')
+        await refreshConversations()
+      } catch (err) { store.showToast(err.message, 'error') }
+    }
+
     // ── Gestion clavier ────────────────────────────────────────
     function onKeydown(e) {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -236,6 +316,8 @@ export default {
       state, inputRef, messagesEndRef,
       sendMessage, startOnboarding,
       applyCurrentAction, cancelActions,
+      newConversation, openHistoryPanel, selectConversation,
+      renameConversation, askDeleteConversation, confirmDeleteConversation,
       onAdviceDismissed, onAdvicePurchased,
       onKeydown, autoResize, t, router,
     }
@@ -245,6 +327,10 @@ export default {
     <div class="view coach-view">
       <PageHeader :title="t('coach.title')">
         <template #actions>
+          <button class="icon-btn" @click="openHistoryPanel()"
+            :title="t('coach.history_title')">🕘</button>
+          <button class="icon-btn" @click="newConversation()"
+            :title="t('coach.new_conversation')">＋</button>
           <button v-if="state.profile?.fitness_level" class="icon-btn"
             @click="state.showProfile = !state.showProfile"
             :title="t('coach.profile_title')">👤</button>
@@ -322,6 +408,43 @@ export default {
           </div>
         </template>
       </div>
+
+      <!-- Panneau historique des conversations -->
+      <div v-if="state.showHistory" class="modal-overlay"
+        @click.self="state.showHistory = false">
+        <div class="modal coach-history">
+          <h2 class="modal__title">{{ t('coach.history_title') }}</h2>
+
+          <div v-if="!state.conversations.length && !state.loadingHistory"
+            class="coach-history__empty">{{ t('coach.history_empty') }}</div>
+
+          <div v-for="c in state.conversations" :key="c.id" class="coach-history__row"
+            :class="{ 'coach-history__row--active': c.id === state.conversationId }"
+            @click="selectConversation(c)">
+            <div class="coach-history__main">
+              <div class="coach-history__title">{{ c.title }}</div>
+              <div class="coach-history__meta">
+                {{ c.message_count }} msg
+                <template v-if="c.last_message_at"> · {{ c.last_message_at.slice(0, 10) }}</template>
+              </div>
+            </div>
+            <button class="coach-history__btn" :title="t('coach.rename')"
+              @click.stop="renameConversation(c)">✏️</button>
+            <button class="coach-history__btn" :title="t('common.delete')"
+              @click.stop="askDeleteConversation(c)">🗑</button>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmModal
+        v-if="state.deleteTarget"
+        :title="t('coach.delete_confirm_title')"
+        :body="t('coach.delete_confirm_body', { title: state.deleteTarget.title })"
+        :danger="true"
+        :confirm-text="t('common.delete')"
+        @confirm="confirmDeleteConversation()"
+        @cancel="state.deleteTarget = null"
+      />
 
       <!-- Zone de saisie -->
       <div class="coach-view__input-area">
