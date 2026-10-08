@@ -23,6 +23,7 @@ import BodyWeightView       from '../stats/BodyWeightView.js'
 import StatsDashboardView   from '../stats/StatsDashboardView.js'
 import ExerciseProgressView from '../stats/ExerciseProgressView.js'
 import CoachView            from '../coach/CoachView.js'
+import SettingsView         from '../settings/SettingsView.js'
 
 // Placeholder pour les vues non encore implémentées
 const Placeholder = (name) => ({
@@ -53,7 +54,7 @@ const VIEW_MAP = {
   ExerciseProgressView,
   BodyWeightView,
   CoachView,
-  SettingsView:          Placeholder('SettingsView'),
+  SettingsView,
 }
 
 export default {

@@ -15,6 +15,7 @@ import bodyweightRouter from './src/routes/bodyweight.js'
 import settingsRouter from './src/routes/settings.js'
 import userProfileRouter from './src/routes/userProfile.js'
 import aiRouter from './src/routes/ai.js'
+import exportImportRouter from './src/routes/exportImport.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -23,6 +24,7 @@ app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
 // ── Montage des routes (à compléter tâche par tâche) ──────────
+app.use('/api/v1/settings',    settingsRouter)
 app.use('/api/v1/exercises', exercisesRouter)
 app.use('/api/v1/equipment', equipmentRouter)
 app.use('/api/v1/programs', programsRouter)
@@ -32,9 +34,9 @@ app.use('/api/v1/sessions', sessionsRouter)
 app.use('/api/v1', setsRouter)
 app.use('/api/v1/stats',       statsRouter)
 app.use('/api/v1/bodyweight',  bodyweightRouter)
-app.use('/api/v1/settings',    settingsRouter)
 app.use('/api/v1/user-profile', userProfileRouter)
 app.use('/api/v1/ai', aiRouter)
+app.use('/api/v1', exportImportRouter)
 
 // ── Fallback SPA ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {

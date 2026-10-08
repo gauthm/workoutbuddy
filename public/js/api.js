@@ -114,6 +114,23 @@ export const coach = {
 
 // ── Export/Import ─────────────────────────────────────────────
 export const exportImport = {
-  exportJson: () => fetch(`${BASE}/export`).then(r => r.blob()),
+  // Export JSON complet
+  exportJson: () =>
+    fetch(`${BASE}/export`).then(async res => {
+      if (!res.ok) throw new Error('Erreur export')
+      return res.blob()
+    }),
+
+  // Export CSV d'une table
+  exportCsv: (table) =>
+    fetch(`${BASE}/export/csv/${table}`).then(async res => {
+      if (!res.ok) throw new Error('Erreur export CSV')
+      return res.blob()
+    }),
+
+  // Import JSON
   importJson: (body) => request('POST', '/import', body),
+
+  // Backup manuel
+  backup: () => request('POST', '/backup'),
 }

@@ -88,9 +88,9 @@
 
 | ID   | Tâche                              | Dépendances      | Fichier de tâche                        | Statut |
 |------|------------------------------------|------------------|-----------------------------------------|--------|
-| T6.1 | API Paramètres complète            | T1.2             | `tasks/T6.1_api_settings.md`            | [ ]    |
-| T6.2 | Écran Paramètres complet           | T6.1, T5.1, T1.6 | `tasks/T6.2_screen_settings.md`         | [ ]    |
-| T6.3 | Export/Import + sauvegarde auto    | T2.2, T6.1       | `tasks/T6.3_export_import.md`           | [ ]    |
+| T6.1 | API Paramètres complète            | T1.2             | `tasks/T6.1_api_settings.md`            | [x]    |
+| T6.2 | Écran Paramètres complet           | T6.1, T5.1, T1.6 | `tasks/T6.2_screen_settings.md`         | [x]    |
+| T6.3 | Export/Import + sauvegarde auto    | T2.2, T6.1       | `tasks/T6.3_export_import.md`           | [x]    |
 
 ---
 
