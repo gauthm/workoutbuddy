@@ -1,6 +1,8 @@
-const CACHE_NAME = 'workoutbuddy-v1'
+const CACHE_NAME = 'workoutbuddy-v3'
 
-// Assets à mettre en cache immédiatement lors de l'installation
+// Assets à mettre en cache immédiatement lors de l'installation.
+// ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
+// Règle complète : AGENT.md §14.
 const PRECACHE_URLS = [
   '/',
   '/offline.html',
@@ -32,6 +34,38 @@ const PRECACHE_URLS = [
   '/js/components/equipment/EquipmentView.js',
   '/js/components/equipment/EquipmentItemRow.js',
   '/js/components/equipment/EquipmentForm.js',
+  '/js/components/calendar/CalendarView.js',
+  '/js/components/coach/ActionPreview.js',
+  '/js/components/coach/AdviceCard.js',
+  '/js/components/coach/ChatMessage.js',
+  '/js/components/coach/CoachView.js',
+  '/js/components/coach/OnboardingBanner.js',
+  '/js/components/coach/UserProfileCard.js',
+  '/js/components/programs/ExerciseSelector.js',
+  '/js/components/programs/ProgramCard.js',
+  '/js/components/programs/ProgramDetailView.js',
+  '/js/components/programs/ProgramForm.js',
+  '/js/components/programs/ProgramGenerator.js',
+  '/js/components/programs/ProgramListView.js',
+  '/js/components/session/AITooltip.js',
+  '/js/components/session/ExerciseBlock.js',
+  '/js/components/session/ExerciseHelp.js',
+  '/js/components/session/RestTimer.js',
+  '/js/components/session/SessionActiveView.js',
+  '/js/components/session/SessionDetailView.js',
+  '/js/components/session/SessionHistoryView.js',
+  '/js/components/session/SessionTimer.js',
+  '/js/components/session/SetRow.js',
+  '/js/components/settings/AIProviderForm.js',
+  '/js/components/settings/ExportImport.js',
+  '/js/components/settings/SettingsSection.js',
+  '/js/components/settings/SettingsView.js',
+  '/js/components/stats/BodyWeightView.js',
+  '/js/components/stats/ExerciseProgressView.js',
+  '/js/components/stats/PRList.js',
+  '/js/components/stats/StatsDashboardView.js',
+  '/js/components/stats/StreakCard.js',
+  '/js/components/stats/VolumeChart.js',
   '/js/views/DashboardView.js',
   '/vendor/vue.esm-browser.prod.js',
   '/vendor/chart.umd.min.js',
@@ -95,7 +129,8 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached
         return fetch(request).then(response => {
           if (response.ok) {
-            caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()))
+            const copy = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
           }
           return response
         }).catch(() => new Response('', { status: 404 }))
@@ -110,7 +145,8 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached
       return fetch(request).then(response => {
         if (response.ok && request.method === 'GET') {
-          caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()))
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
         }
         return response
       }).catch(() => {

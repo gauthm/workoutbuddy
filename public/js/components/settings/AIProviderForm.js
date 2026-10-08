@@ -81,7 +81,8 @@ export default {
     }
 
     function selectModel(modelId) {
-      state.model = modelId
+      state.model  = modelId
+      state.models = []   // refermer la liste déroulante après sélection
       saveField('ai_model', modelId)
     }
 

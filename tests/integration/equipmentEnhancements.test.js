@@ -1,10 +1,20 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
-import { migrate } from '../../src/db/migrate.js'
-import { seedExercises } from '../../src/seed/seed.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t19-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T1.9 — Équipement : nouvelles catégories', () => {
 
@@ -55,8 +65,8 @@ describe('T1.9 — Équipement : nouvelles catégories', () => {
     })
 
     const res = await request(app)
-      .get('/api/v1/equipment/achievable-loads?exercise_id=bench_press_barbell')
-    // bench_press_barbell requiert barbell + bench — pas de haltères
+      .get('/api/v1/equipment/achievable-loads?exercise_id=barbell_bench_press_medium_grip')
+    // barbell_bench_press_medium_grip requiert une barre — pas de haltères
     // Ce test vérifie surtout que la route ne plante pas
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.loads_kg))

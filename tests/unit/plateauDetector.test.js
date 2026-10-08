@@ -13,7 +13,7 @@ function createDb() {
   return db
 }
 
-function insertSession(db, programId, date, weightKg, reps, exerciseId = 'bench_press_barbell') {
+function insertSession(db, programId, date, weightKg, reps, exerciseId = 'barbell_bench_press_medium_grip') {
   const sRes = db.prepare(
     "INSERT INTO session (name, scheduled_date, program_id, status, completed_at) VALUES (?,?,?,'completed',?)"
   ).run('Test', date, programId, date + 'T10:00:00')
@@ -36,7 +36,7 @@ describe('plateauDetector', () => {
       "INSERT INTO program (name,goal,level,days_per_week,progression_model) VALUES ('T','strength','beginner',3,'linear')"
     ).run()
     insertSession(db, pRes.lastInsertRowid, '2025-06-01', 80, 5)
-    const r = detectPlateau('bench_press_barbell', pRes.lastInsertRowid, 4, db)
+    const r = detectPlateau('barbell_bench_press_medium_grip', pRes.lastInsertRowid, 4, db)
     assert.equal(r.is_plateau, false)
     assert.ok(r.sessions_checked < 4)
   })
@@ -51,7 +51,7 @@ describe('plateauDetector', () => {
     insertSession(db, pid, '2025-06-08', 80, 5)
     insertSession(db, pid, '2025-06-15', 80, 5)
     insertSession(db, pid, '2025-06-22', 80, 5)
-    const r = detectPlateau('bench_press_barbell', pid, 4, db)
+    const r = detectPlateau('barbell_bench_press_medium_grip', pid, 4, db)
     assert.equal(r.is_plateau, true)
     assert.equal(r.sessions_checked, 4)
   })
@@ -66,7 +66,7 @@ describe('plateauDetector', () => {
     insertSession(db, pid, '2025-06-08', 82.5, 5)
     insertSession(db, pid, '2025-06-15', 85, 5)
     insertSession(db, pid, '2025-06-22', 87.5, 5)
-    const r = detectPlateau('bench_press_barbell', pid, 4, db)
+    const r = detectPlateau('barbell_bench_press_medium_grip', pid, 4, db)
     assert.equal(r.is_plateau, false)
   })
 })

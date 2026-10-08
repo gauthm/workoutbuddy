@@ -33,19 +33,19 @@ describe('T1.3 — Seed', () => {
   it('primary_muscles est du JSON valide', () => {
     const db = createDb()
     seedExercises(db)
-    const row = db.prepare("SELECT primary_muscles FROM exercise WHERE id = 'bench_press_barbell'").get()
-    assert.ok(row, 'bench_press_barbell doit exister')
+    const row = db.prepare("SELECT primary_muscles FROM exercise WHERE id = 'barbell_bench_press_medium_grip'").get()
+    assert.ok(row, 'barbell_bench_press_medium_grip doit exister')
     const muscles = JSON.parse(row.primary_muscles)
     assert.ok(Array.isArray(muscles))
     assert.ok(muscles.includes('chest'))
   })
 
-  it('les 5 exercices de référence sont présents', () => {
+  it('les mouvements polyarticulaires de base sont présents', () => {
     const db = createDb()
     seedExercises(db)
     const ids = [
-      'bench_press_barbell', 'squat_barbell', 'deadlift_barbell',
-      'pullup_bodyweight', 'overhead_press_barbell'
+      'barbell_bench_press_medium_grip', 'barbell_squat', 'barbell_deadlift',
+      'pullups', 'barbell_shoulder_press'
     ]
     for (const id of ids) {
       const row = db.prepare('SELECT id FROM exercise WHERE id = ?').get(id)

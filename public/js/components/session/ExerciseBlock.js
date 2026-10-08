@@ -15,6 +15,7 @@ export default {
     restSeconds:     { type: Number, default: 90 },
     exerciseDetail:  { type: Object, default: null }, // Exercise complet
     history:         { type: Array, default: () => [] },
+    target:          { type: Object, default: null }, // cible API (is_first_time, explication…)
   },
   emits: ['set-validated'],
   components: { SetRow, RestTimer, ExerciseHelp },
@@ -53,7 +54,16 @@ export default {
       return done.length ? done[done.length - 1] : null
     }
 
-    return { state, onValidated, startRest, addSet, formula, lastCompletedSet, t }
+    // Texte de la bulle : suggestion premier essai ou logique de progression
+    const tooltipText = () => {
+      if (!props.target) return ''
+      return props.target.is_first_time
+        ? (props.target.first_time_suggestion?.reasoning || '')
+        : (props.target.explanation || '')
+    }
+    const isFirstTime = () => !!props.target?.is_first_time
+
+    return { state, onValidated, startRest, addSet, formula, lastCompletedSet, tooltipText, isFirstTime, t }
   },
 
   template: `
@@ -68,6 +78,15 @@ export default {
         {{ targetRepsMin }}<template v-if="targetRepsMax > targetRepsMin">–{{ targetRepsMax }}</template>
       </div>
 
+      <!-- En-tête de colonnes -->
+      <div class="set-row-header">
+        <span>{{ t('session.col_set') }}</span>
+        <span>{{ t('session.col_kg') }}</span>
+        <span>{{ t('session.col_reps') }}</span>
+        <span :title="t('session.10rm_hint')">{{ t('session.10rm_label') }}</span>
+        <span></span>
+      </div>
+
       <!-- Séries existantes -->
       <SetRow
         v-for="(set, i) in state.sets" :key="set.id"
@@ -78,6 +97,8 @@ export default {
         :set-number="i + 1"
         :is-new="false"
         :rest-seconds="restSeconds"
+        :is-first-time="i === 0 && isFirstTime()"
+        :tooltip-text="i === 0 ? tooltipText() : ''"
         @validated="onValidated"
         @rest-start="startRest"
       />
@@ -92,6 +113,8 @@ export default {
         :set-number="state.sets.length + 1"
         :is-new="true"
         :rest-seconds="restSeconds"
+        :is-first-time="isFirstTime()"
+        :tooltip-text="tooltipText()"
         @validated="onValidated"
         @rest-start="startRest"
       />

@@ -1,7 +1,20 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t14-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T1.4 — API Exercices', () => {
   it('GET /exercises retourne un tableau', async () => {
@@ -18,9 +31,9 @@ describe('T1.4 — API Exercices', () => {
   })
 
   it('GET /exercises/:id retourne un exercice', async () => {
-    const res = await request(app).get('/api/v1/exercises/bench_press_barbell')
+    const res = await request(app).get('/api/v1/exercises/barbell_bench_press_medium_grip')
     assert.equal(res.status, 200)
-    assert.equal(res.body.id, 'bench_press_barbell')
+    assert.equal(res.body.id, 'barbell_bench_press_medium_grip')
     assert.ok(Array.isArray(res.body.primary_muscles))
   })
 
@@ -56,19 +69,19 @@ describe('T1.4 — API Exercices', () => {
   })
 
   it('DELETE builtin retourne 403', async () => {
-    const res = await request(app).delete('/api/v1/exercises/bench_press_barbell')
+    const res = await request(app).delete('/api/v1/exercises/barbell_bench_press_medium_grip')
     assert.equal(res.status, 403)
     assert.equal(res.body.error, 'CANNOT_DELETE_BUILTIN_EXERCISE')
   })
 
   it('GET /exercises/:id/history retourne un tableau vide si aucune séance', async () => {
-    const res = await request(app).get('/api/v1/exercises/bench_press_barbell/history')
+    const res = await request(app).get('/api/v1/exercises/barbell_bench_press_medium_grip/history')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.history))
   })
 
   it('GET /exercises/:id/rm-history retourne un tableau', async () => {
-    const res = await request(app).get('/api/v1/exercises/squat_barbell/rm-history')
+    const res = await request(app).get('/api/v1/exercises/barbell_squat/rm-history')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.history))
   })

@@ -1,10 +1,18 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
-import { migrate } from '../../src/db/migrate.js'
-import { seedExercises } from '../../src/seed/seed.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (ce test remet le user_profile à NULL → ne doit pas toucher la DB utilisateur)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t55-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+
+const { app } = await import('../../server.js')
 
 describe('T5.5 — Coach View API', () => {
 
@@ -53,8 +61,8 @@ describe('T5.5 — Coach View API', () => {
             templates: [{
               name: 'Push A',
               exercises: [
-                { exercise_id: 'bench_press_barbell', target_sets: 4, target_reps_min: 8, target_reps_max: 12, rest_seconds: 120 },
-                { exercise_id: 'overhead_press_barbell', target_sets: 3, target_reps_min: 8, target_reps_max: 12 },
+                { exercise_id: 'barbell_bench_press_medium_grip', target_sets: 4, target_reps_min: 8, target_reps_max: 12, rest_seconds: 120 },
+                { exercise_id: 'barbell_shoulder_press', target_sets: 3, target_reps_min: 8, target_reps_max: 12 },
               ]
             }]
           }

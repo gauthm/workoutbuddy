@@ -1,7 +1,20 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (la DB fichier partagée serait écrasée : settings IA, profil, programmes)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t53-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T5.3 — API Chat Expert', () => {
   it('POST /ai/chat sans message → 400', async () => {
@@ -34,7 +47,7 @@ describe('T5.3 — API Chat Expert', () => {
         explanation: 'PPL pour hypertrophie.',
         data: {
           name: 'PPL Coach IA', goal: 'hypertrophy', level: 'intermediate', days_per_week: 3,
-          templates: [{ name: 'Push', exercises: [{ exercise_id: 'bench_press_barbell', target_sets: 4, target_reps_min: 8, target_reps_max: 12 }] }]
+          templates: [{ name: 'Push', exercises: [{ exercise_id: 'barbell_bench_press_medium_grip', target_sets: 4, target_reps_min: 8, target_reps_max: 12 }] }]
         }
       }
     })

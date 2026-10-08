@@ -1,7 +1,20 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t34-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T3.4 — Calendrier API', () => {
   let sessionId

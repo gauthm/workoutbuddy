@@ -25,7 +25,7 @@ describe('T4.3 — Stats endpoints supplémentaires', () => {
 
   it('GET /stats/exercises/:id/progress retourne data avec estimated_1rm_kg', async () => {
     const res = await request(app)
-      .get('/api/v1/stats/exercises/bench_press_barbell/progress?days=365')
+      .get('/api/v1/stats/exercises/barbell_bench_press_medium_grip/progress?days=365')
     assert.equal(res.status, 200)
     if (res.body.data.length > 0) {
       assert.ok('estimated_1rm_kg' in res.body.data[0])
@@ -36,12 +36,12 @@ describe('T4.3 — Stats endpoints supplémentaires', () => {
 
   it('GET /stats/personal-records?exercise_id filtre correctement', async () => {
     const res = await request(app)
-      .get('/api/v1/stats/personal-records?exercise_id=bench_press_barbell')
+      .get('/api/v1/stats/personal-records?exercise_id=barbell_bench_press_medium_grip')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.records))
-    // Si des records existent, ils appartiennent tous à bench_press_barbell
+    // Si des records existent, ils appartiennent tous à barbell_bench_press_medium_grip
     for (const r of res.body.records) {
-      assert.equal(r.exercise_id, 'bench_press_barbell')
+      assert.equal(r.exercise_id, 'barbell_bench_press_medium_grip')
     }
   })
 })

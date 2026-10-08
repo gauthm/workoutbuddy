@@ -8,6 +8,7 @@ import { estimate1RM }              from '../services/rmCalculator.js'
 import { shouldDeload }             from '../services/deloadEngine.js'
 import { detectPlateau }            from '../services/plateauDetector.js'
 import { getExerciseForWeek }       from '../services/rotationEngine.js'
+import { suggestFirstTime }         from '../services/firstTimeSuggestion.js'
 import { runAllSignalChecks }       from '../services/coachingAdvisor.js'
 import { generatePendingAdviceTexts } from '../services/adviceTextGenerator.js'
 
@@ -497,30 +498,101 @@ router.get('/:id/target/:teId', (req, res) => {
     ).get(req.params.teId)
 
     const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(te.exercise_id)
-    const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
-
     const exerciseForCalc = {
       equipment_required: JSON.parse(exercise?.equipment_required || '[]'),
-      is_unilateral: exercise?.is_unilateral || 0,
+      is_unilateral:      exercise?.is_unilateral || 0,
+      mechanic:           exercise?.mechanic,
     }
-    const loadsResult = calculateAchievableLoads(equipmentItems, exerciseForCalc)
 
-    const weight      = state?.current_weight_kg || 0
-    const targetReps  = state?.current_target_reps || te.target_reps_min
+    const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
+    const loadsResult    = calculateAchievableLoads(equipmentItems, exerciseForCalc)
 
-    let explanation
-    if (weight === 0) {
-      explanation = 'Premier entraînement — commencez léger pour trouver votre charge.'
+    // ── Détection premier essai ───────────────────────────────
+    const isFirstTime = !state || state.current_weight_kg === 0
+
+    let weight, targetReps, explanation, suggestion
+
+    if (isFirstTime) {
+      // Charger le profil utilisateur
+      const profileRow = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
+      const profile = profileRow ? {
+        weight_kg:     profileRow.weight_kg,
+        fitness_level: profileRow.fitness_level,
+        primary_goal:  profileRow.primary_goal,
+      } : null
+
+      const parsed = {
+        ...exerciseForCalc,
+        id:       exercise?.id,
+        mechanic: exercise?.mechanic,
+      }
+
+      try {
+        suggestion = suggestFirstTime(parsed, profile, te, equipmentItems)
+      } catch (suggestErr) {
+        console.warn('[GET /sessions/:id/target/:teId] suggestion:', suggestErr.message)
+        suggestion = { weight_kg: 0, reps: 8, reasoning: 'Aucun profil configuré. Commencez léger.' }
+      }
+      weight      = suggestion.weight_kg
+      targetReps  = suggestion.reps
+      explanation = suggestion.reasoning
+
     } else {
+      // Essais suivants : lire depuis progression_state
+      weight      = state.current_weight_kg
+      targetReps  = state.current_target_reps || te.target_reps_min
+
+      // Récupérer la dernière performance réelle
+      const lastSet = db.prepare(`
+        SELECT sl.weight_kg, sl.reps, s.scheduled_date
+        FROM set_log sl
+        JOIN session_exercise se ON sl.session_exercise_id = se.id
+        JOIN session s ON se.session_id = s.id
+        WHERE se.exercise_id = ?
+          AND se.template_exercise_id = ?
+          AND s.status = 'completed'
+          AND sl.is_warmup = 0
+          AND sl.is_completed = 1
+        ORDER BY s.completed_at DESC, sl.set_number DESC
+        LIMIT 1
+      `).get(te.exercise_id, req.params.teId)
+
       const program = session.program_id
         ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
         : null
+
       const model = resolveProgressionModel(te, program)
-      explanation = `Modèle : ${model}. Charge précédente : ${weight} kg × ${targetReps} reps.`
-      if (state?.consecutive_failures > 0) {
-        explanation += ` (${state.consecutive_failures} échec(s) consécutif(s))`
+
+      const modelLabels = {
+        linear:             'progression linéaire',
+        double_progression: 'double progression',
+        rpe_based:          'progression RPE',
+      }
+
+      if (lastSet) {
+        const failureInfo = state.consecutive_failures > 0
+          ? ` (${state.consecutive_failures} échec(s) consécutif(s))`
+          : ''
+        explanation = `Dernière séance (${lastSet.scheduled_date}) : ` +
+                      `${lastSet.weight_kg} kg × ${lastSet.reps} reps. ` +
+                      `Cible : ${weight} kg × ${targetReps} reps ` +
+                      `[${modelLabels[model] || model}]${failureInfo}.`
+      } else {
+        explanation = `Charge initiale : ${weight} kg × ${targetReps} reps [${modelLabels[model] || model}].`
       }
     }
+
+    // ── Calcul du 10RM estimé pour la charge cible ────────────
+    // 10RM = 1RM / (1 + 10/30) = 1RM / 1.333
+    // Si reps = 10 → 10RM ≈ weight
+    const formulaRow = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
+    const formula    = formulaRow ? JSON.parse(formulaRow.value) : 'epley'
+    const est1rm     = weight > 0 && targetReps > 0
+      ? estimate1RM(weight, targetReps, formula)
+      : 0
+    const est10rm    = est1rm > 0
+      ? Math.round((est1rm / (1 + 10 / 30)) * 10) / 10
+      : null
 
     res.json({
       weight_kg:           weight,
@@ -528,6 +600,15 @@ router.get('/:id/target/:teId', (req, res) => {
       reps_max:            te.target_reps_max,
       explanation,
       achievable_loads_kg: loadsResult.loads_kg,
+      is_first_time:       isFirstTime,
+      // Bulle "suggestion premier essai" — null si essai suivant
+      first_time_suggestion: isFirstTime ? {
+        weight_kg: suggestion.weight_kg,
+        reps:      suggestion.reps,
+        reasoning: suggestion.reasoning,
+      } : null,
+      // 10RM estimé de la charge cible
+      estimated_10rm_kg: est10rm,
     })
   } catch (err) {
     console.error('[GET /sessions/:id/target/:teId]', err.message)

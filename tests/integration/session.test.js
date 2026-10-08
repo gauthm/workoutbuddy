@@ -3,8 +3,18 @@ import assert from 'node:assert/strict'
 import request from 'supertest'
 import fs from 'fs'
 import path from 'path'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
+import os from 'os'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t22-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb, getDbPath } = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T2.2 — Séance complète bout en bout', () => {
   let programId, templateId, sessionId, seId, setId
@@ -37,7 +47,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
     templateId = tRes.body.id
 
     await request(app).post(`/api/v1/templates/${templateId}/exercises`).send({
-      exercise_id: 'bench_press_barbell', target_sets: 3,
+      exercise_id: 'barbell_bench_press_medium_grip', target_sets: 3,
       target_reps_min: 5, target_reps_max: 5
     })
   })
@@ -76,14 +86,14 @@ describe('T2.2 — Séance complète bout en bout', () => {
     // Backup auto-créé à la complétion
     const today = new Date().toISOString().slice(0, 10)
     assert.ok(
-      fs.existsSync(path.join(process.cwd(), 'data', 'backups', `workoutbuddy_${today}.db`)),
+      fs.existsSync(path.join(path.dirname(getDbPath()), 'backups', `workoutbuddy_${today}.db`)),
       'le backup du jour doit exister'
     )
   })
 
   it("6. La séance est dans l'historique", async () => {
     const res = await request(app)
-      .get(`/api/v1/exercises/bench_press_barbell/history?limit=1`)
+      .get(`/api/v1/exercises/barbell_bench_press_medium_grip/history?limit=1`)
     assert.equal(res.status, 200)
     assert.equal(res.body.history.length, 1)
     assert.equal(res.body.history[0].sets.length, 3)
@@ -93,7 +103,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
     // Endpoint /stats/personal-records sera implémenté en T4.1 — vérification directe en DB
     const db = getDb()
     const pr = db.prepare(
-      "SELECT * FROM personal_record WHERE exercise_id = 'bench_press_barbell' ORDER BY id DESC LIMIT 1"
+      "SELECT * FROM personal_record WHERE exercise_id = 'barbell_bench_press_medium_grip' ORDER BY id DESC LIMIT 1"
     ).get()
     assert.ok(pr, 'un personal_record doit exister')
     assert.equal(pr.reps, 5)

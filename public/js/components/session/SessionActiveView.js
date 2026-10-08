@@ -93,7 +93,7 @@ export default {
   },
 
   template: `
-    <div class="view" style="padding-bottom:0">
+    <div class="view">
       <!-- Header avec chronomètre -->
       <header class="page-header">
         <h1 class="page-header__title">
@@ -139,6 +139,7 @@ export default {
             :rest-seconds="item.sessionExercise.rest_seconds || 90"
             :exercise-detail="item.exerciseDetail"
             :history="item.history"
+            :target="item.target"
             @set-validated="() => {}"
           />
         </template>

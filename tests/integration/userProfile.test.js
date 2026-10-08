@@ -1,9 +1,18 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
-import { migrate } from '../../src/db/migrate.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (ce test remet le user_profile à NULL → ne doit pas toucher la DB utilisateur)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t52-')), 'test.db')
+
+const { migrate } = await import('../../src/db/migrate.js')
+const { getDb }   = await import('../../src/db/database.js')
+migrate(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T5.2 — User Profile', () => {
 

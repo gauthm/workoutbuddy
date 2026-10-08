@@ -1,32 +1,26 @@
-// Seed des exercices — insère src/seed/exercises.json si la table exercise est vide
+// Seed des exercices — src/seed/exercises.json (issu de scripts/import-exercises.js)
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export function seedExercises(db) {
-  const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
-  if (count > 0) {
-    console.log(`Exercices déjà présents (${count}), seed ignoré.`)
-    return
-  }
-
+export function readSeedCatalog() {
   const filePath = path.join(__dirname, 'exercises.json')
   if (!fs.existsSync(filePath)) {
     console.warn('[seed] src/seed/exercises.json manquant.')
     console.warn('[seed] Lancer : node scripts/import-exercises.js <path-to-free-exercise-db>')
-    return
+    return []
   }
-
-  let exercises
   try {
-    exercises = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'))
   } catch (err) {
     console.error('[seed] Erreur lecture exercises.json :', err.message)
-    return
+    return []
   }
+}
 
+export function insertExercises(db, exercises) {
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO exercise
       (id, name_fr, name_en, category, force, mechanic, movement_pattern,
@@ -38,9 +32,10 @@ export function seedExercises(db) {
        @instructions_fr, @instructions_en, @image_paths, 0, @is_unilateral)
   `)
 
-  const insertMany = db.transaction((list) => {
+  const insert = db.transaction((list) => {
+    let inserted = 0
     for (const ex of list) {
-      stmt.run({
+      const r = stmt.run({
         id:                 ex.id,
         name_fr:            ex.name_fr,
         name_en:            ex.name_en,
@@ -56,9 +51,29 @@ export function seedExercises(db) {
         image_paths:        JSON.stringify(ex.image_paths ?? []),
         is_unilateral:      ex.is_unilateral ?? 0,
       })
+      inserted += r.changes
     }
+    return inserted
   })
 
-  insertMany(exercises)
-  console.log(`[seed] ${exercises.length} exercices importés.`)
+  return { source: exercises.length, inserted: insert(exercises) }
+}
+
+// Seed au démarrage : seulement si la table exercise est vide
+export function seedExercises(db) {
+  const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
+  if (count > 0) {
+    console.log(`Exercices déjà présents (${count}), seed ignoré.`)
+    return
+  }
+
+  const exercises = readSeedCatalog()
+  if (exercises.length === 0) {
+    console.warn('[seed] Aucun fichier seed trouvé.')
+    console.warn('[seed] Lancer : node scripts/import-exercises.js <path-to-free-exercise-db>')
+    return
+  }
+
+  const { inserted } = insertExercises(db, exercises)
+  console.log(`[seed] ${inserted}/${exercises.length} exercices importés.`)
 }

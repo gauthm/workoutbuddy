@@ -362,6 +362,7 @@ Pour chaque tâche du plan (T1.1, T1.2, etc.) :
 - [ ] Les noms d'entités respectent le glossaire
 - [ ] Les colonnes JSON sont sérialisées/désérialisées correctement
 - [ ] Les erreurs retournent le bon code HTTP et le format `{ "error": "..." }`
+- [ ] Si `public/` modifié → `CACHE_NAME` bumpé dans `public/sw.js` (voir §14)
 
 ---
 
@@ -413,3 +414,27 @@ te semble manquante :
 Si un fichier source existant dépasse 500 lignes, ne charge que les
 fonctions / sections directement pertinentes pour la tâche (copie-les
 en contexte, ne charge pas tout le fichier).
+
+---
+
+## 14. Cache frontend (Service Worker)
+
+L'app est une PWA : `public/sw.js` sert les assets statiques en
+**cache-first**. Sans précaution, un changement de `public/` n'est pas
+visible côté utilisateur (l'ancien fichier est resservi depuis le cache).
+
+**Règle — toute modification de `public/` (js, css, locales, html) :**
+
+1. Bumper `CACHE_NAME` dans `public/sw.js` : `'workoutbuddy-vN'` →
+   `'workoutbuddy-vN+1'`. À l'activation, le nouveau SW purge l'ancien
+   cache (`sw.js` → listener `activate`) ; un simple rechargement suffit
+   ensuite (pas besoin de Ctrl+Maj+R).
+2. Si un fichier `.js` est **créé** sous `public/js/` : l'ajouter dans
+   `PRECACHE_URLS` (la liste doit couvrir tous les composants).
+
+Ne jamais changer `CACHE_NAME` sans modification de `public/` (inutile),
+et ne jamais oublier le bump après une modification frontend — c'est le
+seul mécanisme d'invalidation du cache.
+
+Côté API (`/api/*`) : réseau direct, jamais mis en cache — pas de bump
+nécessaire pour un changement purement backend.

@@ -1,15 +1,22 @@
-import { describe, it, before } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t41-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T4.1 — API Stats', () => {
-  before(() => {
-    // Nettoyage des traces d'exécutions précédentes (DB fichier partagée)
-    const db = getDb()
-    db.prepare("DELETE FROM body_weight WHERE date IN ('2025-07-01', '2025-07-02')").run()
-  })
 
   it('GET /stats/overview retourne la structure attendue', async () => {
     const res = await request(app).get('/api/v1/stats/overview')
@@ -42,7 +49,7 @@ describe('T4.1 — API Stats', () => {
 
   it('GET /stats/exercises/:id/progress retourne data + formula', async () => {
     const res = await request(app)
-      .get('/api/v1/stats/exercises/bench_press_barbell/progress?days=30')
+      .get('/api/v1/stats/exercises/barbell_bench_press_medium_grip/progress?days=30')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.data))
     assert.ok(typeof res.body.formula === 'string')

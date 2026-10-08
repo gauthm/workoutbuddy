@@ -102,6 +102,12 @@ export const bodyweight = {
   delete: (id)        => request('DELETE', `/bodyweight/${id}`),
 }
 
+// ── Profil utilisateur ────────────────────────────────────────
+export const userProfile = {
+  get:  ()       => request('GET', '/user-profile'),
+  save: (fields) => request('PUT', '/user-profile', fields),
+}
+
 // ── Coach IA ──────────────────────────────────────────────────
 export const coach = {
   advice:              ()        => request('GET', '/ai/advice'),

@@ -7,7 +7,7 @@ import {
 
 // Exercices fictifs pour les tests
 const BENCH = {
-  id: 'bench_press_barbell', movement_pattern: 'push_horizontal',
+  id: 'barbell_bench_press_medium_grip', movement_pattern: 'push_horizontal',
   primary_muscles: ['chest'], equipment_required: ['barbell', 'bench'],
 }
 const INCLINE = {
@@ -19,7 +19,7 @@ const FLYES = {
   primary_muscles: ['chest'], equipment_required: ['dumbbell_fixed', 'bench'],
 }
 const SQUAT = {
-  id: 'squat_barbell', movement_pattern: 'squat',
+  id: 'barbell_squat', movement_pattern: 'squat',
   primary_muscles: ['quads'], equipment_required: ['barbell', 'rack'],
 }
 
@@ -36,7 +36,7 @@ const EQUIPMENT_NO_DUMBBELLS = [
 describe('findRotationCandidates', () => {
   it('base toujours en position 0', () => {
     const candidates = findRotationCandidates(BENCH, ALL_EXERCISES, EQUIPMENT_FULL)
-    assert.equal(candidates[0].id, 'bench_press_barbell')
+    assert.equal(candidates[0].id, 'barbell_bench_press_medium_grip')
   })
 
   it('trouve les candidats du même mouvement + muscle', () => {
@@ -44,7 +44,7 @@ describe('findRotationCandidates', () => {
     const ids = candidates.map(c => c.id)
     assert.ok(ids.includes('incline_bench_barbell'))
     assert.ok(ids.includes('dumbbell_flyes'))
-    assert.ok(!ids.includes('squat_barbell'))  // mouvement différent
+    assert.ok(!ids.includes('barbell_squat'))  // mouvement différent
   })
 
   it('filtre si équipement manquant', () => {
@@ -58,25 +58,25 @@ describe('findRotationCandidates', () => {
     const candidates = findRotationCandidates(SQUAT, ALL_EXERCISES, [{ category: 'barbell' }])
     // rack absent → SQUAT non atteignable en dehors de la base
     // base est toujours incluse
-    assert.equal(candidates[0].id, 'squat_barbell')
+    assert.equal(candidates[0].id, 'barbell_squat')
   })
 })
 
 describe('getExerciseForWeek', () => {
   const te = {
-    exercise_id: 'bench_press_barbell',
+    exercise_id: 'barbell_bench_press_medium_grip',
     rotation_group: 'horizontal_push',
   }
 
   it('semaine 1 → exercice de base (index 0)', () => {
     const id = getExerciseForWeek(te, 1, ALL_EXERCISES, EQUIPMENT_FULL, null)
-    assert.equal(id, 'bench_press_barbell')
+    assert.equal(id, 'barbell_bench_press_medium_grip')
   })
 
   it('semaine 2 → deuxième candidat', () => {
     // candidates = [bench, incline, flyes] (ordre du filter)
     const id = getExerciseForWeek(te, 2, ALL_EXERCISES, EQUIPMENT_FULL, null)
-    assert.notEqual(id, 'bench_press_barbell')
+    assert.notEqual(id, 'barbell_bench_press_medium_grip')
   })
 
   it('rotation cyclique : semaine 4 = semaine 1 si 3 candidats', () => {
@@ -89,7 +89,7 @@ describe('getExerciseForWeek', () => {
   it('sans rotation_group → toujours exercice de base', () => {
     const teNoGroup = { ...te, rotation_group: null }
     const id = getExerciseForWeek(teNoGroup, 5, ALL_EXERCISES, EQUIPMENT_FULL, null)
-    assert.equal(id, 'bench_press_barbell')
+    assert.equal(id, 'barbell_bench_press_medium_grip')
   })
 
   it('1 seul candidat → exercice de base', () => {

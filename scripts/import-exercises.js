@@ -9,6 +9,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // ── Mappings ────────────────────────────────────────────────
 
+const CATEGORY_MAP = {
+  'strength':                'strength',
+  'cardio':                  'cardio',
+  'stretching':              'stretching',
+  'plyometrics':             'plyometrics',
+  'olympic weightlifting':   'olympic_weightlifting',
+  'olympic_weightlifting':   'olympic_weightlifting',
+  'powerlifting':            'strength',
+  'strongman':               'strength',
+}
+
 const EQUIPMENT_MAP = {
   'barbell':       ['barbell'],
   'dumbbell':      ['dumbbell_fixed'],
@@ -47,6 +58,11 @@ const MUSCLE_MAP = {
 function mapMuscles(arr) {
   if (!arr) return []
   return [...new Set(arr.map(m => MUSCLE_MAP[m.toLowerCase()] ?? m).filter(Boolean))]
+}
+
+function mapCategory(cat) {
+  if (!cat) return 'strength'
+  return CATEGORY_MAP[cat.toLowerCase()] ?? 'strength'
 }
 
 function mapEquipment(eq) {
@@ -105,14 +121,15 @@ function inferUnilateral(ex) {
 
 function transform(ex) {
   const id = toSnakeCase(ex.id || ex.name)
+  const category = mapCategory(ex.category)
   return {
     id,
     name_fr:            ex.name,   // traduction FR = EN par défaut
     name_en:            ex.name,
-    category:           ex.category || 'strength',
+    category,
     force:              ex.force || null,
     mechanic:           ex.mechanic || null,
-    movement_pattern:   inferMovementPattern(ex),
+    movement_pattern:   inferMovementPattern({ ...ex, category }),
     primary_muscles:    mapMuscles(ex.primaryMuscles),
     secondary_muscles:  mapMuscles(ex.secondaryMuscles),
     equipment_required: mapEquipment(ex.equipment),

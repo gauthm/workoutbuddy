@@ -70,8 +70,8 @@ export default {
       return VIEW_MAP[name] || Placeholder(name)
     })
 
-    // Routes qui N'affichent PAS la BottomNav (séance active)
-    const HIDE_NAV = ['SessionActiveView']
+    // Routes qui N'affichent PAS la BottomNav
+    const HIDE_NAV = []
     const showNav = computed(() => !HIDE_NAV.includes(router.currentRoute.name))
 
     return { currentView, showNav, store, router }

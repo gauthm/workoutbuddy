@@ -1,8 +1,20 @@
 import { describe, it, before } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import { app } from '../../server.js'
-import { getDb } from '../../src/db/database.js'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t21-')), 'test.db')
+
+const { migrate }       = await import('../../src/db/migrate.js')
+const { getDb }         = await import('../../src/db/database.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+
+const { app } = await import('../../server.js')
 
 describe('T2.1 — API Programmes', () => {
   let programId
@@ -82,10 +94,10 @@ describe('T2.1 — API Programmes', () => {
     const templateId = tplRes.body.id
 
     const res = await request(app).post(`/api/v1/templates/${templateId}/exercises`).send({
-      exercise_id: 'bench_press_barbell', target_sets: 4, target_reps_min: 6, target_reps_max: 10
+      exercise_id: 'barbell_bench_press_medium_grip', target_sets: 4, target_reps_min: 6, target_reps_max: 10
     })
     assert.equal(res.status, 201)
-    assert.equal(res.body.exercise_id, 'bench_press_barbell')
+    assert.equal(res.body.exercise_id, 'barbell_bench_press_medium_grip')
 
     const db = getDb()
     const state = db.prepare('SELECT * FROM progression_state WHERE template_exercise_id = ?').get(res.body.id)
