@@ -738,6 +738,20 @@ router.post('/:id/skip', (req, res) => {
   }
 })
 
+// Restore only a skipped session; retain its date, template, sets and schedule identity.
+router.post('/:id/unskip', (req,res) => {
+  try {
+    const session=db.prepare('SELECT * FROM session WHERE id=?').get(req.params.id)
+    if (!session) return res.status(404).json({error:'SESSION_NOT_FOUND'})
+    if (session.status!=='skipped') return res.status(409).json({error:'SESSION_NOT_SKIPPED'})
+    db.prepare("UPDATE session SET status='planned',updated_at=datetime('now') WHERE id=? AND status='skipped'").run(session.id)
+    res.json(db.prepare('SELECT * FROM session WHERE id=?').get(session.id))
+  } catch (err) {
+    console.error('[POST /sessions/:id/unskip]',err.message)
+    res.status(500).json({error:'INTERNAL_ERROR'})
+  }
+})
+
 // ── GET /sessions/:id/target/:templateExerciseId ──────────────
 router.get('/:id/target/:teId', (req, res) => {
   try {

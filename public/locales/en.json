@@ -785,5 +785,7 @@
   "exercises.image_next": "Next photo",
   "common.previous": "Previous",
   "common.next": "Next",
-  "settings.import_custom_unsupported": "This backup contains a custom exercise without a recognized catalogue equivalent. No data was changed."
+  "settings.import_custom_unsupported": "This backup contains a custom exercise without a recognized catalogue equivalent. No data was changed.",
+  "calendar.restore": "Restore to planned",
+  "calendar.restored_toast": "Session restored to planned."
 }

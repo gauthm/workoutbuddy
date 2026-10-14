@@ -107,6 +107,7 @@ export default {
       // Modale confirmation skip
       showSkip:         false,
       skipSession:      null,
+      restoringId:      null,
     })
 
     // ── Grille ────────────────────────────────────────────────────
@@ -233,6 +234,20 @@ export default {
       }
     }
 
+    async function restoreSession(session) {
+      if (state.restoringId !== null) return
+      state.restoringId=session.id
+      try {
+        await api.unskip(session.id)
+        store.showToast(t('calendar.restored_toast'),'success')
+        await load()
+      } catch (err) {
+        store.showToast(err.message,'error')
+      } finally {
+        state.restoringId=null
+      }
+    }
+
     function viewSession(session) {
       router.push('#/session/' + session.id)
     }
@@ -244,7 +259,7 @@ export default {
       sessionsByDate, STATUS_COLORS,
       prevMonth, nextMonth, selectDay,
       startSession, openReschedule, doReschedule,
-      openSkip, doSkip, viewSession,
+      openSkip, doSkip, restoreSession, viewSession,
       load, router, t,
     }
   },
@@ -345,6 +360,14 @@ export default {
                     style="padding:0.3rem 0.75rem;font-size:0.8rem"
                     @click="router.push('#/session')">
                     {{ t('calendar.resume') }}
+                  </button>
+                </template>
+
+                <template v-if="session.status === 'skipped'">
+                  <button class="btn btn--secondary btn--sm"
+                    :disabled="state.restoringId !== null"
+                    @click="restoreSession(session)">
+                    {{ t('calendar.restore') }}
                   </button>
                 </template>
 

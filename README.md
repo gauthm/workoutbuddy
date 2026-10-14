@@ -52,7 +52,7 @@ Depuis la fiche du programme, un exercice peut être remplacé par une alternati
 
 ### Séances et progression
 
-Une séance peut être démarrée un autre jour que celui prévu. Elle apparaît alors au jour réel de son démarrage ; sa date prévue d’origine reste enregistrée, sans recréer de séance à cette date ni déplacer les autres séances. Reprendre une séance en cours conserve son jour de démarrage.
+Une séance peut être démarrée un autre jour que celui prévu. Elle apparaît alors au jour réel de son démarrage ; sa date prévue d’origine reste enregistrée, sans recréer de séance à cette date ni déplacer les autres séances. Reprendre une séance en cours conserve son jour de démarrage. Une séance marquée « Sautée » peut être remise en planifiée depuis le calendrier, puis démarrée ou déplacée ; elle conserve sa date et ses données.
 
 Pendant une séance, saisir la charge et les répétitions des séries proposées, puis les valider. Une série validée par erreur peut être annulée. Si tu quittes une séance sans la terminer, elle reste en cours et les séries validées sont conservées. Une saisie non validée peut être perdue au rechargement. L’onglet Séance permet de reprendre ; une autre séance ne peut pas démarrer tant que la première reste en cours. Le chronomètre mesure le temps depuis le démarrage, y compris lorsque l’application est fermée, et la progression attend la fin de la séance. Le bouton Échauffement affiche les consignes sans ajouter de série au programme.
 

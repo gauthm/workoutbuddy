@@ -785,5 +785,7 @@
   "exercises.image_next": "Photo suivante",
   "common.previous": "Précédent",
   "common.next": "Suivant",
-  "settings.import_custom_unsupported": "Cette sauvegarde contient un exercice personnalisé sans équivalent reconnu dans le catalogue. Aucune donnée n’a été modifiée."
+  "settings.import_custom_unsupported": "Cette sauvegarde contient un exercice personnalisé sans équivalent reconnu dans le catalogue. Aucune donnée n’a été modifiée.",
+  "calendar.restore": "Remettre en planifiée",
+  "calendar.restored_toast": "Séance remise en planifiée."
 }

@@ -104,3 +104,41 @@ test('deleting an early completed workout reserves its actual and original dates
  await post('/reset-stats')
  assert.deepEqual((await get('/export')).data.session_schedule_exclusions,[])
 })
+
+
+test('a skipped session can be restored, rescheduled and started without recreating its schedule slot',async()=>{
+ const p=await program()
+ const planned=(await calendar()).find(s=>s.status==='planned')
+ const before=(await get(`/sessions/${planned.id}`))
+ const others=db.prepare('SELECT * FROM session WHERE id!=? ORDER BY id').all(planned.id)
+ const states=db.prepare('SELECT * FROM progression_state ORDER BY id').all()
+ await post(`/sessions/${planned.id}/skip`)
+ const restored=await post(`/sessions/${planned.id}/unskip`)
+ assert.equal(restored.status,'planned')
+ for(const field of ['id','program_id','workout_template_id','scheduled_date','original_scheduled_date','started_at','completed_at'])assert.equal(restored[field],before[field],field)
+ assert.deepEqual(db.prepare('SELECT * FROM progression_state ORDER BY id').all(),states)
+ assert.deepEqual(db.prepare('SELECT * FROM session WHERE id!=? ORDER BY id').all(planned.id),others)
+ assert.equal(scheduleWeeks(db,p.id),0)
+ assert.equal(db.prepare('SELECT COUNT(*) n FROM session WHERE id=?').get(planned.id).n,1)
+ const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1)
+ await call('put',`/sessions/${planned.id}`,{scheduled_date:localIsoDate(tomorrow)})
+ assert.equal((await get(`/sessions/${planned.id}`)).scheduled_date,localIsoDate(tomorrow))
+ await post(`/sessions/${planned.id}/start`)
+ assert.equal((await get(`/sessions/${planned.id}`)).status,'in_progress')
+})
+
+test('restoring refuses missing, planned, completed and in-progress sessions without changing them',async()=>{
+ await post('/sessions/999999/unskip',undefined,404)
+ const insert=db.prepare('INSERT INTO session(name,scheduled_date,status) VALUES (?,?,?)')
+ for(const status of ['planned','completed','in_progress']){
+  const id=Number(insert.run('Status test',today,status).lastInsertRowid)
+  const before=db.prepare('SELECT * FROM session WHERE id=?').get(id)
+  const result=await post(`/sessions/${id}/unskip`,undefined,409)
+  assert.equal(result.error,'SESSION_NOT_SKIPPED')
+  assert.deepEqual(db.prepare('SELECT * FROM session WHERE id=?').get(id),before)
+ }
+ const id=Number(insert.run('Skipped',today,'skipped').lastInsertRowid)
+ await post(`/sessions/${id}/unskip`)
+ await post(`/sessions/${id}/unskip`,undefined,409)
+ assert.equal(db.prepare('SELECT status FROM session WHERE id=?').get(id).status,'planned')
+})
