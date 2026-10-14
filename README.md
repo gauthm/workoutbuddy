@@ -24,7 +24,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000). `npm start` lance le serv
 
 La création suit un questionnaire avec des choix prédéfinis : objectif, niveau, jours d’entraînement, durée de séance, durée totale, priorités musculaires et mesures personnelles. Des explications accompagnent les objectifs et un aperçu permet de consulter les séances avant de créer le programme.
 
-Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances complétées, en cours, planifiées ou sautées de ce programme.
+Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances complétées, en cours, planifiées ou sautées de ce programme. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
 
 La durée totale peut être limitée ou illimitée. Une durée limitée est comptée depuis la première activation ; une réactivation conserve ce point de départ. À la fin, les nouvelles séances sont bloquées et l’historique reste accessible. Prolonger le programme reprend la planification.
 
@@ -52,7 +52,7 @@ Depuis la fiche du programme, un exercice peut être remplacé par une alternati
 
 Une séance peut être démarrée un autre jour que celui prévu. Elle apparaît alors au jour réel de son démarrage ; sa date prévue d’origine reste enregistrée, sans recréer de séance à cette date ni déplacer les autres séances. Reprendre une séance en cours conserve son jour de démarrage.
 
-Pendant une séance, saisir la charge et les répétitions des séries proposées, puis les valider. Une série validée par erreur peut être annulée. Le bouton Échauffement affiche les consignes sans ajouter de série au programme.
+Pendant une séance, saisir la charge et les répétitions des séries proposées, puis les valider. Une série validée par erreur peut être annulée. Si tu quittes une séance sans la terminer, elle reste en cours et les séries validées sont conservées. Une saisie non validée peut être perdue au rechargement. L’onglet Séance permet de reprendre ; une autre séance ne peut pas démarrer tant que la première reste en cours. Le chronomètre mesure le temps depuis le démarrage, y compris lorsque l’application est fermée, et la progression attend la fin de la séance. Le bouton Échauffement affiche les consignes sans ajouter de série au programme.
 
 La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages avancés.
 

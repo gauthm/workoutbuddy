@@ -55,6 +55,8 @@ export default {
             {{ t('programs.new') }}
           </button>
         </EmptyState>
+        <p v-if="state.activeProgram && !state.activeProgram.is_finished && state.activeProgram.weekly_progress?.is_complete"
+          class="weekly-complete" role="status">✓ {{ t('programs.week_complete') }}</p>
         <div class="dashboard-shortcuts">
           <button class="btn btn--secondary" @click="router.push('#/programs')">{{ t('programs.title') }}</button>
           <button class="btn btn--secondary" @click="router.push('#/session/history')">{{ t('session.history_title') }}</button>

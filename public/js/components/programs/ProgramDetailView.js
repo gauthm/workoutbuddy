@@ -166,6 +166,8 @@ export default {
           </p>
           <p v-if="state.program.ends_on" class="settings-notice">{{ t('programs.ends_on', {date:state.program.ends_on}) }}</p>
           <p v-if="state.program.is_finished" class="settings-notice">{{ t('programs.finished_help') }}</p>
+          <p v-if="state.program.is_active && !state.program.is_finished && state.program.weekly_progress?.is_complete"
+            class="weekly-complete" role="status">✓ {{ t('programs.week_complete') }}</p>
           <!-- Actions -->
           <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem">
             <button v-if="state.program.is_active" class="btn btn--primary btn--full"

@@ -37,7 +37,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Domaine | Fichiers |
 | --- | --- |
 | Création des programmes | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
-| Planification et durée | `sessionScheduler.js`, `programLifecycle.js` |
+| Planification et durée | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
 | Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js` |
 | Remplacement et contraintes | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
 | Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |

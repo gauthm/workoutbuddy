@@ -795,5 +795,6 @@
   "programs.replacement_has_history": "Déjà pratiqué : progression conservée",
   "programs.finished_badge": "Terminé",
   "programs.ends_on": "Fin du programme : {{date}}",
-  "programs.finished_help": "Ce programme est terminé. Prolonge sa durée ou choisis une durée illimitée pour reprendre ses séances."
+  "programs.finished_help": "Ce programme est terminé. Prolonge sa durée ou choisis une durée illimitée pour reprendre ses séances.",
+  "programs.week_complete": "Toutes les séances de la semaine sont faites !"
 }

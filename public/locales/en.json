@@ -795,5 +795,6 @@
   "programs.replacement_has_history": "Previously trained: progression retained",
   "programs.finished_badge": "Finished",
   "programs.ends_on": "Program ends: {{date}}",
-  "programs.finished_help": "This program has finished. Extend its duration or choose unlimited duration to resume training."
+  "programs.finished_help": "This program has finished. Extend its duration or choose unlimited duration to resume training.",
+  "programs.week_complete": "All workouts for this week are done!"
 }

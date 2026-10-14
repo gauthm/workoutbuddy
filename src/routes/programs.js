@@ -1,3 +1,4 @@
+import { programWeeklyProgress } from '../services/programWeeklyProgress.js'
 import { programDates } from '../services/programLifecycle.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
@@ -13,6 +14,7 @@ function parseProgram(row) {
   return {
     ...row,
     ...programDates(row),
+    weekly_progress: programWeeklyProgress(db,row),
     is_active:              row.is_active === 1,
     use_exercise_rotation:  row.use_exercise_rotation === 1,
     deload_auto_enabled:    row.deload_auto_enabled === 1,

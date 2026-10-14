@@ -1,7 +1,13 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import request from 'supertest'
-import { app } from '../../server.js'
+import request from '../helpers/in-process-request.js'
+process.env.DB_PATH = ':memory:'
+const { getDb } = await import('../../src/db/database.js')
+const { migrate } = await import('../../src/db/migrate.js')
+const { seedExercises } = await import('../../src/seed/seed.js')
+migrate(getDb())
+seedExercises(getDb())
+const { app } = await import('../../server.js')
 
 describe('T4.3 — Stats endpoints supplémentaires', () => {
   it('GET /stats/overview inclut personal_records_count', async () => {
