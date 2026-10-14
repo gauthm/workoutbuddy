@@ -20,7 +20,10 @@ test('recherche et filtres conservés en revenant de la fiche, catalogue seul et
 })
 test('exclure un exercice persiste après rechargement et met à jour le compteur',async({page,request})=>{
  await page.goto('/#/exercises')
- const badge=page.locator('.exercise-tabs__badge'),initial=Number(await badge.textContent())
+ const available=(await get(request,'/exercises?excluded=0')).exercises.length
+ const badge=page.locator('.exercise-tabs__badge')
+ await expect(badge).toHaveText(String(available))
+ const initial=available
  const name=await page.locator('.exercise-card__name').first().textContent()
  await page.locator('.exercise-card').first().getByRole('button',{name:L('exercises.exclude_btn'),exact:true}).click()
  await expect(badge).toHaveText(String(initial-1))
