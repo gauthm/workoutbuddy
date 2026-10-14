@@ -5,10 +5,11 @@ import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
 import ProgramCard    from './ProgramCard.js'
+import EmptyState from '../common/EmptyState.js'
 
 export default {
   name: 'ProgramListView',
-  components: { PageHeader, LoadingSpinner, ErrorBanner, ProgramCard },
+  components: { PageHeader, LoadingSpinner, ErrorBanner, ProgramCard, EmptyState },
 
   setup() {
     const router = inject('router')
@@ -19,10 +20,6 @@ export default {
       try {
         const data = await api.list()
         state.programs = data.programs
-        if (!state.programs.length) {
-          router.replace('#/programs/new')
-          return
-        }
       } catch (err) { state.error = err.message }
       finally { state.loading = false }
     }
@@ -33,10 +30,13 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="t('programs.title')" />
+      <PageHeader :title="t('programs.title')"><template #actions><button class="btn btn--primary" @click="router.push('#/programs/new')">{{ t('programs.new') }}</button></template></PageHeader>
       <div class="view__content">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
+        <EmptyState v-else-if="!state.programs.length" icon="🏋️" :message="t('dashboard.no_program')">
+          <button class="btn btn--primary" @click="router.push('#/programs/new')">{{ t('programs.new') }}</button>
+        </EmptyState>
         <div v-else>
           <ProgramCard
             v-for="p in state.programs" :key="p.id"

@@ -87,9 +87,11 @@ export default {
               @error="$event.target.style.display='none'"
             />
             <div v-if="state.exercise.image_paths.length > 1" class="exercise-detail__dots">
-              <span
+              <button
                 v-for="(_, i) in state.exercise.image_paths" :key="i"
                 class="exercise-detail__dot"
+                :aria-label="t('exercises.image_number', { number: i + 1 })"
+                :aria-pressed="i === state.imageIndex"
                 :class="{ 'exercise-detail__dot--active': i === state.imageIndex }"
                 @click="state.imageIndex = i"
               />
@@ -109,7 +111,7 @@ export default {
           <!-- Équipement -->
           <section v-if="state.exercise.equipment_required.length" class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.equipment') }}</h3>
-            <p>{{ state.exercise.equipment_required.join(', ') }}</p>
+            <p>{{ state.exercise.equipment_required.map(e => t('equipment.category_' + e)).join(', ') }}</p>
           </section>
 
           <!-- Instructions -->
@@ -122,12 +124,12 @@ export default {
 
           <!-- Dernière performance + RM -->
           <section v-if="lastRM()" class="detail-section">
-            <h3 class="detail-section__title">RM estimé</h3>
+            <h3 class="detail-section__title">{{ t('stats.rm_estimated') }}</h3>
             <p style="font-size:1.5rem;font-weight:700;color:var(--color-primary)">
               {{ lastRM().rm }} kg
             </p>
             <p style="font-size:0.85rem;color:var(--color-text-muted)">
-              Basé sur {{ lastRM().set.weight_kg }} kg × {{ lastRM().set.reps }} reps
+              {{ t('exercises.performance_basis', { weight: lastRM().set.weight_kg, reps: lastRM().set.reps }) }}
             </p>
           </section>
 
@@ -135,7 +137,7 @@ export default {
           <section class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.history') }}</h3>
             <div v-if="!state.history.length" style="color:var(--color-text-muted);font-size:0.9rem">
-              Aucune séance enregistrée.
+              {{ t('session.no_history') }}
             </div>
             <div v-for="session in state.history" :key="session.session_id"
               class="history-session">

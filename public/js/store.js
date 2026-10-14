@@ -1,8 +1,11 @@
 import { reactive } from '/vendor/vue.esm-browser.prod.js'
+import { stopSessionTimers } from './timer-worker-singleton.js'
 
 export const store = reactive({
   // ── État global ───────────────────────────────────────────
   settings:      null,       // objet settings chargé depuis GET /settings
+  activeRest: null,
+  activeRestExerciseId: null,
   activeSession: null,       // session en cours (status='in_progress')
   pendingAction: null,       // action IA en attente de confirmation
   pendingAdjustments: [],    // ajustements coach retournés par POST /sessions/:id/start
@@ -28,6 +31,9 @@ export const store = reactive({
 
   clearActiveSession() {
     this.activeSession = null
+    this.activeRest = null
+    this.activeRestExerciseId = null
+    stopSessionTimers()
   },
 
   setPendingAction(action) {
@@ -47,7 +53,7 @@ export const store = reactive({
   },
 
   setSettings(settings) {
-    this.settings = settings
+    this.settings = settings == null ? null : JSON.parse(JSON.stringify(settings))
   },
 
   getSetting(key, defaultValue = null) {

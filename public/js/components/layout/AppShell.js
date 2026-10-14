@@ -80,7 +80,7 @@ export default {
     <div class="app-shell">
       <component
         :is="currentView"
-        :key="router.currentRoute.name + JSON.stringify(router.currentRoute.params)"
+        :key="router.currentRoute.name + (router.currentRoute.name === 'ExerciseListView' ? '' : JSON.stringify(router.currentRoute.params))"
         v-bind="router.currentRoute.params"
       />
       <BottomNav v-if="showNav" />

@@ -3,6 +3,7 @@ import { reactive, onMounted, onUnmounted, inject, computed, nextTick }
 import { bodyweight as api } from '../../api.js'
 import { kgToLb, formatWeight } from '../../utils/weight.js'
 import { t } from '../../i18n.js'
+import { isoDate } from '../../utils/date.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -47,7 +48,7 @@ export default {
       error:      null,
       entries:    [],           // BodyWeight[] triés ASC par date
       showForm:   false,
-      form:       { date: new Date().toISOString().slice(0, 10), weight_kg: '', notes: '' },
+      form:       { date: isoDate(), weight_kg: '', notes: '' },
       saving:     false,
       deleteTarget: null,
     })
@@ -70,17 +71,21 @@ export default {
         const data = await api.list({ days: 365 })
         // Trier ASC par date pour la courbe
         state.entries = [...data.entries].sort((a, b) => a.date.localeCompare(b.date))
-        await nextTick()
-        renderChart()
       } catch (err) {
         state.error = err.message
       } finally {
         state.loading = false
+        await nextTick()
+        renderChart()
       }
     }
 
     // ── Rendu du graphique ──────────────────────────────────────
     function renderChart() {
+      const styles = getComputedStyle(document.documentElement)
+      const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
+      const textColor = styles.getPropertyValue('--color-text').trim()
+      const gridColor = styles.getPropertyValue('--color-border').trim()
       if (!window.Chart) {
         console.warn('[BodyWeightView] Chart.js non disponible')
         return
@@ -143,7 +148,7 @@ export default {
           interaction:        { mode: 'index', intersect: false },
           plugins: {
             legend: {
-              labels: { color: '#e8e8e8', font: { size: 12 } }
+              labels: { color: textColor, font: { size: 12 } }
             },
             tooltip: {
               callbacks: {
@@ -156,15 +161,15 @@ export default {
               // 'category' (fallback documenté du plan) : le bundle UMD
               // de Chart.js 4 n'inclut pas d'adaptateur de date, 'time' échouerait
               type:    'category',
-              ticks:   { color: '#888', maxTicksLimit: 8 },
-              grid:    { color: 'rgba(255,255,255,0.05)' },
+              ticks:   { color: mutedColor, maxTicksLimit: 8 },
+              grid:    { color: gridColor },
             },
             y: {
               ticks: {
-                color:    '#888',
+                color:    mutedColor,
                 callback: (v) => `${v} ${unit.value}`,
               },
-              grid: { color: 'rgba(255,255,255,0.05)' },
+              grid: { color: gridColor },
             },
           },
         },
@@ -188,7 +193,7 @@ export default {
           weight_kg: weightKg,
           notes:     state.form.notes || null,
         })
-        state.form   = { date: new Date().toISOString().slice(0, 10), weight_kg: '', notes: '' }
+        state.form   = { date: isoDate(), weight_kg: '', notes: '' }
         state.showForm = false
         store.showToast(t('bodyweight.saved_toast'), 'success')
         await load()
@@ -248,20 +253,20 @@ export default {
           <div v-if="state.showForm" class="bw-form">
             <form @submit.prevent="saveEntry">
               <div class="form-group">
-                <label class="form-label">{{ t('bodyweight.date') }}</label>
-                <input class="form-input" type="date" v-model="state.form.date" required />
+                <label class="form-label" for="BodyWeightView-state-form-date">{{ t('bodyweight.date') }}</label>
+                <input id="BodyWeightView-state-form-date" class="form-input" type="date" v-model="state.form.date" required />
               </div>
               <div class="form-group">
-                <label class="form-label">
+                <label class="form-label" for="BodyWeightView-state-form-weight_kg">
                   {{ t('bodyweight.weight') }} ({{ unit }})
                 </label>
-                <input class="form-input" type="number" step="0.1" min="20" max="500"
+                <input id="BodyWeightView-state-form-weight_kg" class="form-input" type="number" step="0.1" min="20" max="500"
                   v-model="state.form.weight_kg" required
                   :placeholder="unit === 'kg' ? '75.0' : '165.0'" />
               </div>
               <div class="form-group">
-                <label class="form-label">{{ t('bodyweight.notes') }}</label>
-                <input class="form-input" type="text" v-model="state.form.notes" />
+                <label class="form-label" for="BodyWeightView-state-form-notes">{{ t('bodyweight.notes') }}</label>
+                <input id="BodyWeightView-state-form-notes" class="form-input" type="text" v-model="state.form.notes" />
               </div>
               <button type="submit" class="btn btn--primary btn--full"
                 :disabled="state.saving">

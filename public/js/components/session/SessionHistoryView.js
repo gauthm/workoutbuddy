@@ -142,6 +142,7 @@ export default {
             <input
               class="form-input history-filters__search"
               type="search"
+              :aria-label="t('session.history_search')"
               :placeholder="t('session.history_search')"
               v-model="state.filterQ"
             />
@@ -194,7 +195,7 @@ export default {
                 v-if="s.status !== 'in_progress'"
                 class="history-row__delete"
                 @click.stop="askDelete(s)"
-                :title="t('session.delete')">
+                :title="t('session.delete')" :aria-label="t('session.delete')">
                 🗑
               </button>
             </div>

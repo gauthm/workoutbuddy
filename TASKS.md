@@ -157,3 +157,60 @@ Un jalon est **terminé** quand :
 - `npm test` passe sans erreur
 - La fonctionnalité est testable manuellement sur mobile (Chrome Android
   ou Safari iOS via LAN)
+
+## Évolution demandée — moteur de programmes et conseiller
+
+- [x] Questionnaire de création sans IA, moteur déterministe, aperçu et matériel vérifié.
+- [x] Exercices stables, progression conservée par exercice et bilan hebdomadaire.
+- [x] Conseiller IA en lecture seule ; anciennes actions de configuration bloquées.
+- [x] Profil personnel simplifié ; poids, taille et objectifs propres au programme.
+- [x] Réinitialisations adaptées aux nouvelles données, sauvegardes et tests de portée.
+
+Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
+
+- [x] Séance : colonne 10RM, tableau des dernières séries sous Échauffement, explications des formules RM et conversion cohérente (détails : `docs/SESSION_UI_TODO.md`).
+
+- [x] Simplifier les paramètres : retirer les seuils internes et options obsolètes, garder les préférences utiles et regrouper RM/réseau dans Réglages avancés (détails : `docs/SETTINGS_TODO.md`).
+
+- [x] Matériel : liste unique de cases sous les élastiques, sans Home gym/Salle ; audit de couverture des besoins des exercices et corrections d’import (détails : `docs/EQUIPMENT_TODO.md`).
+
+- [x] Matériel : familles repliables, recherche et résumé ; catégorie personnalisée séparée ; filtre « Matériel » commun dans Exercices et « Réalisables avec mon matériel » (360 tests, 16 présentations Playwright).
+
+- [x] Déplacer Matériel dans un onglet à droite de Douleurs ; renommer la page et la navigation « Exercices et Matériel » sur deux lignes ; conserver brouillons et anciens liens.
+
+- [x] Déplacer Données dans Réglages avancés ; supprimer le bouton de réinitialisation du profil ; renommer Conseiller IA en Coach IA.
+- [x] Exercices : volet Filtre repliable, quatre lignes Muscle/Mouvement/Matériel/disponibilité ; recherches de matériel et d’exercices au même design (360 tests, contrôle Playwright de 320 à 1280 px).
+
+- [x] Renommer le volet Filtres et aligner l’espacement de la recherche Matériel sur Exercices.
+- [x] Programme à durée illimitée : choix explicite, validation, stockage null, aperçu et détail ; progression hebdomadaire inchangée.
+- [x] Réglages avancés : trois blocs cohérents Calcul des performances / Réseau / Données, titres et séparateurs harmonisés.
+- [x] Recherche d’exercices vide : « Rechercher un exercice… » ; réinitialiser stats et historique : seule icône poubelle.
+- [x] Déplacer le texte explicatif des réglages avancés dans « Comprendre les formules RM ».
+
+- [x] Modifier seulement la durée totale du programme (semaines ou illimitée) depuis sa fiche ; autres champs verrouillés aussi dans l’API ; conserver programme, séances et progression.
+
+- [x] Calendrier : afficher uniquement les quatre statuts du programme actif ; retirer les séances planifiées lors de la suppression de leur programme tout en conservant l’historique.
+- [x] Création : cocher les jours d’entraînement et planifier les séances sur ces jours.
+
+- [x] Renommer les exports CSV en « Résumé des séances » et « Détail des séries », avec une description du contenu de chaque ligne (FR/EN).
+
+- [x] Réglages : Général replié par défaut.
+
+- [x] Coach IA : un bouton Enregistrer à droite de Tester la connexion, sauvegarde groupée URL/modèle/clé, fin des sauvegardes individuelles ; clé configurée affichée avec des points.
+
+- [x] Réglages : bouton Enregistrer fixe au-dessus de la navbar, visible seulement après une modification ; sauvegarde groupée des préférences/profil/Coach IA/réglages avancés, annulation et brouillons conservés après erreur.
+- [x] Réglages : renommer Mon profil en Profil, En séance en Séance ; Profil avant Séance.
+- [x] Programme : modifier uniquement sa durée totale et ses jours d’entraînement, avec exactement le même nombre de jours qu’à la création.
+- [x] Sauvegarde Réglages « Not found » : relancer le serveur pour charger la nouvelle route atomique.
+
+- [x] Fiche du programme : remplacer un exercice par une alternative similaire compatible avec le matériel ; prochaines séances seulement, historique et progression par exercice conservés.
+
+- [x] Audit : isoler les brouillons des réglages du store, y compris après annulation ou erreur de sauvegarde.
+- [x] Audit : recalculer la progression par exercice et les cibles des programmes après suppression d’une séance ; conserver le contexte de calcul dans l’export/import.
+- [x] Audit : respecter la durée depuis la première activation, afficher la fin et arrêter les nouvelles séances ; permettre une prolongation ou une durée illimitée.
+- [x] Audit : vérifier le nombre d’haltères réglables requis dans le calcul partagé des charges.
+- [x] Audit : enregistrer les zones douloureuses en base, migrer les anciennes préférences du navigateur et filtrer la création/remplacement sur les muscles principaux et secondaires.
+
+- [x] Fiabilité : sept parcours API complets sur base isolée (programme/calendrier, séance/progression, suppression/historique, export/import, réglages, remplacement, rollback d’import invalide), intégrés à `npm test` ; commande `npm run test:journeys` et documentation. Validation : 386 tests réussis et contrôles Playwright des réglages sur quatre tailles d’écran.
+
+- [x] Documentation : réduire CODEBASE.md à un index et actualiser le README (installation, fonctionnement actuel, données, sauvegardes et tests).

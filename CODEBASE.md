@@ -1,95 +1,72 @@
-# WorkoutBuddy — Codebase Index
+# Index du code
 
-## Stack
-Node.js 20 / Express 4.18.3 / better-sqlite3 13 / Vue 3.5 (fichier local, pas de build) / Chart.js 4.4
-PWA (Service Worker cache-first) | Tests: node:test + supertest | ES Modules partout
+Installation, fonctionnement et tests : [README.md](README.md). Règles de développement : [AGENT.md](AGENT.md). Suivi : [TASKS.md](TASKS.md).
 
-## Structure
-```
-server.js          → entrée unique (migrate + seed + listen)
-src/
-  db/              → database.js (singleton SQLite WAL), migrate.js, migrations/001-006*.sql
-  routes/          → un fichier par domaine REST /api/v1/*
-  services/        → logique métier pure (pas de DB directe, pas de res.json)
-  seed/            → exercises.json + seed.js
-public/
-  js/
-    app.js         → createApp Vue + mount
-    router.js      → hash router (regex match, pas vue-router)
-    store.js       → reactive() global (settings, activeSession, toast, pendingAction)
-    api.js         → wrappers fetch /api/v1/*
-    i18n.js        → t(key) + chargement locales JSON
-    timer-worker.js → Web Worker timer repos
-    utils/         → rm.js, weight.js, date.js
-    components/    → layout/ | common/ | exercises/ | session/ | programs/ | stats/ | coach/ | equipment/ | settings/ | calendar/
-  vendor/          → vue + chart.js (générés par scripts/download-vendors.js)
-  locales/         → fr.json, en.json
-  sw.js            → Service Worker PWA (cache-first, CACHE_NAME bump obligatoire)
-tests/
-  unit/            → services (DB :memory:)
-  integration/     → routes (supertest + DB :memory:)
-```
+## Serveur et données
 
-## Fichiers clés
+| Emplacement | Rôle |
+| --- | --- |
+| `server.js` | Démarrage, routes, fichiers statiques |
+| `src/db/database.js` | Connexion SQLite |
+| `src/db/migrate.js`, `src/db/migrations/` | Migrations |
+| `src/db/backup.js` | Sauvegardes |
+| `src/seed/` | Catalogue intégré et chargement |
+| `scripts/` | Téléchargement des bibliothèques et import d’exercices |
 
-### Server
-server.js                → bootstrap: migrate + seed + scheduleWeeks + listen
-src/db/database.js       → singleton better-sqlite3 (WAL, foreign_keys, busy_timeout)
-src/db/migrate.js        → migrations séquentielles idempotentes (NNN_*.sql)
-src/db/migrations/       → 001_schema, 002_default_settings, 003_user_profile, 004_equipment, 005_exercise_exclusion, 006_coach_history
+## API — `/api/v1`
 
-### Routes (toutes sous /api/v1/)
-routes/sessions.js (802L) → CRUD sessions + start/complete + ajustements coach
-routes/ai.js (664L)       → chat SSE + validation/exec actions IA (12 types d'actions)
-routes/exercises.js       → CRUD + history + rm-history + toggle-exclusion
-routes/programs.js        → CRUD + génération
-routes/templates.js      → workout templates + template_exercises
-routes/sets.js           → set_log CRUD
-routes/stats.js          → volume, PR, streaks, progression
-routes/settings.js       → settings + test-ai + ai-models
-routes/equipment.js      → CRUD + achievable-loads
-routes/bodyweight.js     → body_weight tracking
-routes/userProfile.js    → profil + onboarding
-routes/exportImport.js   → export/import JSON
+Tous les fichiers ci-dessous sont dans `src/routes/`.
 
-### Services (logique métier pure)
-services/aiProvider.js         → streaming chat SSE (OpenAI-compatible: OpenAI, Groq, Mistral, Ollama, LM Studio)
-services/systemPromptBuilder.js → construit le system prompt du coach IA
-services/progressionEngine.js  → double/half progression + simple increment
-services/programGenerator.js  → génère programme auto selon profil/objectifs
-services/deloadEngine.js      → détection fatigue → décharge
-services/plateauDetector.js   → détection stagnation
-services/rotationEngine.js   → rotation exercices (A/B split)
-services/sessionScheduler.js  → planification auto séances
-services/coachingAdvisor.js   → conseils basés sur contexte
-services/rmCalculator.js      → 1RM (Epley/Brzycki/Lander)
-services/equipmentCalc.js    → charges atteignables selon équipement
-services/streakCalculator.js  → séries de jours consécutifs
-services/adviceTextGenerator.js → texte conseil pour UI
-services/firstTimeSuggestion.js → suggestions premier usage
+| Domaine | Fichier |
+| --- | --- |
+| Exercices, historique, exclusions | `exercises.js` |
+| Inventaire et charges disponibles | `equipment.js` |
+| Création, activation, modification des programmes | `programs.js` |
+| Séances types et remplacement d’exercices | `templates.js` |
+| Séances, cibles, démarrage et complétion | `sessions.js` |
+| Séries | `sets.js` |
+| Statistiques et records | `stats.js` |
+| Poids corporel | `bodyweight.js` |
+| Préférences, sauvegarde groupée, connexion IA | `settings.js` |
+| Profil | `userProfile.js` |
+| Coach IA et conversations | `ai.js` |
+| Exports, import, sauvegarde et réinitialisations | `exportImport.js` |
 
-### Frontend
-js/app.js              → init Vue, charge settings, applique langue + thème
-js/router.js           → 19 routes hash (#/session, #/coach, #/stats, ...)
-js/store.js            → état global réactif (settings, activeSession, toast, pendingAction)
-js/api.js              → 12 wrappers fetch (exercises, equipment, programs, sessions, sets, stats, settings, ai, bodyweight, userProfile, templates, exportImport)
-js/i18n.js             → t(key, params) + fallback fr
-js/components/layout/AppShell.js → shell + nav bottom
-js/components/session/SessionActiveView.js → séance en cours (sets, timer, rest)
-js/components/coach/CoachView.js (470L) → chat IA + actions preview + onboarding
-js/components/programs/ProgramDetailView.js → détail programme + exercices
-js/components/stats/StatsDashboardView.js → volume, PR, streaks
+## Logique métier — `src/services/`
 
-## Patterns clés
-- Pas de build frontend: Vue 3 en .js pur (template string), imports relatifs /vendor/vue.esm-browser.prod.js
-- SQLite synchrone: db.prepare().get/.all/.run() — jamais async/await sur DB
-- DB singleton: getDb() depuis database.js — jamais de 2e instance
-- Migrations idempotentes: CREATE IF NOT EXISTS, INSERT OR IGNORE — jamais modifier un .sql existant
-- Services: pas de DB directe, pas de res.json — la route gère HTTP, le service gère la logique
-- API: JSON partout, erreurs `{ "error": "NOM" }`, codes HTTP stricts (200/201/204/400/404/409/500)
-- Clé API IA: lue en DB côté serveur, jamais renvoyée au client (seulement `ai_api_key_set: bool`)
-- i18n: t('clé') obligatoire — jamais de texte en dur dans templates
-- PWA: sw.js cache-first → bump CACHE_NAME à chaque modif de public/
-- Tests: DB :memory: par test, jamais data/workoutbuddy.db
-- Colonnes JSON: JSON.stringify() avant INSERT, JSON.parse() après SELECT
-- Coach IA: SSE streaming + 12 types d'actions validées côté serveur (create_program, schedule_sessions, swap_exercise, etc.)
+| Domaine | Fichiers |
+| --- | --- |
+| Création des programmes | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
+| Planification et durée | `sessionScheduler.js`, `programLifecycle.js` |
+| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js` |
+| Remplacement et contraintes | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
+| Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
+| Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
+| Coach IA | `aiProvider.js`, `systemPromptBuilder.js`, `coachingAdvisor.js`, `adviceTextGenerator.js`, `actionStreamParser.js` |
+| Utilitaires et compatibilité | `date.js`, `validation.js`, `rotationEngine.js` |
+
+## Interface — `public/`
+
+| Domaine | Emplacement |
+| --- | --- |
+| Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
+| Accueil | `js/views/DashboardView.js` |
+| Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
+| Exercices, douleurs, filtres | `js/components/exercises/` |
+| Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
+| Questionnaire et fiche programme | `js/components/programs/` |
+| Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
+| Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
+| RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
+| Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
+
+## Tests et documentation
+
+| Emplacement | Contenu |
+| --- | --- |
+| `tests/unit/`, `tests/integration/` | Logique métier et API |
+| `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
+| `tests/helpers/` | Exécution isolée des requêtes |
+| `tests/ui/` | Scénarios Playwright |
+| `docs/` | Audits et suivis détaillés |
+| `docs/plan/` | Plan initial et fiches de tâches |

@@ -50,17 +50,18 @@ export function runAllSignalChecks(db, settings) {
   for (const te of templateExercises) {
     if (isOnCooldown('max_load_reached', te.exercise_id, null, activeAdvice, cooldownDays)) continue
     const loads = calculateAchievableLoads(equipmentItems, { equipment_required: te.equipment_required, is_unilateral: te.is_unilateral })
-    if (!loads.loads_kg.length) continue
+    if (!loads.loads_kg.length || loads.max_load_kg <= 0) continue
 
     const recentSets = db.prepare(`
-      SELECT sl.weight_kg, sl.reps, te2.target_reps_max
+      SELECT MIN(sl.weight_kg) AS weight_kg, MIN(sl.reps) AS reps, te2.target_reps_max
       FROM set_log sl
       JOIN session_exercise se ON sl.session_exercise_id = se.id
       JOIN session s           ON se.session_id = s.id
       JOIN template_exercise te2 ON se.template_exercise_id = te2.id
       WHERE se.exercise_id=? AND s.program_id=? AND s.status='completed'
         AND sl.is_warmup=0 AND sl.is_completed=1 AND te2.id=?
-      ORDER BY s.completed_at DESC LIMIT ?
+      GROUP BY s.id
+      ORDER BY s.completed_at DESC, s.id DESC LIMIT ?
     `).all(te.exercise_id, activeProgram.id, te.id, maxLoadSessions)
 
     if (recentSets.length < maxLoadSessions) continue
@@ -71,11 +72,32 @@ export function runAllSignalChecks(db, settings) {
       const avgReps = recentSets.reduce((s, r) => s + r.reps, 0) / recentSets.length
       insertAdvice(db, 'max_load_reached', te.exercise_id, null, null, {
         type: 'max_load_reached', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
-        max_load_kg: loads.max_load_kg, sessions_checked: maxLoadSessions,
+        max_load_kg: loads.max_load_kg, resistance_is_approximate: !!loads.resistance_is_approximate, equipment_required: te.equipment_required, sessions_checked: maxLoadSessions,
         target_reps_max: te.target_reps_max, actual_reps_avg: Math.round(avgReps * 10) / 10,
       })
       created++
     }
+  }
+
+  // Advance notice based on the last distinct completed sessions, never a promised date.
+  for (const te of templateExercises) {
+    if (isOnCooldown('equipment_limit_approaching', te.exercise_id, null, activeAdvice, cooldownDays)) continue
+    const loads = calculateAchievableLoads(equipmentItems, te)
+    if (loads.max_load_kg <= 0) continue
+    const history = db.prepare(`
+      SELECT s.id, MAX(sl.weight_kg) AS weight_kg
+      FROM set_log sl JOIN session_exercise se ON sl.session_exercise_id=se.id
+      JOIN session s ON se.session_id=s.id
+      WHERE se.template_exercise_id=? AND s.program_id=? AND s.status='completed'
+        AND sl.is_completed=1 AND sl.is_warmup=0
+      GROUP BY s.id ORDER BY s.completed_at DESC, s.id DESC LIMIT 4
+    `).all(te.id, activeProgram.id).reverse()
+    const forecast = forecastEquipmentLimit(loads, history)
+    if (!forecast) continue
+    if (insertAdvice(db, 'equipment_limit_approaching', te.exercise_id, null, null, {
+      type: 'equipment_limit_approaching', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
+      equipment_required: te.equipment_required, max_load_kg: loads.max_load_kg, ...forecast,
+    })) created++
   }
 
   // Signal 2 : Incrément trop grand + plateau
@@ -91,7 +113,7 @@ export function runAllSignalChecks(db, settings) {
       if (!plateau.is_plateau) continue
       insertAdvice(db, 'min_increment_too_large', te.exercise_id, null, null, {
         type: 'min_increment_too_large', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
-        min_increment_kg: loads.min_increment_kg, current_weight_kg: state.current_weight_kg, pct: Math.round(pct * 10) / 10,
+        equipment_required: te.equipment_required, min_increment_kg: loads.min_increment_kg, current_weight_kg: state.current_weight_kg, pct: Math.round(pct * 10) / 10,
       })
       created++
     }
@@ -192,12 +214,30 @@ function isOnCooldown(signalType, exerciseId, muscleGroup, activeAdvice, cooldow
 
 function insertAdvice(db, signalType, exerciseId, muscleGroup, movementPattern, signalData) {
   try {
-    db.prepare(`
+    const result = db.prepare(`
       INSERT OR IGNORE INTO equipment_advice
         (signal_type, exercise_id, muscle_group, movement_pattern, signal_data, status, last_generated_at)
       VALUES (?,?,?,?,?,'active',datetime('now'))
     `).run(signalType, exerciseId||null, muscleGroup||null, movementPattern||null, JSON.stringify(signalData))
+    return result.changes > 0
   } catch (err) {
     console.warn('[coachingAdvisor] insertAdvice:', err.message)
+    return false
   }
+}
+
+/** A short trend estimate, not a calendar prediction. Bands have no fixed kg increment. */
+export function forecastEquipmentLimit(loads, history) {
+  if (history.length < 3 || loads.max_load_kg <= 0) return null
+  const weights = history.map(s => s.weight_kg)
+  if (!weights.every(w => Number.isFinite(w) && w > 0)) return null
+  const current = weights.at(-1)
+  if (current >= loads.max_load_kg) return null
+  const deltas = weights.slice(1).map((w,i) => w - weights[i])
+  if (deltas.some(d => d < 0) || !deltas.some(d => d > 0)) return null
+  if (loads.resistance_is_approximate) return current >= loads.max_load_kg * .85
+    ? {current_weight_kg: current, resistance_is_approximate: true, estimated_sessions: null} : null
+  const average = deltas.reduce((a,b) => a+b,0) / deltas.length
+  const sessions = Math.ceil((loads.max_load_kg - current) / average)
+  return sessions <= 3 ? {current_weight_kg: current, average_gain_kg: Math.round(average*100)/100, estimated_sessions: sessions, resistance_is_approximate: false} : null
 }

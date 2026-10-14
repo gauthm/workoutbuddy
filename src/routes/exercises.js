@@ -1,5 +1,7 @@
 import express from 'express'
 import { getDb } from '../db/database.js'
+import { EQUIPMENT_FAMILIES } from '../../public/js/components/equipment/inventoryCatalog.js'
+import { calculateAchievableLoads } from '../services/equipmentCalc.js'
 
 const router = express.Router()
 const db = getDb()
@@ -23,6 +25,13 @@ function parseExercise(row) {
 
 router.get('/', (req, res) => {
   try {
+    const family = EQUIPMENT_FAMILIES.find(f => f.id === req.query.equipment_family)
+    if (req.query.equipment_family && !family && req.query.equipment_family !== 'bodyweight') {
+      return res.status(400).json({ error: 'INVALID_EQUIPMENT_FAMILY' })
+    }
+    if (req.query.available !== undefined && !['0','1'].includes(req.query.available)) {
+      return res.status(400).json({ error: 'INVALID_AVAILABLE_FILTER' })
+    }
     let sql = 'SELECT * FROM exercise WHERE 1=1'
     const params = []
 
@@ -58,7 +67,19 @@ router.get('/', (req, res) => {
     sql += ' ORDER BY name_fr ASC'
 
     const rows = db.prepare(sql).all(...params)
-    res.json({ exercises: rows.map(parseExercise) })
+    let exercises = rows.map(parseExercise)
+    if (family) exercises = exercises.filter(ex => ex.equipment_required.some(c => family.categories.includes(c)))
+    else if (req.query.equipment_family === 'bodyweight') exercises = exercises.filter(ex => !ex.equipment_required.length)
+    if (req.query.available === '1') {
+      const inventory = db.prepare('SELECT * FROM equipment_item WHERE count > 0').all()
+      const cache = new Map()
+      exercises = exercises.filter(ex => {
+        const key = JSON.stringify([ex.equipment_required, ex.is_unilateral])
+        if (!cache.has(key)) cache.set(key, calculateAchievableLoads(inventory, ex).loads_kg.length > 0)
+        return cache.get(key)
+      })
+    }
+    res.json({ exercises })
   } catch (err) {
     console.error('[GET /exercises]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })

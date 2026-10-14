@@ -1,3 +1,5 @@
+import { resetProfile } from './userProfile.js'
+import { createBackup } from '../db/backup.js'
 import express   from 'express'
 import fs        from 'fs'
 import path      from 'path'
@@ -8,30 +10,8 @@ const db     = getDb()
 
 // ── Helper : autoBackup (identique à sessions.js — duplication assumée) ─
 export function autoBackup() {
-  try {
-    const today     = new Date().toISOString().slice(0, 10)
-    const src       = getDbPath()
-    const backupDir = path.join(path.dirname(src), 'backups')
-    fs.mkdirSync(backupDir, { recursive: true })
-
-    const dest = path.join(backupDir, `workoutbuddy_${today}.db`)
-    if (!fs.existsSync(dest)) {
-      fs.copyFileSync(src, dest)
-      console.log(`[backup] Sauvegarde créée : ${dest}`)
-    }
-
-    // Conserver les 7 dernières sauvegardes
-    const files = fs.readdirSync(backupDir)
-      .filter(f => f.endsWith('.db'))
-      .sort()
-      .reverse()
-    for (const f of files.slice(7)) {
-      fs.unlinkSync(path.join(backupDir, f))
-    }
-  } catch (err) {
-    console.warn('[backup] Erreur :', err.message)
-    // Non bloquant
-  }
+  try { return createBackup(db, getDbPath()) }
+  catch (err) { console.warn('[backup] Erreur :', err.message) }
 }
 
 // ── GET /export ───────────────────────────────────────────────
@@ -47,9 +27,13 @@ router.get('/export', (req, res) => {
     // Toutes les autres tables
     const equipment_items    = db.prepare('SELECT * FROM equipment_item').all()
     const programs           = db.prepare('SELECT * FROM program').all()
+    const program_plans = db.prepare('SELECT * FROM program_plan').all().map(p => ({...p,parameters:JSON.parse(p.parameters),warnings:JSON.parse(p.warnings)}))
+    const program_weekly_reviews = db.prepare('SELECT * FROM program_weekly_review').all().map(r => ({...r,evidence:JSON.parse(r.evidence)}))
     const workout_templates  = db.prepare('SELECT * FROM workout_template').all()
     const template_exercises = db.prepare('SELECT * FROM template_exercise').all()
     const progression_states = db.prepare('SELECT * FROM progression_state').all()
+    const exercise_progression_events = db.prepare('SELECT * FROM exercise_progression_event').all().map(e=>({...e,context:JSON.parse(e.context)}))
+    const exercise_progressions = db.prepare('SELECT * FROM exercise_progression').all()
     const sessions           = db.prepare('SELECT * FROM session').all()
     const session_exercises  = db.prepare('SELECT * FROM session_exercise').all()
     const set_logs           = db.prepare('SELECT * FROM set_log').all()
@@ -58,6 +42,9 @@ router.get('/export', (req, res) => {
     const equipment_advice   = db.prepare('SELECT * FROM equipment_advice').all()
     const coach_conversations = db.prepare('SELECT * FROM coach_conversation').all()
     const coach_messages      = db.prepare('SELECT * FROM coach_message').all()
+    const profile = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
+    const user_profile = { ...profile, secondary_goals: JSON.parse(profile.secondary_goals) }
+    const exercise_exclusions = db.prepare('SELECT id, is_excluded, exclusion_reason FROM exercise WHERE is_excluded = 1').all()
 
     // Settings (sans ai_api_key)
     const settingsRows = db.prepare(
@@ -74,9 +61,13 @@ router.get('/export', (req, res) => {
         exercises,
         equipment_items,
         programs,
+        program_plans,
+        program_weekly_reviews,
         workout_templates,
         template_exercises,
         progression_states,
+        exercise_progressions,
+        exercise_progression_events,
         sessions,
         session_exercises,
         set_logs,
@@ -85,6 +76,8 @@ router.get('/export', (req, res) => {
         equipment_advice,
         coach_conversations,
         coach_messages,
+        user_profile,
+        exercise_exclusions,
         settings,
       }
     }
@@ -125,25 +118,48 @@ router.post('/import', (req, res) => {
     }
 
     const d = payload.data
+    const required = ['exercises','equipment_items','programs','workout_templates',
+      'template_exercises','progression_states','sessions','session_exercises',
+      'set_logs','body_weights','personal_records','equipment_advice']
+    if (required.some(key => !Array.isArray(d[key])) || !d.settings || typeof d.settings !== 'object' || Array.isArray(d.settings)) {
+      return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Export incomplet : tables ou paramètres manquants.' })
+    }
+    for (const key of ['coach_conversations','coach_messages','exercise_exclusions']) {
+      if (d[key] !== undefined && !Array.isArray(d[key])) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
+    }
+    if ((d.coach_conversations === undefined) !== (d.coach_messages === undefined)) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
+    if (d.user_profile !== undefined && (!d.user_profile || typeof d.user_profile !== 'object' || Array.isArray(d.user_profile))) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
+    const customIds = new Set()
+    for (const exercise of d.exercises) {
+      if (!exercise || typeof exercise.id !== 'string' || !exercise.id || customIds.has(exercise.id)
+        || db.prepare('SELECT id FROM exercise WHERE id = ? AND is_custom = 0').get(exercise.id)) {
+        return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Identifiant d’exercice personnalisé invalide ou dupliqué.' })
+      }
+      customIds.add(exercise.id)
+    }
 
     // Sauvegarder avant l'import (protection)
-    autoBackup()
+    createBackup(db, getDbPath(), { force: true })
 
     const counts = {}
 
     db.transaction(() => {
       // Vider dans l'ordre correct (FK-safe) : personal_record référence set_log
-      db.prepare('DELETE FROM coach_message').run()
-      db.prepare('DELETE FROM coach_conversation').run()
+      if (d.coach_conversations !== undefined) {
+        db.prepare('DELETE FROM coach_message').run()
+        db.prepare('DELETE FROM coach_conversation').run()
+      }
       db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM set_log').run()
       db.prepare('DELETE FROM session_exercise').run()
       db.prepare('DELETE FROM session').run()
+      db.prepare('DELETE FROM exercise_progression').run()
       db.prepare('DELETE FROM progression_state').run()
       db.prepare('DELETE FROM template_exercise').run()
       db.prepare('DELETE FROM workout_template').run()
       db.prepare('DELETE FROM program').run()
       db.prepare('DELETE FROM equipment_item').run()
+      db.prepare('DELETE FROM program_weekly_review').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
       // Supprimer uniquement les exercices custom (garder les built-in)
@@ -156,8 +172,8 @@ router.post('/import', (req, res) => {
             INSERT OR IGNORE INTO exercise
               (id, name_fr, name_en, category, force, mechanic, movement_pattern,
                primary_muscles, secondary_muscles, equipment_required,
-               instructions_fr, instructions_en, image_paths, is_custom, is_unilateral, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               instructions_fr, instructions_en, image_paths, is_custom, is_unilateral, created_at, is_excluded, exclusion_reason)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           `).run(
             ex.id, ex.name_fr, ex.name_en, ex.category, ex.force, ex.mechanic,
             ex.movement_pattern,
@@ -167,12 +183,28 @@ router.post('/import', (req, res) => {
             serializeJson(ex.instructions_fr),
             serializeJson(ex.instructions_en),
             serializeJson(ex.image_paths),
-            ex.is_custom ? 1 : 0,
+            1,
             ex.is_unilateral ? 1 : 0,
-            ex.created_at || new Date().toISOString()
+            ex.created_at || new Date().toISOString(),
+            ex.is_excluded ? 1 : 0, ex.exclusion_reason ?? null
           )
         }
         counts.exercises = d.exercises.length
+      }
+
+      if (d.exercise_exclusions !== undefined) {
+        db.prepare('UPDATE exercise SET is_excluded = 0, exclusion_reason = NULL').run()
+        for (const ex of d.exercise_exclusions) {
+          const result = db.prepare('UPDATE exercise SET is_excluded = 1, exclusion_reason = ? WHERE id = ?').run(ex.exclusion_reason ?? null, ex.id)
+          if (!result.changes) throw new Error('Exercice exclu inconnu.')
+        }
+      }
+      if (d.user_profile !== undefined) {
+        const fields = db.prepare('PRAGMA table_info(user_profile)').all().map(row => row.name).filter(key => key !== 'id')
+        const profile = d.user_profile
+        const values = fields.map(key => key === 'secondary_goals' ? serializeJson(profile[key])
+          : ['prefers_exercise_variation','onboarding_completed'].includes(key) ? (profile[key] ? 1 : 0) : profile[key] ?? null)
+        db.prepare(`UPDATE user_profile SET ${fields.map(key => `${key} = ?`).join(', ')} WHERE id = 1`).run(...values)
       }
 
       // equipment_item
@@ -202,15 +234,15 @@ router.post('/import', (req, res) => {
                is_active, use_exercise_rotation, rotation_frequency_weeks,
                progression_model, deload_auto_enabled, deload_frequency_weeks,
                deload_load_reduction_pct, deload_volume_reduction_pct,
-               last_deload_date, is_in_deload, current_week, created_at, updated_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               last_deload_date, is_in_deload, current_week, created_at, updated_at, started_on)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           `).run(
             p.id, p.name, p.description, p.goal, p.level, p.days_per_week,
             p.duration_weeks, p.is_active, p.use_exercise_rotation,
             p.rotation_frequency_weeks, p.progression_model, p.deload_auto_enabled,
             p.deload_frequency_weeks, p.deload_load_reduction_pct,
             p.deload_volume_reduction_pct, p.last_deload_date, p.is_in_deload,
-            p.current_week, p.created_at, p.updated_at
+            p.current_week, p.created_at, p.updated_at, p.started_on ?? (p.is_active ? p.created_at.slice(0,10) : null)
           )
         }
         counts.programs = d.programs.length
@@ -246,6 +278,15 @@ router.post('/import', (req, res) => {
           )
         }
         counts.template_exercises = d.template_exercises.length
+      }
+
+      for (const plan of (d.program_plans || [])) {
+        db.prepare('INSERT INTO program_plan (program_id,engine_version,parameters,warnings) VALUES (?,?,?,?)')
+          .run(plan.program_id,plan.engine_version,JSON.stringify(plan.parameters),JSON.stringify(plan.warnings))
+      }
+      for (const review of (d.program_weekly_reviews || [])) {
+        db.prepare('INSERT INTO program_weekly_review (id,program_id,week_start,decision,evidence,created_at) VALUES (?,?,?,?,?,?)')
+          .run(review.id,review.program_id,review.week_start,review.decision,JSON.stringify(review.evidence),review.created_at)
       }
 
       // progression_state
@@ -314,6 +355,24 @@ router.post('/import', (req, res) => {
           )
         }
         counts.set_logs = d.set_logs.length
+      }
+
+      for (const event of d.exercise_progression_events || []) {
+        db.prepare('INSERT INTO exercise_progression_event(session_exercise_id,context) VALUES (?,?)').run(event.session_exercise_id,JSON.stringify(event.context))
+      }
+      if (Array.isArray(d.exercise_progressions)) {
+        for (const ps of d.exercise_progressions) {
+          db.prepare(`INSERT INTO exercise_progression (exercise_id,current_weight_kg,current_target_reps,
+            consecutive_failures,target_reps_min,target_reps_max,last_session_id,last_updated) VALUES (?,?,?,?,?,?,?,?)`)
+            .run(ps.exercise_id,ps.current_weight_kg,ps.current_target_reps,ps.consecutive_failures,ps.target_reps_min,ps.target_reps_max,ps.last_session_id,ps.last_updated)
+        }
+      } else {
+        db.prepare(`INSERT OR IGNORE INTO exercise_progression
+          (exercise_id,current_weight_kg,current_target_reps,consecutive_failures,target_reps_min,target_reps_max,last_session_id,last_updated)
+          SELECT te.exercise_id,ps.current_weight_kg,ps.current_target_reps,ps.consecutive_failures,
+            te.target_reps_min,te.target_reps_max,ps.last_session_id,ps.last_updated FROM progression_state ps
+          JOIN template_exercise te ON te.id=ps.template_exercise_id WHERE ps.last_session_id IS NOT NULL
+          ORDER BY ps.last_updated DESC,ps.last_session_id DESC`).run()
       }
 
       // body_weight
@@ -469,7 +528,7 @@ router.get('/export/csv/:table', (req, res) => {
 router.post('/reset-stats', (req, res) => {
   try {
     // Sauvegarder avant d'effacer
-    autoBackup()
+    createBackup(db, getDbPath(), { force: true })
 
     db.transaction(() => {
       // Ordre FK-safe : personal_record référence set_log (NO ACTION)
@@ -477,6 +536,8 @@ router.post('/reset-stats', (req, res) => {
       db.prepare('DELETE FROM set_log').run()
       db.prepare('DELETE FROM session_exercise').run()
       db.prepare('DELETE FROM session').run()
+      db.prepare('DELETE FROM program_weekly_review').run()
+      db.prepare('DELETE FROM exercise_progression').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
 
@@ -513,10 +574,30 @@ router.post('/reset-stats', (req, res) => {
   }
 })
 
+// Explicit full user-data reset: application settings and built-in catalog are retained.
+router.post('/reset-all', (req,res) => {
+  try {
+    createBackup(db,getDbPath(),{force:true})
+    db.transaction(() => {
+      for (const table of ['personal_record','set_log','session_exercise','session','exercise_progression',
+        'progression_state','template_exercise','workout_template','program','equipment_item','body_weight',
+        'equipment_advice','coach_message','coach_conversation']) db.prepare(`DELETE FROM ${table}`).run()
+      db.prepare('DELETE FROM exercise WHERE is_custom=1').run()
+      db.prepare('UPDATE exercise SET is_excluded=0,exclusion_reason=NULL').run()
+      resetProfile(db)
+      db.prepare("UPDATE settings SET value='[]' WHERE key='painful_muscles'").run()
+    })()
+    res.json({ reset:true,settings_retained:true })
+  } catch (err) {
+    console.error('[POST /reset-all]',err.message)
+    res.status(500).json({error:'INTERNAL_ERROR'})
+  }
+})
+
 // ── POST /backup ──────────────────────────────────────────────
 router.post('/backup', (req, res) => {
   try {
-    autoBackup()
+    createBackup(db, getDbPath(), { force: true })
     const backupDir = path.join(path.dirname(getDbPath()), 'backups')
     const files = fs.existsSync(backupDir)
       ? fs.readdirSync(backupDir).filter(f => f.endsWith('.db')).sort().reverse()

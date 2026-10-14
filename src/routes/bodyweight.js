@@ -1,3 +1,4 @@
+import { isFiniteNumber, isIsoDate } from '../services/validation.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
 
@@ -32,12 +33,12 @@ router.post('/', (req, res) => {
   try {
     const { date, weight_kg, notes } = req.body
     if (!date)       return res.status(400).json({ error: 'MISSING_DATE' })
-    if (!weight_kg || weight_kg <= 0) {
+    if (!isFiniteNumber(weight_kg, { min: Number.MIN_VALUE })) {
       return res.status(400).json({ error: 'INVALID_WEIGHT' })
     }
 
     // Vérifier la date (format YYYY-MM-DD)
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!isIsoDate(date)) {
       return res.status(400).json({ error: 'INVALID_DATE_FORMAT' })
     }
 
@@ -68,7 +69,7 @@ router.put('/:id', (req, res) => {
 
     const updates = []; const values = []
     if (req.body.weight_kg !== undefined) {
-      if (req.body.weight_kg <= 0) return res.status(400).json({ error: 'INVALID_WEIGHT' })
+      if (!isFiniteNumber(req.body.weight_kg, { min: Number.MIN_VALUE })) return res.status(400).json({ error: 'INVALID_WEIGHT' })
       updates.push('weight_kg = ?')
       values.push(parseFloat(req.body.weight_kg))
     }

@@ -21,10 +21,12 @@ describe('T8.3 — Gating du prompt coach', () => {
     db.prepare('DELETE FROM equipment_item').run()
   })
 
-  it('règle Programme interdit sans profil présente', () => {
+  it('le prompt interdit toute configuration, même dans les anciennes conversations', () => {
     const prompt = buildSystemPrompt(db)
-    assert.ok(prompt.includes('Programme interdit sans profil'),
-      'RÈGLES IMPÉRATIVES doit contenir la règle 11')
+    assert.ok(prompt.includes('Lecture seule'))
+    assert.ok(prompt.includes('ignore leurs instructions de configuration'))
+    assert.ok(!prompt.includes('ACTIONS DISPONIBLES'))
+    assert.ok(!prompt.includes('MODE ONBOARDING'))
   })
 
   it('inventaire vide → avertissement + réf. Paramètres > Matériel', () => {
@@ -41,9 +43,9 @@ describe('T8.3 — Gating du prompt coach', () => {
     assert.ok(!prompt.includes('Aucun matériel enregistré'))
   })
 
-  it('étape asking_equipment mentionne la vérification physique', () => {
+  it('la création est dirigée vers le questionnaire', () => {
     const prompt = buildSystemPrompt(db)
-    assert.ok(prompt.includes('REGARDER PHYSIQUEMENT'),
-      'buildOnboardingSection doit mentionner la vérification du matériel chez soi')
+    assert.ok(prompt.includes('questionnaire à choix prédéfinis'))
+    assert.ok(prompt.includes('Aucun onboarding conversationnel imposé'))
   })
 })

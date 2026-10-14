@@ -1,4 +1,4 @@
-import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
+import { reactive, onMounted, inject, ref, computed } from '/vendor/vue.esm-browser.prod.js'
 import { settings as settingsApi } from '../../api.js'
 import { t, i18n } from '../../i18n.js'
 import PageHeader       from '../layout/PageHeader.js'
@@ -8,24 +8,22 @@ import SettingsSection  from './SettingsSection.js'
 import AIProviderForm   from './AIProviderForm.js'
 import ExportImport     from './ExportImport.js'
 import ProfileSettings  from './ProfileSettings.js'
-import EquipmentSettings from './EquipmentSettings.js'
 
 export default {
   name: 'SettingsView',
   components: {
     PageHeader, LoadingSpinner, ErrorBanner,
     SettingsSection, AIProviderForm, ExportImport, ProfileSettings,
-    EquipmentSettings,
   },
 
   setup() {
-    const store = inject('store')
+    const store = inject('store'), profile = ref(null), ai = ref(null)
 
     const state = reactive({
       loading:  false,
       error:    null,
       settings: null,
-      saving:   {},    // { key: bool } — indique quelle clé est en cours de sauvegarde
+      baseline: {}, saving: false,
       networkChanged: false,
     })
 
@@ -34,6 +32,7 @@ export default {
       state.loading = true; state.error = null
       try {
         state.settings = await settingsApi.get()
+        state.baseline = JSON.parse(JSON.stringify(state.settings))
         store.setSettings(state.settings)
       } catch (err) {
         state.error = err.message
@@ -42,45 +41,42 @@ export default {
       }
     }
 
-    // ── Sauvegarde d'un paramètre ────────────────────────────
-    async function saveSetting(key, value) {
-      state.saving[key] = true
-      try {
-        const res = await settingsApi.update({ [key]: value })
-        state.settings = { ...state.settings, ...res }
-        store.setSettings(state.settings)
-        store.showToast(t('settings.saved'), 'success')
-
-        // Appliquer immédiatement les changements UI
-        if (key === 'theme') {
-          document.documentElement.setAttribute('data-theme', value)
-        }
-        if (key === 'language') {
-          await i18n.setLocale(value)
-        }
-        if (res.restart_required) {
-          state.networkChanged = true
-        }
-      } catch (err) {
-        store.showToast(err.message, 'error')
-      } finally {
-        state.saving[key] = false
-      }
+    const settingChanges = computed(() => Object.fromEntries(Object.entries(state.settings || {}).filter(([key,value]) => JSON.stringify(value) !== JSON.stringify(state.baseline[key]))))
+    const dirty = computed(() => Object.keys(settingChanges.value).length > 0 || !!profile.value?.dirty || !!ai.value?.dirty)
+    const busy = computed(() => state.saving || !!ai.value?.busy)
+    function updateSetting(key, value) { state.settings[key] = value }
+    function discard() {
+      state.settings = JSON.parse(JSON.stringify(state.baseline))
+      profile.value?.reset()
+      ai.value?.reset()
     }
-
-    // ── Sauvegarde depuis AIProviderForm ─────────────────────
-    async function onAiSaved(changes) {
-      const res = await settingsApi.get()
-      state.settings = res
-      store.setSettings(res)
+    async function saveAll() {
+      if (!dirty.value || busy.value) return
+      if (ai.value?.dirty && !ai.value.valid) { store.showToast(t('settings.ai_fields_required'), 'error'); return }
+      const body = { settings: { ...settingChanges.value, ...(ai.value?.getPatch() || {}) } }
+      if (profile.value?.dirty) body.profile = profile.value.getDraft()
+      state.saving = true
+      try {
+        const result = await settingsApi.save(body)
+        state.settings = JSON.parse(JSON.stringify(result.settings))
+        state.baseline = JSON.parse(JSON.stringify(result.settings))
+        store.setSettings(result.settings)
+        ai.value?.acceptSaved(result.settings)
+        if (body.profile) profile.value?.acceptSaved(result.profile)
+        if (result.restart_required) state.networkChanged = true
+        document.documentElement.setAttribute('data-theme', result.settings.theme)
+        await i18n.setLocale(result.settings.language)
+        store.showToast(t('settings.saved'), 'success')
+      } catch (err) { store.showToast(err.details?.join('; ') || err.detail?.join?.('; ') || err.message, 'error') }
+      finally { state.saving = false }
     }
 
     onMounted(load)
-    return { state, load, saveSetting, onAiSaved, t }
+    return { state, profile, ai, dirty, busy, load, updateSetting, saveAll, discard, t }
   },
 
   template: `
-    <div class="view">
+    <div class="view settings-view" :class="{ 'settings-view--pending': dirty }">
       <PageHeader :title="t('settings.title')" />
 
       <div class="view__content">
@@ -88,263 +84,142 @@ export default {
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else-if="state.settings">
+          <fieldset class="settings-fields" :disabled="state.saving">
 
           <!-- ① Général ───────────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_general')" :default-open="true">
+          <SettingsSection :title="t('settings.section_general')">
             <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.unit') }}</label>
-              <select class="form-select setting-row__control"
+              <label class="setting-row__label" for="SettingsView-state-settings-unit">{{ t('settings.bodyweight_unit') }}</label>
+              <select id="SettingsView-state-settings-unit" class="form-select setting-row__control"
                 :value="state.settings.unit"
-                @change="saveSetting('unit', $event.target.value)">
+                @change="updateSetting('unit', $event.target.value)">
                 <option value="kg">{{ t('settings.unit_kg') }}</option>
                 <option value="lb">{{ t('settings.unit_lb') }}</option>
               </select>
             </div>
             <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.rm_formula') }}</label>
-              <select class="form-select setting-row__control"
-                :value="state.settings.rm_formula"
-                @change="saveSetting('rm_formula', $event.target.value)">
-                <option value="epley">Epley</option>
-                <option value="brzycki">Brzycki</option>
-                <option value="lander">Lander</option>
-                <option value="oconner">O'Conner</option>
-                <option value="lombardi">Lombardi</option>
-              </select>
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.theme') }}</label>
-              <select class="form-select setting-row__control"
+              <label class="setting-row__label" for="SettingsView-state-settings-theme">{{ t('settings.theme') }}</label>
+              <select id="SettingsView-state-settings-theme" class="form-select setting-row__control"
                 :value="state.settings.theme"
-                @change="saveSetting('theme', $event.target.value)">
+                @change="updateSetting('theme', $event.target.value)">
                 <option value="dark">{{ t('settings.theme_dark') }}</option>
                 <option value="light">{{ t('settings.theme_light') }}</option>
               </select>
             </div>
             <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.language') }}</label>
-              <select class="form-select setting-row__control"
+              <label class="setting-row__label" for="SettingsView-state-settings-language">{{ t('settings.language') }}</label>
+              <select id="SettingsView-state-settings-language" class="form-select setting-row__control"
                 :value="state.settings.language"
-                @change="saveSetting('language', $event.target.value)">
+                @change="updateSetting('language', $event.target.value)">
                 <option value="fr">{{ t('settings.language_fr') }}</option>
                 <option value="en">{{ t('settings.language_en') }}</option>
               </select>
             </div>
           </SettingsSection>
 
-          <!-- ② Entraînement ──────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_training')">
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.default_rest') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="10" max="600" step="10"
-                :value="state.settings.default_rest_seconds"
-                @change="saveSetting('default_rest_seconds', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.linear_increment') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="0.5" max="10" step="0.5"
-                :value="state.settings.linear_increment_kg"
-                @change="saveSetting('linear_increment_kg', parseFloat($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.dumbbell_increment') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="0.5" max="5" step="0.5"
-                :value="state.settings.linear_dumbbell_increment_kg"
-                @change="saveSetting('linear_dumbbell_increment_kg', parseFloat($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.warmup_sets') }}</label>
-              <select class="form-select setting-row__control"
-                :value="state.settings.warmup_sets_count"
-                @change="saveSetting('warmup_sets_count', parseInt($event.target.value))">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
-            <div class="setting-row setting-row--switch">
-              <label class="setting-row__label">{{ t('settings.show_rpe') }}</label>
-              <input type="checkbox" class="setting-row__switch"
-                :checked="state.settings.show_rpe_field"
-                @change="saveSetting('show_rpe_field', $event.target.checked)" />
-            </div>
-            <div class="setting-row setting-row--switch">
-              <label class="setting-row__label">{{ t('settings.show_rir') }}</label>
-              <input type="checkbox" class="setting-row__switch"
-                :checked="state.settings.show_rir_field"
-                @change="saveSetting('show_rir_field', $event.target.checked)" />
-            </div>
-            <div class="setting-row setting-row--switch">
-              <label class="setting-row__label">{{ t('settings.timer_sound') }}</label>
-              <input type="checkbox" class="setting-row__switch"
-                :checked="state.settings.timer_sound_enabled"
-                @change="saveSetting('timer_sound_enabled', $event.target.checked)" />
-            </div>
-            <div class="setting-row setting-row--switch">
-              <label class="setting-row__label">{{ t('settings.timer_vibration') }}</label>
-              <input type="checkbox" class="setting-row__switch"
-                :checked="state.settings.timer_vibration_enabled"
-                @change="saveSetting('timer_vibration_enabled', $event.target.checked)" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.bodyweight_days') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="30" max="730" step="30"
-                :value="state.settings.bodyweight_display_days"
-                @change="saveSetting('bodyweight_display_days', parseInt($event.target.value))" />
-            </div>
-          </SettingsSection>
-
-          <!-- ②b Matériel ───────────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_equipment')">
-            <EquipmentSettings />
-          </SettingsSection>
-
-          <!-- ③ Progression ───────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_progression')">
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.failure_threshold') }}</label>
-              <select class="form-select setting-row__control"
-                :value="state.settings.progression_failure_threshold"
-                @change="saveSetting('progression_failure_threshold', parseInt($event.target.value))">
-                <option v-for="n in [1,2,3,4,5]" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.weight_reduction') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="5" max="30" step="5"
-                :value="state.settings.progression_weight_reduction_pct"
-                @change="saveSetting('progression_weight_reduction_pct', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.plateau_sessions') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="3" max="8" step="1"
-                :value="state.settings.plateau_detection_sessions"
-                @change="saveSetting('plateau_detection_sessions', parseInt($event.target.value))" />
-            </div>
-          </SettingsSection>
-
-          <!-- ④ Deload ─────────────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_deload')">
-            <div class="setting-row setting-row--switch">
-              <label class="setting-row__label">{{ t('settings.deload_auto') }}</label>
-              <input type="checkbox" class="setting-row__switch"
-                :checked="state.settings.deload_auto_enabled"
-                @change="saveSetting('deload_auto_enabled', $event.target.checked)" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.deload_freq') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="2" max="16" step="1"
-                :value="state.settings.deload_frequency_weeks"
-                @change="saveSetting('deload_frequency_weeks', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.deload_load_reduction') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="10" max="40" step="5"
-                :value="state.settings.deload_load_reduction_pct"
-                @change="saveSetting('deload_load_reduction_pct', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.deload_volume_reduction') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="20" max="60" step="10"
-                :value="state.settings.deload_volume_reduction_pct"
-                @change="saveSetting('deload_volume_reduction_pct', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.deload_min_sets') }}</label>
-              <select class="form-select setting-row__control"
-                :value="state.settings.deload_min_sets"
-                @change="saveSetting('deload_min_sets', parseInt($event.target.value))">
-                <option v-for="n in [1,2,3,4]" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </div>
-          </SettingsSection>
-
-          <!-- ⑤ Signaux matériel ───────────────────────────── -->
-          <SettingsSection :title="t('settings.section_signals')">
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.advice_cooldown') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="1" max="90" step="1"
-                :value="state.settings.equipment_advice_cooldown_days"
-                @change="saveSetting('equipment_advice_cooldown_days', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.advice_max_load_sessions') }}</label>
-              <select class="form-select setting-row__control"
-                :value="state.settings.equipment_advice_max_load_sessions"
-                @change="saveSetting('equipment_advice_max_load_sessions', parseInt($event.target.value))">
-                <option v-for="n in [1,2,3,4,5]" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.advice_min_incr_pct') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="1" max="20" step="1"
-                :value="state.settings.equipment_advice_min_increment_pct"
-                @change="saveSetting('equipment_advice_min_increment_pct', parseInt($event.target.value))" />
-            </div>
-            <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.advice_plateau_sessions') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
-                type="number" min="3" max="10" step="1"
-                :value="state.settings.equipment_advice_plateau_sessions"
-                @change="saveSetting('equipment_advice_plateau_sessions', parseInt($event.target.value))" />
-            </div>
-          </SettingsSection>
-
           <!-- ⑤b Mon profil ─────────────────────────────────── -->
           <SettingsSection :title="t('settings.section_profile')">
-            <ProfileSettings />
+            <ProfileSettings ref="profile" />
           </SettingsSection>
+
+          <SettingsSection :title="t('settings.section_session')">
+            <p class="settings-notice">{{ t('settings.session_automatic') }}</p>
+            <div class="setting-row setting-row--switch">
+              <label class="setting-row__label" for="setting-show-rpe">{{ t('settings.show_rpe') }}<small class="setting-row__hint">{{ t('settings.rpe_help') }}</small></label>
+              <input id="setting-show-rpe" type="checkbox" class="setting-row__switch"
+                :checked="state.settings.show_rpe_field"
+                @change="updateSetting('show_rpe_field', $event.target.checked)" />
+            </div>
+            <div class="setting-row setting-row--switch">
+              <label class="setting-row__label" for="setting-timer-sound">{{ t('settings.timer_sound') }}</label>
+              <input id="setting-timer-sound" type="checkbox" class="setting-row__switch"
+                :checked="state.settings.timer_sound_enabled"
+                @change="updateSetting('timer_sound_enabled', $event.target.checked)" />
+            </div>
+            <div class="setting-row setting-row--switch">
+              <label class="setting-row__label" for="setting-timer-vibration">{{ t('settings.timer_vibration') }}<small class="setting-row__hint">{{ t('settings.vibration_help') }}</small></label>
+              <input id="setting-timer-vibration" type="checkbox" class="setting-row__switch"
+                :checked="state.settings.timer_vibration_enabled"
+                @change="updateSetting('timer_vibration_enabled', $event.target.checked)" />
+            </div>
+          </SettingsSection>
+
+
 
           <!-- ⑥ Coach IA ─────────────────────────────────── -->
           <SettingsSection :title="t('settings.section_ai')">
-            <AIProviderForm
+            <p class="settings-notice">{{ t('settings.advisor_optional') }}</p>
+            <AIProviderForm ref="ai"
               :current-settings="state.settings"
-              @saved="onAiSaved"
             />
           </SettingsSection>
 
-          <!-- ⑦ Réseau ─────────────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_network')">
+          <SettingsSection :title="t('settings.section_advanced')">
+            <section class="settings-advanced-card">
+            <h3>{{ t('settings.performance_calculation') }}</h3>
+            <div class="setting-row setting-row--rm">
+              <label class="setting-row__label" for="SettingsView-state-settings-rm_formula">{{ t('settings.rm_formula') }}</label>
+              <select id="SettingsView-state-settings-rm_formula" class="form-select setting-row__control"
+                :value="state.settings.rm_formula"
+                @change="updateSetting('rm_formula', $event.target.value)">
+                <option value="epley">Epley</option>
+                <option value="brzycki">Brzycki</option>
+                <option value="lander">Lander</option>
+                <option value="oconner">O'Conner</option>
+                <option value="lombardi">Lombardi</option>
+              </select>
+              <details class="rm-formula-help">
+              <summary>{{ t('settings.rm_help_title') }}</summary>
+              <p>{{ t('settings.advanced_help') }}</p>
+              <p>{{ t('settings.rm_help_definition') }}</p>
+              <p>{{ t('settings.rm_help_choice') }}</p>
+              <dl>
+                <template v-for="formula in ['epley','brzycki','lander','oconner','lombardi']" :key="formula">
+                  <dt>{{ t('settings.rm_name_' + formula) }}</dt><dd>{{ t('settings.rm_description_' + formula) }}</dd>
+                </template>
+              </dl>
+              <p>{{ t('settings.rm_help_10rm') }}</p>
+              <p>{{ t('settings.rm_help_limits') }}</p>
+              </details>
+            </div>
+            </section>
+            <section class="settings-advanced-card">
+            <h3>{{ t('settings.section_network') }}</h3>
             <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.network_host') }}</label>
-              <select class="form-select setting-row__control"
+              <label class="setting-row__label" for="SettingsView-state-settings-network_host">{{ t('settings.network_host') }}</label>
+              <select id="SettingsView-state-settings-network_host" class="form-select setting-row__control"
                 :value="state.settings.network_host"
-                @change="saveSetting('network_host', $event.target.value)">
+                @change="updateSetting('network_host', $event.target.value)">
                 <option value="127.0.0.1">{{ t('settings.network_host_local') }}</option>
                 <option value="0.0.0.0">{{ t('settings.network_host_lan') }}</option>
               </select>
             </div>
             <div class="setting-row">
-              <label class="setting-row__label">{{ t('settings.network_port') }}</label>
-              <input class="form-input setting-row__control setting-row__control--sm"
+              <label class="setting-row__label" for="SettingsView-state-settings-network_port">{{ t('settings.network_port') }}</label>
+              <input id="SettingsView-state-settings-network_port" class="form-input setting-row__control setting-row__control--sm"
                 type="number" min="1024" max="65535" step="1"
                 :value="state.settings.network_port"
-                @change="saveSetting('network_port', parseInt($event.target.value))" />
+                @input="updateSetting('network_port', parseInt($event.target.value))" />
             </div>
             <div v-if="state.networkChanged"
               class="settings-notice settings-notice--warning">
               {{ t('settings.network_restart') }}
             </div>
-          </SettingsSection>
-
-          <!-- ⑧ Données ──────────────────────────────────── -->
-          <SettingsSection :title="t('settings.section_data')">
+            </section>
+            <section class="settings-advanced-card">
+            <h3>{{ t('settings.section_data') }}</h3>
             <ExportImport />
+            </section>
+
           </SettingsSection>
 
+          </fieldset>
         </template>
+      </div>
+      <div v-if="dirty" class="settings-save-dock" role="region" :aria-label="t('settings.pending_changes')">
+        <span class="settings-save-dock__message" role="status">{{ t('settings.pending_changes') }}</span>
+        <button type="button" class="btn btn--secondary" :disabled="busy" @click="discard()">{{ t('common.cancel') }}</button>
+        <button type="button" class="btn btn--primary" :disabled="busy" @click="saveAll()">{{ state.saving ? t('common.loading') : t('common.save') }}</button>
       </div>
     </div>
   `

@@ -148,9 +148,7 @@ router.get('/exercises/:id/progress', (req, res) => {
     const rows = db.prepare(`
       SELECT
         date(s.scheduled_date) AS date,
-        MAX(sl.weight_kg)      AS best_weight,
-        MAX(sl.reps)           AS best_reps_at_best_weight,
-        MAX(sl.weight_kg * (1.0 + sl.reps / 30.0)) AS estimated_1rm
+        sl.weight_kg, sl.reps, sl.id
       FROM session s
       JOIN session_exercise se ON se.session_id = s.id
       JOIN set_log sl          ON sl.session_exercise_id = se.id
@@ -161,20 +159,19 @@ router.get('/exercises/:id/progress', (req, res) => {
         AND sl.reps         > 0
         AND sl.weight_kg    > 0
         AND s.scheduled_date >= date('now', ? || ' days')
-      GROUP BY date(s.scheduled_date)
-      ORDER BY date ASC
+      ORDER BY date ASC, sl.id ASC
     `).all(req.params.id, `-${days}`)
 
-    // Recalculer avec la formule configurée (Epley par défaut dans la requête)
-    // Pour d'autres formules, recalculer côté JS
-    const data = rows.map(r => ({
-      date:             r.date,
-      weight_kg:        r.best_weight,
-      reps:             r.best_reps_at_best_weight,
-      estimated_1rm_kg: Math.round(
-        estimate1RM(r.best_weight, r.best_reps_at_best_weight, formula) * 100
-      ) / 100,
-    }))
+    // Choisir une vraie série, plutôt que combiner deux MAX indépendants.
+    const bestByDate = new Map()
+    for (const row of rows) {
+      const estimated = estimate1RM(row.weight_kg, row.reps, formula)
+      if (!bestByDate.has(row.date) || estimated > bestByDate.get(row.date).estimated_1rm_kg) {
+        bestByDate.set(row.date, { date: row.date, weight_kg: row.weight_kg,
+          reps: row.reps, estimated_1rm_kg: estimated })
+      }
+    }
+    const data = [...bestByDate.values()]
 
     res.json({ exercise_id: req.params.id, formula, data })
   } catch (err) {

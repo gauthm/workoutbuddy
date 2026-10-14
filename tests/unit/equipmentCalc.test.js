@@ -39,7 +39,7 @@ describe('calculateAchievableLoads', () => {
 
   it('haltère réglable 5-30kg par pas de 2.5kg', () => {
     const items = [{
-      category: 'dumbbell_adjustable',
+      category: 'dumbbell_adjustable', count: 1,
       weight_min_kg: 5, weight_max_kg: 30, weight_step_kg: 2.5
     }]
     const ex = { equipment_required: ['dumbbell_adjustable'], is_unilateral: 1 }
@@ -49,14 +49,14 @@ describe('calculateAchievableLoads', () => {
     assert.equal(r.min_increment_kg, 2.5)
   })
 
-  it('haltères fixes : une paire incluse, une seule ignorée', () => {
+  it('haltères fixes : un haltère suffit pour un exercice unilatéral', () => {
     const items = [
       { category: 'dumbbell_fixed', weight_kg: 10, count: 2 },
-      { category: 'dumbbell_fixed', weight_kg: 15, count: 1 }, // impair → ignoré
+      { category: 'dumbbell_fixed', weight_kg: 15, count: 1 }, // un haltère disponible pour un exercice unilatéral
     ]
     const ex = { equipment_required: ['dumbbell_fixed'], is_unilateral: 1 }
     const r = calculateAchievableLoads(items, ex)
-    assert.deepEqual(r.loads_kg, [10])
+    assert.deepEqual(r.loads_kg, [10, 15])
   })
 })
 

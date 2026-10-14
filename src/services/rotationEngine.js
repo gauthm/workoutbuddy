@@ -20,6 +20,8 @@ export function isEquipmentAvailable(equipmentRequired, equipmentItems) {
 
   // bench_adjustable → satisfait bench
   if (available.has('bench_adjustable')) available.add('bench')
+  if (available.has('cable_machine')) { available.add('lat_pulldown'); available.add('seated_row') }
+  if (available.has('roman_chair')) { available.add('pullup_bar'); available.add('dip_station') }
 
   // dumbbell_loadable → satisfait dumbbell_fixed
   if (available.has('dumbbell_loadable')) available.add('dumbbell_fixed')

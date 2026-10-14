@@ -1,3 +1,5 @@
+import { isEquipmentAvailable } from './rotationEngine.js'
+
 // Calcul des charges atteignables avec un inventaire d'équipement donné
 
 /**
@@ -15,13 +17,15 @@
  */
 export function calculateAchievableLoads(equipmentItems, exercise) {
   const eqTypes      = exercise.equipment_required || []
-  const isUnilateral = exercise.is_unilateral === 1
+  const isUnilateral = exercise.is_unilateral === 1 || exercise.is_unilateral === true
+  const requiredDumbbells = isUnilateral ? 1 : 2
 
   // Exercice sans équipement requis
   if (eqTypes.length === 0) {
     return { loads_kg: [0], min_increment_kg: 0, max_load_kg: 0 }
   }
 
+  if (!isEquipmentAvailable(eqTypes, equipmentItems)) return { loads_kg: [], min_increment_kg: 0, max_load_kg: 0 }
   const all_loads = new Set()
 
   // ── 1. Barres + disques de barre ────────────────────────────
@@ -55,14 +59,13 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
     eqTypes.includes('dumbbell_adjustable')
 
   const dumbHandles = exerciseNeedsDumbbells
-    ? equipmentItems.filter(i => i.category === 'dumbbell_loadable' && i.count >= 2)
+    ? quantitiesByWeight(equipmentItems, ['dumbbell_loadable']).filter(item => item.count >= requiredDumbbells)
     : []
 
   if (dumbHandles.length > 0) {
     // Disques pour haltères : 'plate' + 'dumbbell_plate'
-    const dumbPlatePairs = equipmentItems
-      .filter(i => i.category === 'plate' || i.category === 'dumbbell_plate')
-      .map(i => ({ weight: i.weight_kg, max: Math.floor((i.count || 0) / 2) }))
+    const dumbPlatePairs = quantitiesByWeight(equipmentItems, ['plate', 'dumbbell_plate'])
+      .map(i => ({ weight: i.weight_kg, max: Math.floor(i.count / (2 * requiredDumbbells)) }))
       .filter(p => p.max > 0 && p.weight > 0)
 
     const perSide = dpSubsetSum(dumbPlatePairs)
@@ -76,23 +79,33 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
 
   // ── 3. Haltères fixes ────────────────────────────────────────
   if (exerciseNeedsDumbbells) {
-    equipmentItems
-      .filter(i => i.category === 'dumbbell_fixed' && i.count >= 2)
+    quantitiesByWeight(equipmentItems, ['dumbbell_fixed'])
+      .filter(i => i.count >= requiredDumbbells)
       .forEach(i => all_loads.add(round2(i.weight_kg)))
   }
 
   // ── 4. Haltères réglables (sélecteur) ───────────────────────
   if (exerciseNeedsDumbbells) {
     equipmentItems
-      .filter(i => i.category === 'dumbbell_adjustable')
+      .filter(i => i.category === 'dumbbell_adjustable' && i.count >= requiredDumbbells)
       .forEach(i => {
-        let w = i.weight_min_kg
-        while (w <= i.weight_max_kg + 0.001) {
-          all_loads.add(round2(w))
-          w = round2(w + i.weight_step_kg)
-        }
+        const min = i.weight_min_kg, max = i.weight_max_kg, step = i.weight_step_kg
+        if (![min, max, step].every(Number.isFinite) || min < 0 || max < min || step <= 0) return
+        const count = Math.floor((max - min) / step + 0.001)
+        if (count > 10000) return
+        for (let index = 0; index <= count; index++) all_loads.add(round2(min + index * step))
       })
   }
+
+  if (eqTypes.includes('kettlebell')) {
+    quantitiesByWeight(equipmentItems, ['kettlebell']).forEach(i => all_loads.add(round2(i.weight_kg)))
+  }
+  const resistanceRanges = eqTypes.includes('resistance_band') ? equipmentItems
+    .filter(i => i.category === 'resistance_band' && i.count > 0 && Number.isFinite(i.resistance_min_kg) && Number.isFinite(i.resistance_max_kg) && i.resistance_min_kg > 0 && i.resistance_max_kg > i.resistance_min_kg)
+    .map(i => ({min_kg: i.resistance_min_kg, max_kg: i.resistance_max_kg})) : []
+  for (const range of resistanceRanges) { all_loads.add(range.min_kg); all_loads.add(range.max_kg) }
+  const loadedCategories = ['barbell','ez_bar','dumbbell_fixed','dumbbell_loadable','dumbbell_adjustable','kettlebell','resistance_band']
+  if (!eqTypes.some(c => loadedCategories.includes(c))) all_loads.add(0)
 
   // ── 5. Trier + incrément minimal ────────────────────────────
   const sorted = Array.from(all_loads).sort((a, b) => a - b)
@@ -108,9 +121,23 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
 
   return {
     loads_kg:         sorted,
-    min_increment_kg: sorted.length <= 1 ? 0 : (minInc === Infinity ? 0 : minInc),
+    ...(resistanceRanges.length ? { resistance_ranges: resistanceRanges, resistance_is_approximate: true } : {}),
+    min_increment_kg: resistanceRanges.length ? 0 : sorted.length <= 1 ? 0 : (minInc === Infinity ? 0 : minInc),
     max_load_kg:      sorted[sorted.length - 1],
   }
+}
+
+function quantitiesByWeight(items, categories) {
+  const groups = new Map()
+  for (const item of items) {
+    if (!categories.includes(item.category) || !Number.isFinite(item.weight_kg)
+      || !Number.isInteger(item.count) || item.count < 1) continue
+    const key = item.weight_kg
+    const group = groups.get(key) || { weight_kg: key, count: 0 }
+    group.count += item.count
+    groups.set(key, group)
+  }
+  return [...groups.values()]
 }
 
 // ── Helper : DP bounded subset sum ──────────────────────────

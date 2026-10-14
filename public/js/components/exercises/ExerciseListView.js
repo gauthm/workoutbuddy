@@ -1,33 +1,20 @@
-import { reactive, onMounted, onBeforeUnmount, nextTick, inject, computed } from '/vendor/vue.esm-browser.prod.js'
-import { exercises as api } from '../../api.js'
+import { reactive, onMounted, onBeforeUnmount, nextTick, inject, computed, watch } from '/vendor/vue.esm-browser.prod.js'
+import { ALL_MUSCLES } from '../../utils/muscles.js'
+import { exercises as api, settings as settingsApi } from '../../api.js'
 import { t, tm } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
 import EmptyState     from '../common/EmptyState.js'
 import ExerciseFilter from './ExerciseFilter.js'
-
-const ALL_MUSCLES = [
-  'chest','back','shoulders','biceps','triceps',
-  'quads','hamstrings','glutes','calves','core','traps','forearms',
-  'lower_back','inner_thigh','neck'
-]
-
-const PAIN_KEY = 'wb_painful_muscles'
-
-function loadPain() {
-  try { return JSON.parse(localStorage.getItem(PAIN_KEY) || '[]') } catch { return [] }
-}
-function savePain(arr) {
-  localStorage.setItem(PAIN_KEY, JSON.stringify(arr))
-}
+import EquipmentEditor from '../equipment/EquipmentEditor.js'
 
 const scrollMemory = new Map()
 const SCROLL_KEY = '#/exercises'
 
 export default {
   name: 'ExerciseListView',
-  components: { PageHeader, LoadingSpinner, ErrorBanner, EmptyState, ExerciseFilter },
+  components: { PageHeader, LoadingSpinner, ErrorBanner, EmptyState, ExerciseFilter, EquipmentEditor },
 
   setup() {
     const router = inject('router')
@@ -37,13 +24,18 @@ export default {
       loading:      false,
       error:        null,
       exercises:    [],
-      filters:      { muscle: '', equipment: '', movement: '', q: '' },
+      filters:      { muscle: '', equipment: '', equipment_family: '', available: false, movement: '', q: '' },
       showExcluded: true,
-      activeTab:    'list',
-      painfulMuscles: loadPain(),
+      activeTab:    router.currentRoute.params.tab || 'list',
+      materialVisited: router.currentRoute.params.tab === 'material',
+      painfulMuscles: [...(store.settings?.painful_muscles || [])],
+      savingPain:false,
     })
 
+    let requestVersion = 0
+    let filterTimer = null
     async function load() {
+      const version = ++requestVersion
       state.loading = true; state.error = null
       try {
         const params = {}
@@ -51,13 +43,31 @@ export default {
         if (state.filters.equipment) params.equipment = state.filters.equipment
         if (state.filters.movement)  params.movement  = state.filters.movement
         if (state.filters.q)         params.q         = state.filters.q
+        if (state.filters.equipment_family) params.equipment_family = state.filters.equipment_family
+        if (state.filters.available) params.available = '1'
         const data = await api.list(params)
-        state.exercises = data.exercises
-      } catch (err) { state.error = err.message }
-      finally { state.loading = false }
+        if (version === requestVersion) state.exercises = data.exercises
+      } catch (err) { if (version === requestVersion) state.error = err.message }
+      finally { if (version === requestVersion) state.loading = false }
     }
 
-    function onFilterChange(f) { Object.assign(state.filters, f); load() }
+    function onFilterChange(f) {
+      const searchChanged = f.q !== state.filters.q
+      ++requestVersion
+      clearTimeout(filterTimer)
+      Object.assign(state.filters, f)
+      if (searchChanged && f.q) filterTimer = setTimeout(load, 150)
+      else load()
+    }
+
+    function selectTab(tab) {
+      router.push(tab === 'list' ? '#/exercises' : '#/exercises/' + tab)
+    }
+    watch(() => router.currentRoute.params.tab, tab => {
+      state.activeTab = tab || 'list'
+      if (state.activeTab === 'material') state.materialVisited = true
+      if (state.activeTab === 'list') load()
+    })
 
     const byName = (a, b) =>
       (a.name_fr || a.name_en || '').localeCompare(b.name_fr || b.name_en || '', 'fr')
@@ -85,11 +95,18 @@ export default {
       state.exercises.filter(e => !e.is_excluded && usesPainfulMuscle(e)).length
     )
 
-    function togglePain(muscle) {
-      const idx = state.painfulMuscles.indexOf(muscle)
-      if (idx === -1) state.painfulMuscles.push(muscle)
-      else state.painfulMuscles.splice(idx, 1)
-      savePain(state.painfulMuscles)
+    async function togglePain(muscle) {
+      if (state.savingPain) return
+      const before=[...state.painfulMuscles]
+      state.painfulMuscles=before.includes(muscle) ? before.filter(m=>m!==muscle) : [...before,muscle]
+      state.savingPain=true
+      try {
+        const saved=await settingsApi.update({painful_muscles:state.painfulMuscles})
+        store.setSettings(saved)
+      } catch (err) {
+        state.painfulMuscles=before
+        store.showToast(err.message,'error')
+      } finally {state.savingPain=false}
     }
 
     async function toggleExclusion(ex, event) {
@@ -123,6 +140,8 @@ export default {
     })
 
     onBeforeUnmount(() => {
+      ++requestVersion
+      clearTimeout(filterTimer)
       const h = window.location.hash
       const keep = h.startsWith('#/exercises/') && h !== '#/exercises'
       scrollMemory.set(SCROLL_KEY, keep ? window.scrollY : 0)
@@ -131,7 +150,7 @@ export default {
     return {
       state, displayedExercises, excludedExercises, excludedCount,
       painFilteredCount, ALL_MUSCLES,
-      load, onFilterChange, toggleExclusion, togglePain, usesPainfulMuscle,
+      load, selectTab, onFilterChange, toggleExclusion, togglePain, usesPainfulMuscle,
       router, t, tm,
     }
   },
@@ -140,7 +159,7 @@ export default {
     <div class="view">
       <PageHeader :title="t('exercises.title')">
         <template #actions>
-          <button class="btn btn--primary"
+          <button v-if="state.activeTab === 'list'" class="btn btn--primary"
             style="padding:0.4rem 0.75rem;font-size:0.85rem"
             @click="router.push('#/exercises/new')">+</button>
         </template>
@@ -150,26 +169,32 @@ export default {
       <div class="exercise-tabs">
         <button class="exercise-tabs__btn"
           :class="{ 'exercise-tabs__btn--active': state.activeTab === 'list' }"
-          @click="state.activeTab = 'list'">
+          @click="selectTab('list')">
           {{ t('exercises.tab_list') }}
           <span v-if="painFilteredCount > 0" class="exercise-tabs__badge">{{ painFilteredCount }}</span>
         </button>
         <button class="exercise-tabs__btn"
           :class="{ 'exercise-tabs__btn--active': state.activeTab === 'pain' }"
-          @click="state.activeTab = 'pain'">
+          @click="selectTab('pain')">
           {{ t('exercises.tab_pain') }}
           <span v-if="state.painfulMuscles.length" class="exercise-tabs__badge exercise-tabs__badge--active">{{ state.painfulMuscles.length }}</span>
         </button>
+        <button class="exercise-tabs__btn"
+          :class="{ 'exercise-tabs__btn--active': state.activeTab === 'material' }"
+          @click="selectTab('material')">{{ t('exercises.tab_material') }}</button>
       </div>
 
       <div class="view__content">
+        <div v-if="state.materialVisited" v-show="state.activeTab === 'material'" class="exercise-material-panel">
+          <EquipmentEditor />
+        </div>
         <!-- ═══ Onglet Exercices ═══ -->
         <template v-if="state.activeTab === 'list'">
           <ExerciseFilter :filters="state.filters" @change="onFilterChange" />
 
           <div v-if="painFilteredCount > 0" class="exercise-pain-bar">
             <span>🤕 {{ t('exercises.pain_filtered', { count: painFilteredCount }) }}</span>
-            <button class="exercise-pain-bar__btn" @click="state.activeTab = 'pain'">
+            <button class="exercise-pain-bar__btn" @click="selectTab('pain')">
               {{ t('exercises.tab_pain') }}
             </button>
           </div>
@@ -242,7 +267,7 @@ export default {
                 <button
                   class="exercise-card__exclude-btn"
                   :title="t('exercises.exclude_btn')"
-                  @click.stop="toggleExclusion(ex, $event)">
+                  @click.stop="toggleExclusion(ex, $event)" :aria-label="t('exercises.exclude_btn')">
                   🚫
                 </button>
               </div>
@@ -262,6 +287,7 @@ export default {
                 :class="{ 'pain-chip--active': state.painfulMuscles.includes(m) }">
                 <input type="checkbox"
                   :checked="state.painfulMuscles.includes(m)"
+                  :disabled="state.savingPain"
                   @change="togglePain(m)" />
                 <span>{{ tm(m) }}</span>
               </label>
@@ -269,7 +295,7 @@ export default {
 
             <div v-if="state.painfulMuscles.length" class="pain-summary">
               <p>🤕 {{ t('exercises.pain_filtered', { count: painFilteredCount }) }}</p>
-              <button class="btn btn--secondary" @click="state.activeTab = 'list'">
+              <button class="btn btn--secondary" @click="selectTab('list')">
                 {{ t('exercises.tab_list') }}
               </button>
             </div>

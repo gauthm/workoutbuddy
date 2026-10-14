@@ -1,5 +1,7 @@
+import { ALL_MUSCLES } from '../../public/js/utils/muscles.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
+import { validateField as validateProfileField } from './userProfile.js'
 import { testConnection, listModels } from '../services/aiProvider.js'
 
 const router = express.Router()
@@ -7,6 +9,7 @@ const db     = getDb()
 
 // ── Schéma de validation ──────────────────────────────────────
 const SETTINGS_SCHEMA = {
+  painful_muscles: { type:'enum_array', enum:ALL_MUSCLES },
   unit:                               { type: 'enum',   enum: ['kg','lb'] },
   rm_formula:                         { type: 'enum',   enum: ['epley','brzycki','lander','oconner','lombardi'] },
   default_rest_seconds:               { type: 'number', min: 10,  max: 600 },
@@ -55,14 +58,16 @@ function getAllSettings(db) {
   return result
 }
 
-function validateValue(key, value) {
+export function validateValue(key, value) {
   const schema = SETTINGS_SCHEMA[key]
   if (!schema) return { valid: false, error: `Clé inconnue : ${key}` }
-  if (schema.type === 'boolean') {
+  if (schema.type === 'enum_array') {
+    if (!Array.isArray(value) || new Set(value).size !== value.length || value.some(v=>!schema.enum.includes(v))) return {valid:false,error:`${key} : liste invalide.`}
+  } else if (schema.type === 'boolean') {
     if (typeof value !== 'boolean') return { valid: false, error: `${key} doit être un booléen.` }
   } else if (schema.type === 'number') {
-    const n = Number(value)
-    if (isNaN(n)) return { valid: false, error: `${key} doit être un nombre.` }
+    const n = value
+    if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: `${key} doit être un nombre.` }
     if (schema.min !== undefined && n < schema.min) return { valid: false, error: `${key} ≥ ${schema.min}.` }
     if (schema.max !== undefined && n > schema.max) return { valid: false, error: `${key} ≤ ${schema.max}.` }
   } else if (schema.type === 'enum') {
@@ -83,7 +88,7 @@ router.get('/', (req, res) => {
 router.put('/', (req, res) => {
   try {
     const updates = req.body
-    if (!updates || typeof updates !== 'object') return res.status(400).json({ error: 'INVALID_BODY' })
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) return res.status(400).json({ error: 'INVALID_BODY' })
     const errors = []; const valid = []
     for (const [key, value] of Object.entries(updates)) {
       const r = validateValue(key, value)
@@ -102,10 +107,53 @@ router.put('/', (req, res) => {
   } catch (err) { console.error('[PUT /settings]', err.message); res.status(500).json({ error: 'INTERNAL_ERROR' }) }
 })
 
+// Save the page in one transaction, so a rejected profile never partially saves settings.
+router.post('/save', (req,res) => {
+  try {
+    const body = req.body
+    const isObject = value => value && typeof value === 'object' && !Array.isArray(value)
+    if (!isObject(body) || Object.keys(body).some(key => !['settings','profile'].includes(key)) ||
+        (body.settings !== undefined && !isObject(body.settings)) || (body.profile !== undefined && !isObject(body.profile))) {
+      return res.status(400).json({ error:'INVALID_BODY' })
+    }
+    const settings = Object.entries(body.settings || {}), profile = Object.entries(body.profile || {})
+    const errors = []
+    for (const [key,value] of settings) { const check=validateValue(key,value); if (!check.valid) errors.push(check.error) }
+    for (const [key,value] of profile) {
+      if (!['display_name','sex','date_of_birth'].includes(key)) { errors.push('INVALID_PROFILE_FIELD'); continue }
+      const check=validateProfileField(key,value); if (!check.valid) errors.push(check.error)
+    }
+    if (errors.length) return res.status(400).json({ error:'VALIDATION_ERRORS',details:errors })
+    if (!settings.length && !profile.length) return res.status(400).json({ error:'NO_FIELDS_TO_UPDATE' })
+    db.transaction(() => {
+      const stmt=db.prepare("INSERT INTO settings (key,value,updated_at) VALUES (?,?,datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at")
+      for (const [key,value] of settings) stmt.run(key,JSON.stringify(value))
+      if (profile.length) {
+        const current=db.prepare('SELECT display_name,sex,date_of_birth FROM user_profile WHERE id=1').get()
+        const updated={...current,...Object.fromEntries(profile)}
+        db.prepare("UPDATE user_profile SET display_name=?,sex=?,date_of_birth=?,updated_at=datetime('now') WHERE id=1").run(updated.display_name,updated.sex,updated.date_of_birth)
+      }
+    })()
+    res.json({settings:getAllSettings(db),profile:db.prepare('SELECT display_name,sex,date_of_birth FROM user_profile WHERE id=1').get(),restart_required:settings.some(([key])=>NETWORK_KEYS.has(key))})
+  } catch (err) { console.error('[POST /settings/save]',err.message);res.status(500).json({error:'INTERNAL_ERROR'}) }
+})
+
+// Preview connection settings without persisting draft credentials.
+function getDraftAiSettings(body) {
+  const saved = getAiSettings(db)
+  if (body === undefined) return saved
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('INVALID_AI_SETTINGS')
+  for (const [key,value] of Object.entries(body)) {
+    if (!['ai_base_url','ai_model','ai_api_key'].includes(key) || typeof value !== 'string') throw new Error('INVALID_AI_SETTINGS')
+    saved[key.replace('ai_','')] = value
+  }
+  return saved
+}
+
 // ── POST /settings/test-ai ─────────────────────────────────────
 router.post('/test-ai', async (req, res) => {
   try {
-    const s = getAiSettings(db)
+    const s = getDraftAiSettings(req.body)
     if (!s.base_url || !s.model) return res.status(400).json({ success: false, error: 'Provider IA non configuré.' })
     const result = await testConnection(s)
     res.json(result)
@@ -119,6 +167,14 @@ router.get('/ai-models', async (req, res) => {
     if (!s.base_url) return res.status(400).json({ error: 'URL de base non configurée.' })
     const result = await listModels(s)
     res.json(result)
+  } catch (err) { res.status(400).json({ error: err.message }) }
+})
+
+router.post('/ai-models', async (req,res) => {
+  try {
+    const s = getDraftAiSettings(req.body)
+    if (!s.base_url) return res.status(400).json({ error: 'URL de base non configurée.' })
+    res.json(await listModels(s))
   } catch (err) { res.status(400).json({ error: err.message }) }
 })
 

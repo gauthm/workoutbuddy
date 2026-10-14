@@ -36,6 +36,7 @@ export default {
     <div class="exercise-selector">
       <div style="padding:0.75rem">
         <input class="form-input" type="search"
+          :aria-label="t('exercises.search')"
           :placeholder="t('exercises.search')"
           @input="onSearch($event.target.value)" />
       </div>

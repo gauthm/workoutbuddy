@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-13",
+  "automated_tests": {
+    "command": "npm run test:in-process",
+    "passed": 318,
+    "failed": 0
+  },
+  "ui": {
+    "origin": "http://workoutbuddy.test",
+    "configurations": 16,
+    "datasets": 2,
+    "layout_scenarios": 32,
+    "simulated_writes": 16,
+    "javascript_errors": 0,
+    "horizontal_overflow": false
+  },
+  "cleanup": {
+    "identified_fixture_rows_removed": 171,
+    "remaining_equipment_rows": 0,
+    "snapshot": "data/backups/equipment-fixtures-2026-10-13.json"
+  },
+  "activation": "Restart the existing server to apply migrations 007 and 008 and reload backend modules.",
+  "standard_test_command": {
+    "command": "DB_PATH=:memory: npm test",
+    "limitation": "API tests require opening a TCP port; listen EPERM in the sandbox."
+  }
+}

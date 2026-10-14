@@ -1,3 +1,4 @@
+import { requiredExerciseEquipment } from '../src/services/exerciseEquipment.js'
 // Usage: node scripts/import-exercises.js <path-to-free-exercise-db-dist-exercises.json>
 // Exemple: node scripts/import-exercises.js /tmp/free-exercise-db/dist/exercises.json
 
@@ -132,7 +133,7 @@ function transform(ex) {
     movement_pattern:   inferMovementPattern({ ...ex, category }),
     primary_muscles:    mapMuscles(ex.primaryMuscles),
     secondary_muscles:  mapMuscles(ex.secondaryMuscles),
-    equipment_required: mapEquipment(ex.equipment),
+    equipment_required: requiredExerciseEquipment({id,equipment_required:mapEquipment(ex.equipment),instructions_en:ex.instructions || []},ex.equipment),
     instructions_fr:    ex.instructions || [],
     instructions_en:    ex.instructions || [],
     image_paths:        (ex.images || []).map(img => {

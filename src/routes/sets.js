@@ -1,23 +1,10 @@
+import { markRecord, refreshPersonalRecords, refreshSessionMetrics } from '../services/personalRecords.js'
+import { isFiniteNumber, isBoolean } from '../services/validation.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
 
 const router = express.Router()
 const db = getDb()
-
-function getFormula(db) {
-  const row = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
-  return row ? JSON.parse(row.value) : 'epley'
-}
-
-function estimate1RM(weightKg, reps, formula = 'epley') {
-  if (!weightKg || weightKg <= 0 || !reps || reps <= 0) return 0
-  if (reps === 1) return weightKg
-  if (formula === 'epley')   return weightKg * (1 + reps / 30)
-  if (formula === 'brzycki') return reps >= 37 ? weightKg : weightKg * 36 / (37 - reps)
-  if (formula === 'lander')  return 100 * weightKg / (101.3 - 2.67123 * reps)
-  if (formula === 'oconner') return weightKg * (1 + 0.025 * reps)
-  return weightKg * (1 + reps / 30) // fallback Epley
-}
 
 // ── GET /session-exercises/:id/sets ──────────────────────────
 router.get('/session-exercises/:seId/sets', (req, res) => {
@@ -44,60 +31,30 @@ router.post('/session-exercises/:seId/sets', (req, res) => {
 
     const { set_number, weight_kg, reps, rpe, rir, is_warmup, notes, is_completed } = req.body
     if (set_number === undefined) return res.status(400).json({ error: 'MISSING_SET_NUMBER' })
+    if (!isFiniteNumber(set_number, { min: 1, integer: true }) || !validFields(req.body)) return res.status(400).json({ error: 'INVALID_SET_VALUES' })
+    const set = db.transaction(() => {
+      const previous = db.prepare('SELECT MAX(weight_kg) AS weight FROM personal_record WHERE exercise_id = ? AND reps = ?').get(se.exercise_id, reps ?? 0)
 
-    const result = db.prepare(`
-      INSERT INTO set_log
-        (session_exercise_id, set_number, weight_kg, reps, rpe, rir, is_warmup, is_completed, notes)
-      VALUES (?,?,?,?,?,?,?,?,?)
-    `).run(
-      parseInt(req.params.seId),
-      set_number,
-      weight_kg ?? 0,
-      reps ?? 0,
-      rpe ?? null,
-      rir ?? null,
-      is_warmup ? 1 : 0,
-      is_completed ? 1 : 0,
-      notes ?? null
-    )
 
-    const set = db.prepare('SELECT * FROM set_log WHERE id = ?').get(result.lastInsertRowid)
+      const result = db.prepare(`
+        INSERT INTO set_log
+          (session_exercise_id, set_number, weight_kg, reps, rpe, rir, is_warmup, is_completed, notes)
+        VALUES (?,?,?,?,?,?,?,?,?)
+      `).run(
+        parseInt(req.params.seId),
+        set_number,
+        weight_kg ?? 0,
+        reps ?? 0,
+        rpe ?? null,
+        rir ?? null,
+        is_warmup ? 1 : 0,
+        is_completed ? 1 : 0,
+        notes ?? null
+      )
 
-    // Vérifier si c'est un PR (seulement si série complétée, non warmup, reps > 0)
-    if (set.is_completed && !set.is_warmup && set.reps > 0 && set.weight_kg > 0) {
-      const formula = getFormula(db)
-      const new1rm  = estimate1RM(set.weight_kg, set.reps, formula)
-
-      const existingPR = db.prepare(`
-        SELECT * FROM personal_record
-        WHERE exercise_id = (SELECT exercise_id FROM session_exercise WHERE id = ?)
-          AND reps = ?
-        ORDER BY estimated_1rm_kg DESC LIMIT 1
-      `).get(req.params.seId, set.reps)
-
-      if (!existingPR || new1rm > existingPR.estimated_1rm_kg) {
-        const exerciseId = db.prepare(
-          'SELECT exercise_id FROM session_exercise WHERE id = ?'
-        ).get(req.params.seId).exercise_id
-
-        const today = new Date().toISOString().slice(0, 10)
-
-        // Supprimer l'ancien PR pour ce reps si existant
-        if (existingPR) {
-          db.prepare('DELETE FROM personal_record WHERE id = ?').run(existingPR.id)
-        }
-
-        db.prepare(`
-          INSERT INTO personal_record
-            (exercise_id, reps, weight_kg, estimated_1rm_kg, achieved_date, set_log_id)
-          VALUES (?,?,?,?,?,?)
-        `).run(exerciseId, set.reps, set.weight_kg,
-          Math.round(new1rm * 100) / 100, today, set.id)
-
-        set._new_pr = true
-        set._estimated_1rm = Math.round(new1rm * 100) / 100
-      }
-    }
+      const created = db.prepare('SELECT * FROM set_log WHERE id = ?').get(result.lastInsertRowid)
+      return markRecord(db, created, previous?.weight || 0)
+    })()
 
     res.status(201).json(set)
   } catch (err) {
@@ -112,15 +69,23 @@ router.put('/sets/:id', (req, res) => {
     const set = db.prepare('SELECT id FROM set_log WHERE id = ?').get(req.params.id)
     if (!set) return res.status(404).json({ error: 'SET_NOT_FOUND' })
 
+    if (!validFields(req.body)) return res.status(400).json({ error: 'INVALID_SET_VALUES' })
     const UPDATABLE = ['weight_kg','reps','rpe','rir','is_completed','rest_seconds_after','notes']
     const updates = []; const values = []
     for (const f of UPDATABLE) {
-      if (req.body[f] !== undefined) { updates.push(`${f} = ?`); values.push(req.body[f]) }
+      if (req.body[f] !== undefined) { updates.push(`${f} = ?`); values.push(f === 'is_completed' ? Number(req.body[f]) : req.body[f]) }
     }
     if (updates.length === 0) return res.status(400).json({ error: 'NO_FIELDS_TO_UPDATE' })
     values.push(req.params.id)
-    db.prepare(`UPDATE set_log SET ${updates.join(', ')} WHERE id = ?`).run(...values)
-    res.json(db.prepare('SELECT * FROM set_log WHERE id = ?').get(req.params.id))
+    const result = db.transaction(() => {
+      const previous = db.prepare(`SELECT MAX(pr.weight_kg) AS weight FROM personal_record pr
+        JOIN session_exercise se ON se.exercise_id = pr.exercise_id
+        JOIN set_log sl ON sl.session_exercise_id = se.id
+        WHERE sl.id = ? AND pr.reps = ?`).get(req.params.id, req.body.reps ?? db.prepare('SELECT reps FROM set_log WHERE id = ?').get(req.params.id).reps)
+      db.prepare(`UPDATE set_log SET ${updates.join(', ')} WHERE id = ?`).run(...values)
+      return markRecord(db, db.prepare('SELECT * FROM set_log WHERE id = ?').get(req.params.id), previous?.weight || 0)
+    })()
+    res.json(result)
   } catch (err) {
     console.error('[PUT /sets/:id]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
@@ -132,7 +97,13 @@ router.delete('/sets/:id', (req, res) => {
   try {
     const set = db.prepare('SELECT id FROM set_log WHERE id = ?').get(req.params.id)
     if (!set) return res.status(404).json({ error: 'SET_NOT_FOUND' })
-    db.prepare('DELETE FROM set_log WHERE id = ?').run(req.params.id)
+    db.transaction(() => {
+      const se = db.prepare('SELECT se.exercise_id, se.session_id FROM session_exercise se JOIN set_log sl ON sl.session_exercise_id = se.id WHERE sl.id = ?').get(req.params.id)
+      db.prepare('DELETE FROM personal_record WHERE set_log_id = ?').run(req.params.id)
+      db.prepare('DELETE FROM set_log WHERE id = ?').run(req.params.id)
+      refreshPersonalRecords(db, se.exercise_id)
+      refreshSessionMetrics(db, se.session_id)
+    })()
     res.status(204).end()
   } catch (err) {
     console.error('[DELETE /sets/:id]', err.message)
@@ -171,14 +142,28 @@ router.post('/session-exercises', (req, res) => {
 // ── DELETE /session-exercises/:id ────────────────────────────
 router.delete('/session-exercises/:id', (req, res) => {
   try {
-    const se = db.prepare('SELECT id FROM session_exercise WHERE id = ?').get(req.params.id)
+    const se = db.prepare('SELECT * FROM session_exercise WHERE id = ?').get(req.params.id)
     if (!se) return res.status(404).json({ error: 'SESSION_EXERCISE_NOT_FOUND' })
-    db.prepare('DELETE FROM session_exercise WHERE id = ?').run(req.params.id)
+    db.transaction(() => {
+      db.prepare('DELETE FROM personal_record WHERE set_log_id IN (SELECT id FROM set_log WHERE session_exercise_id = ?)').run(req.params.id)
+      db.prepare('DELETE FROM session_exercise WHERE id = ?').run(req.params.id)
+      refreshPersonalRecords(db, se.exercise_id)
+      refreshSessionMetrics(db, se.session_id)
+    })()
     res.status(204).end()
   } catch (err) {
     console.error('[DELETE /session-exercises/:id]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
 })
+
+function validFields(body) {
+  for (const key of ['weight_kg','reps','rpe','rir','rest_seconds_after']) {
+    if (body[key] === undefined || (['rpe','rir'].includes(key) && body[key] === null)) continue
+    if (!isFiniteNumber(body[key], { min: 0, max: key === 'rpe' ? 10 : Infinity, integer: key === 'reps' })) return false
+  }
+  for (const key of ['is_completed','is_warmup']) if (body[key] !== undefined && !isBoolean(body[key])) return false
+  return body.notes === undefined || body.notes === null || typeof body.notes === 'string'
+}
 
 export default router

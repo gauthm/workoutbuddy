@@ -1,10 +1,15 @@
+import { saveProgressionEvent, rebuildExerciseProgression, saveExerciseProgression, synchronizeTemplateProgression } from '../services/exerciseProgression.js'
+import { cannotStartProgram } from '../services/programLifecycle.js'
+import { parseUtcTimestamp } from '../services/date.js'
+import { refreshPersonalRecords } from '../services/personalRecords.js'
+import { createBackup } from '../db/backup.js'
 import express from 'express'
-import fs from 'fs'
-import path from 'path'
 import { getDb, getDbPath } from '../db/database.js'
 import { computeNextState, resolveProgressionModel } from '../services/progressionEngine.js'
 import { calculateAchievableLoads } from '../services/equipmentCalc.js'
-import { estimate1RM }              from '../services/rmCalculator.js'
+import { estimate1RM, weightForReps }              from '../services/rmCalculator.js'
+import { reviewProgramWeek, expireProgramDeload } from '../services/programReview.js'
+import { computeDeloadTargets } from '../services/deloadEngine.js'
 import { shouldDeload }             from '../services/deloadEngine.js'
 import { detectPlateau }            from '../services/plateauDetector.js'
 import { getExerciseForWeek }       from '../services/rotationEngine.js'
@@ -17,36 +22,17 @@ const router = express.Router()
 const db = getDb()
 
 function autoBackup() {
-  try {
-    const today = new Date().toISOString().slice(0, 10)
-    const src = getDbPath()
-    const backupDir = path.join(path.dirname(src), 'backups')
-    fs.mkdirSync(backupDir, { recursive: true })
-
-    const dest = path.join(backupDir, `workoutbuddy_${today}.db`)
-    if (!fs.existsSync(dest)) {
-      fs.copyFileSync(src, dest)
-    }
-
-    // Garder seulement les 7 plus récents
-    const files = fs.readdirSync(backupDir)
-      .filter(f => f.endsWith('.db'))
-      .sort()
-      .reverse()
-    for (const f of files.slice(7)) {
-      fs.unlinkSync(path.join(backupDir, f))
-    }
-  } catch (err) {
-    console.warn('[backup] Erreur auto-backup :', err.message)
-    // Non bloquant : ne pas faire échouer la complétion
-  }
+  try { return createBackup(db, getDbPath()) }
+  catch (err) { console.warn('[backup] Erreur :', err.message) }
 }
 
 // ── GET /sessions ─────────────────────────────────────────────
 router.get('/', (req, res) => {
   try {
+    if (req.query.active_program==='1') scheduleWeeks(db)
     let sql = 'SELECT * FROM session WHERE 1=1'
     const params = []
+    if (req.query.active_program === '1') sql += " AND program_id = (SELECT id FROM program WHERE is_active = 1 LIMIT 1) AND status IN ('completed','in_progress','planned','skipped')"
     if (req.query.from)       { sql += ' AND scheduled_date >= ?'; params.push(req.query.from) }
     if (req.query.to)         { sql += ' AND scheduled_date <= ?'; params.push(req.query.to) }
     if (req.query.status)     { sql += ' AND status = ?';          params.push(req.query.status) }
@@ -79,6 +65,7 @@ router.post('/from-template/:templateId', (req, res) => {
       ? db.prepare('SELECT * FROM program WHERE id = ?').get(tpl.program_id)
       : null
 
+    if (program && cannotStartProgram(program,scheduled_date)) return res.status(409).json({error:'PROGRAM_FINISHED'})
     // Préparer la rotation hors transaction
     const useRotation = apply_rotation === true
     let allExercises = []
@@ -142,7 +129,7 @@ router.post('/from-template/:templateId', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const { name, scheduled_date, workout_template_id, program_id, is_deload } = req.body
-    if (!name?.trim())       return res.status(400).json({ error: 'MISSING_NAME' })
+    if (typeof name !== 'string' || !name.trim())       return res.status(400).json({ error: 'MISSING_NAME' })
     if (!scheduled_date)     return res.status(400).json({ error: 'MISSING_DATE' })
 
     const result = db.prepare(`
@@ -168,10 +155,17 @@ router.get('/:id', (req, res) => {
     if (!session) return res.status(404).json({ error: 'SESSION_NOT_FOUND' })
 
     const sessionExercises = db.prepare(
-      'SELECT se.*, e.name_fr, e.name_en FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
+      `SELECT se.*, e.name_fr, e.name_en, te.target_sets, te.target_reps_min, te.target_reps_max, te.rest_seconds
+       FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id
+       LEFT JOIN template_exercise te ON se.template_exercise_id = te.id
+       WHERE se.session_id = ? ORDER BY se.order_index`
     ).all(session.id)
 
     for (const se of sessionExercises) {
+      if (session.is_deload && se.target_sets) {
+        const program = db.prepare('SELECT * FROM program WHERE id=?').get(session.program_id)
+        if (program) se.target_sets = computeDeloadTargets(se,{ current_weight_kg:0 },program,{},[]).sets
+      }
       se.sets = db.prepare(
         'SELECT * FROM set_log WHERE session_exercise_id = ? ORDER BY set_number'
       ).all(se.id)
@@ -193,6 +187,11 @@ router.post('/:id/start', (req, res) => {
       return res.status(409).json({ error: 'SESSION_ALREADY_COMPLETED' })
     }
 
+    if (session.status === 'in_progress') {
+      return res.json({ ...session, adjustments: computeSessionAdjustments(db, session) })
+    }
+    const programForStart=session.program_id ? db.prepare('SELECT * FROM program WHERE id=?').get(session.program_id) : null
+    if (programForStart && cannotStartProgram(programForStart,session.scheduled_date)) return res.status(409).json({error:'PROGRAM_FINISHED'})
     // Vérifier qu'il n'y a pas déjà une séance in_progress
     const existing = db.prepare(
       "SELECT id FROM session WHERE status = 'in_progress' AND id != ?"
@@ -204,11 +203,29 @@ router.post('/:id/start', (req, res) => {
       })
     }
 
+    // Scheduled sessions initially store only their template; prepare their exercises once.
+    if (session.workout_template_id && !db.prepare('SELECT id FROM session_exercise WHERE session_id=? LIMIT 1').get(session.id)) {
+      db.prepare(`INSERT INTO session_exercise (session_id,exercise_id,template_exercise_id,order_index)
+        SELECT ?,exercise_id,id,order_index FROM template_exercise WHERE workout_template_id=? ORDER BY order_index`)
+        .run(session.id, session.workout_template_id)
+    }
+
+    if (session.program_id) {
+      expireProgramDeload(db,session.program_id)
+      reviewProgramWeek(db,session.program_id)
+      const current = db.prepare('SELECT is_in_deload FROM program WHERE id=?').get(session.program_id)
+      session.is_deload = current?.is_in_deload ? 1 : 0
+      db.prepare('UPDATE session SET is_deload=? WHERE id=?').run(session.is_deload,session.id)
+    }
+
     db.prepare(`
       UPDATE session SET status = 'in_progress', started_at = datetime('now'),
       updated_at = datetime('now') WHERE id = ?
     `).run(req.params.id)
 
+    for (const row of db.prepare('SELECT template_exercise_id FROM session_exercise WHERE session_id=? AND template_exercise_id IS NOT NULL').all(session.id)) {
+      synchronizeTemplateProgression(db,row.template_exercise_id)
+    }
     // ── Calcul des ajustements coach (déterministe, lecture seule) ──
     const adjustments = computeSessionAdjustments(db, session)
 
@@ -260,7 +277,10 @@ function computeSessionAdjustments(db, session) {
     ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
     : null
   const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
-  const profileRow     = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
+  const planRow = program ? db.prepare('SELECT parameters FROM program_plan WHERE program_id=?').get(program.id) : null
+  const planParams = planRow ? JSON.parse(planRow.parameters) : null
+  const profileRow = planParams ? { weight_kg:planParams.weight_kg, fitness_level:program.level, primary_goal:program.goal }
+    : db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
 
   const settingsRows = db.prepare('SELECT key, value FROM settings').all()
   const settings     = {}
@@ -301,12 +321,13 @@ function computeSessionAdjustments(db, session) {
         AND s.status = 'completed'
         AND sl.is_warmup = 0
         AND sl.is_completed = 1
+        AND s.is_deload = 0
       ORDER BY s.completed_at DESC, s.id DESC, sl.set_number ASC
     `).all(te.id)
     const lastSeId     = lastSets.length > 0 ? lastSets[0].session_exercise_id : null
     const relevantSets = lastSets.filter(s => s.session_exercise_id === lastSeId)
 
-    const isFirstTime = !state || state.current_weight_kg === 0
+    const isFirstTime = !state || !state.last_session_id && state.current_weight_kg === 0
 
     let targetWeight, targetReps, explanation, changeType
 
@@ -337,11 +358,12 @@ function computeSessionAdjustments(db, session) {
 
     } else {
       // Le calcul a déjà été fait à la complétion → on relit progression_state
-      const stateUpToDate = relevantSets.length > 0 &&
+      const learned = db.prepare('SELECT last_session_id FROM exercise_progression WHERE exercise_id=?').get(se.exercise_id)
+      const stateUpToDate = learned?.last_session_id === state.last_session_id || relevantSets.length > 0 &&
         state.last_session_id === lastSets[0].session_id
 
       const nextState = (relevantSets.length > 0 && !stateUpToDate)
-        ? computeNextState(state, relevantSets, te, program, achievable, progressionSettings)
+        ? computeNextState(state, relevantSets, te, program, achievable, { ...progressionSettings, resistance_is_approximate: loadsResult.resistance_is_approximate })
         : null
 
       targetWeight = nextState?.current_weight_kg ?? state.current_weight_kg
@@ -372,6 +394,13 @@ function computeSessionAdjustments(db, session) {
       }
     }
 
+    if (session.is_deload && program) {
+      const target = computeDeloadTargets(te,{ current_weight_kg:targetWeight },program,{},loadsResult.loads_kg)
+      targetWeight = loadsResult.resistance_is_approximate ? targetWeight : target.weight_kg
+      targetReps = target.reps_min
+      explanation = 'Semaine allégée : mêmes exercices, charge et volume temporairement réduits.'
+      changeType = 'decrease'
+    }
     adjustments.push({
       exercise_id:          se.exercise_id,
       exercise_name_fr:     se.name_fr,
@@ -397,6 +426,8 @@ router.post('/:id/complete', (req, res) => {
       return res.status(409).json({ error: 'SESSION_ALREADY_COMPLETED' })
     }
 
+    if (session.status !== 'in_progress') return res.status(409).json({ error: 'SESSION_NOT_IN_PROGRESS' })
+
     db.transaction(() => {
       // Calculer les métriques
       const volumeRow = db.prepare(`
@@ -413,11 +444,12 @@ router.post('/:id/complete', (req, res) => {
         WHERE se.session_id = ? AND sl.rpe IS NOT NULL AND sl.is_completed = 1
       `).get(req.params.id)
 
-      const durationSec = session.started_at
+      const rawDurationSec = session.started_at
         ? Math.round(
-            (new Date().getTime() - new Date(session.started_at + 'Z').getTime()) / 1000
+            (new Date().getTime() - parseUtcTimestamp(session.started_at)) / 1000
           )
         : null
+      const durationSec = Number.isFinite(rawDurationSec) ? Math.max(0, rawDurationSec) : null
 
       db.prepare(`
         UPDATE session
@@ -435,13 +467,11 @@ router.post('/:id/complete', (req, res) => {
         req.params.id
       )
 
-      // Incrémenter current_week du programme
+      // Calendar weeks, not a counter incremented for every workout.
       if (session.program_id) {
-        const prog = db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
-        if (prog) {
-          db.prepare('UPDATE program SET current_week = current_week + 1 WHERE id = ?')
-            .run(session.program_id)
-        }
+        db.prepare(`UPDATE program SET current_week = MAX(1,
+          CAST((julianday(date('now')) - julianday(date(created_at))) / 7 AS INTEGER) + 1)
+          WHERE id=?`).run(session.program_id)
       }
     }).immediate()
 
@@ -501,8 +531,13 @@ router.post('/:id/complete', (req, res) => {
         ? loadsResult.loads_kg
         : [state.current_weight_kg || 0]
 
+      if (session.is_deload) continue
+      const performedWeight = Math.min(...workSets.map(set=>set.weight_kg))
+      const performanceState = { ...state,current_weight_kg:performedWeight,
+        current_target_reps:Math.max(te.target_reps_min,Math.min(te.target_reps_max,Math.min(...workSets.map(set=>set.reps)))) }
+      const actualLoads = loadsResult.max_load_kg > 0 ? achievable : [performedWeight]
       const nextState = computeNextState(
-        state, workSets, te, program, achievable, progressionSettings
+        performanceState,workSets,te,program,actualLoads,{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}
       )
 
       db.prepare(`
@@ -520,6 +555,8 @@ router.post('/:id/complete', (req, res) => {
         parseInt(req.params.id),
         te.id
       )
+      saveExerciseProgression(db,se.exercise_id,nextState,te,Number(session.id))
+      saveProgressionEvent(db,se.id,{template:te,program,loads:actualLoads,settings:{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}})
     }
     // ── fin mise à jour progression ───────────────────────────────────────
 
@@ -532,7 +569,11 @@ router.post('/:id/complete', (req, res) => {
         plateau_detection_sessions: settings.plateau_detection_sessions || 4,
         deload_min_sets: settings.deload_min_sets || 2,
       }
-      const deloadCheck = shouldDeload(program, settingsForDeload, db)
+      const enginePlan = db.prepare('SELECT program_id FROM program_plan WHERE program_id=?').get(program.id)
+      const review = enginePlan ? reviewProgramWeek(db,program.id) : null
+      const deloadCheck = enginePlan
+        ? {should:review?.decision === 'deload' && !program.is_in_deload,reason:review?.evidence.reason}
+        : shouldDeload(program,settingsForDeload,db)
 
       if (deloadCheck.should) {
         db.prepare(`
@@ -636,7 +677,17 @@ router.delete('/:id', (req, res) => {
     if (session.status === 'in_progress') {
       return res.status(409).json({ error: 'CANNOT_DELETE_IN_PROGRESS_SESSION' })
     }
-    db.prepare('DELETE FROM session WHERE id = ?').run(req.params.id)
+    db.transaction(() => {
+      const exercises = db.prepare('SELECT DISTINCT exercise_id FROM session_exercise WHERE session_id = ?').all(req.params.id)
+      db.prepare(`DELETE FROM personal_record WHERE set_log_id IN (
+        SELECT sl.id FROM set_log sl JOIN session_exercise se ON se.id = sl.session_exercise_id WHERE se.session_id = ?
+      )`).run(req.params.id)
+      db.prepare('DELETE FROM session WHERE id = ?').run(req.params.id)
+      for (const exercise of exercises) {
+        refreshPersonalRecords(db,exercise.exercise_id)
+        if (session.status==='completed' && !session.is_deload) rebuildExerciseProgression(db,exercise.exercise_id)
+      }
+    })()
     res.status(204).end()
   } catch (err) {
     console.error('[DELETE /sessions/:id]', err.message)
@@ -680,6 +731,8 @@ router.get('/:id/target/:teId', (req, res) => {
       'SELECT * FROM progression_state WHERE template_exercise_id = ?'
     ).get(req.params.teId)
 
+    const program = session.program_id ? db.prepare('SELECT * FROM program WHERE id=?').get(session.program_id) : null
+
     const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(te.exercise_id)
     const exerciseForCalc = {
       equipment_required: JSON.parse(exercise?.equipment_required || '[]'),
@@ -691,13 +744,16 @@ router.get('/:id/target/:teId', (req, res) => {
     const loadsResult    = calculateAchievableLoads(equipmentItems, exerciseForCalc)
 
     // ── Détection premier essai ───────────────────────────────
-    const isFirstTime = !state || state.current_weight_kg === 0
+    const isFirstTime = !state || !state.last_session_id && state.current_weight_kg === 0
 
     let weight, targetReps, explanation, suggestion
 
     if (isFirstTime) {
       // Charger le profil utilisateur
-      const profileRow = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
+      const planRow = program ? db.prepare('SELECT parameters FROM program_plan WHERE program_id=?').get(program.id) : null
+      const planParams = planRow ? JSON.parse(planRow.parameters) : null
+      const profileRow = planParams ? { weight_kg:planParams.weight_kg, fitness_level:program.level, primary_goal:program.goal }
+        : db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
       const profile = profileRow ? {
         weight_kg:     profileRow.weight_kg,
         fitness_level: profileRow.fitness_level,
@@ -765,22 +821,28 @@ router.get('/:id/target/:teId', (req, res) => {
       }
     }
 
+    if (session.is_deload && program) {
+      const target = computeDeloadTargets(te,{ current_weight_kg:weight },program,{},loadsResult.loads_kg)
+      weight = loadsResult.resistance_is_approximate ? weight : target.weight_kg
+      targetReps = target.reps_min
+      explanation = 'Semaine allégée : mêmes exercices, charge et volume temporairement réduits.'
+    }
+
     // ── Calcul du 10RM estimé pour la charge cible ────────────
-    // 10RM = 1RM / (1 + 10/30) = 1RM / 1.333
-    // Si reps = 10 → 10RM ≈ weight
+    // Conversion inverse de la formule sélectionnée : une série de 10 reps conserve sa charge.
     const formulaRow = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
     const formula    = formulaRow ? JSON.parse(formulaRow.value) : 'epley'
     const est1rm     = weight > 0 && targetReps > 0
       ? estimate1RM(weight, targetReps, formula)
       : 0
     const est10rm    = est1rm > 0
-      ? Math.round((est1rm / (1 + 10 / 30)) * 10) / 10
+      ? weightForReps(est1rm,10,formula)
       : null
 
     res.json({
       weight_kg:           weight,
       reps_min:            targetReps,
-      reps_max:            te.target_reps_max,
+      reps_max:            session.is_deload ? targetReps : te.target_reps_max,
       explanation,
       achievable_loads_kg: loadsResult.loads_kg,
       is_first_time:       isFirstTime,

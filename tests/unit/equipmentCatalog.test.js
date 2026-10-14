@@ -4,7 +4,7 @@ import { EQUIPMENT_CATALOG } from '../../public/js/components/settings/equipment
 
 const VALID_CATS = ['barbell','ez_bar','plate','dumbbell_plate','dumbbell_fixed',
   'dumbbell_adjustable','dumbbell_loadable','kettlebell','resistance_band',
-  'bench','bench_adjustable','rack','pullup_bar','cable_machine','smith_machine','other']
+  'bench','bench_adjustable','rack','pullup_bar','roman_chair','cable_machine','smith_machine','other']
 
 describe('T8.4 — catalogue matériel', () => {
   it('keys d\'instances uniques', () => {

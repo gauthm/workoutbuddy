@@ -1,7 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
-import http from 'node:http'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -17,26 +16,18 @@ seedExercises(getDb())
 const { app } = await import('../../server.js')
 
 // ── Mock provider SSE ─────────────────────────────────────────
-let mockServer, mockPort
+let originalFetch
 before(async () => {
-  mockServer = http.createServer((req, res) => {
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      const last = JSON.parse(body).messages.at(-1).content
-      res.writeHead(200, { 'Content-Type': 'text/event-stream' })
-      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: `Réponse à: ${last}` } }] })}\n\n`)
-      res.write('data: [DONE]\n\n')
-      res.end()
+  originalFetch = globalThis.fetch
+  globalThis.fetch = async (_url, options) => {
+    const last = JSON.parse(options.body).messages.at(-1).content
+    return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: `Réponse à: ${last}` } }] })}\n\ndata: [DONE]\n\n`, {
+      headers: { 'Content-Type': 'text/event-stream' },
     })
-  })
-  await new Promise(r => mockServer.listen(0, '127.0.0.1', r))
-  mockPort = mockServer.address().port
-  await request(app).put('/api/v1/settings').send({
-    ai_base_url: `http://127.0.0.1:${mockPort}`, ai_model: 'mock',
-  })
+  }
+  await request(app).put('/api/v1/settings').send({ ai_base_url: 'http://mock.invalid', ai_model: 'mock' })
 })
-after(() => mockServer.close())
+after(() => { globalThis.fetch = originalFetch })
 
 describe('T8.2 — Persistance du chat coach', () => {
 

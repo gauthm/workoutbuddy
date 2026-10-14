@@ -3,9 +3,12 @@ import { getAiSettings } from '../routes/settings.js'
 
 // Prompts par type de signal
 const ADVICE_PROMPTS = {
+  equipment_limit_approaching: d => `L’utilisateur approche de la limite de son matériel pour ${d.exercise_name_fr}. Charge actuelle ${d.current_weight_kg} kg, plafond ${d.max_load_kg} kg. ${d.resistance_is_approximate ? 'Élastiques : résistance nominale variable avec l’étirement, aucune date précise possible.' : `Estimation : environ ${d.estimated_sessions} séances si la progression récente continue ; estimation incertaine, pas une garantie.`} Matériel requis : ${JSON.stringify(d.equipment_required)}. Rédige en français un conseil concis pour anticiper un achat adapté au matériel, avec une alternative gratuite, sans inventer de prix ni de date.`,
   max_load_reached: (d) => `
 Signal détecté dans WorkoutBuddy :
 - Exercice : ${d.exercise_name_fr}
+- Matériel : ${JSON.stringify(d.equipment_required || [])}
+- Résistance approximative : ${!!d.resistance_is_approximate}
 - Charge maximale atteignable avec l'équipement actuel : ${d.max_load_kg} kg
 - Depuis ${d.sessions_checked} séances consécutives : ${d.actual_reps_avg} reps en moyenne (objectif max : ${d.target_reps_max})
 
@@ -19,12 +22,14 @@ Réponds en français.`,
   min_increment_too_large: (d) => `
 Signal détecté dans WorkoutBuddy :
 - Exercice : ${d.exercise_name_fr}
+- Matériel : ${JSON.stringify(d.equipment_required || [])}
+- Résistance approximative : ${!!d.resistance_is_approximate}
 - Charge actuelle : ${d.current_weight_kg} kg
 - Plus petit incrément possible : ${d.min_increment_kg} kg (${d.pct}% de la charge courante)
 - Plateau confirmé sur les dernières séances
 
 Rédige un conseil de coach (4-6 phrases) sur comment progresser quand l'incrément minimal est trop grand :
-- Micro-plaques (1kg, 0.5kg) — prix et utilité
+- Matériel adapté à la catégorie : micro-disques pour barres/haltères à disques ; kettlebell intermédiaire pour kettlebells ; ne pas proposer de micro-disques pour les élastiques
 - Techniques alternatives (rest-pause, drop-sets, accentuation excentrique)
 - Réorganisation de l'entraînement pour contourner ce problème
 Réponds en français.`,
@@ -42,7 +47,9 @@ Réponds en français.`,
 
   no_rotation_possible: (d) => `
 Signal détecté dans WorkoutBuddy :
-- Exercice : ${d.exercise_name_fr} (groupe de rotation : ${d.rotation_group})
+- Exercice : ${d.exercise_name_fr}
+- Matériel : ${JSON.stringify(d.equipment_required || [])}
+- Résistance approximative : ${!!d.resistance_is_approximate} (groupe de rotation : ${d.rotation_group})
 - Impossible de varier l'exercice — aucun mouvement équivalent réalisable avec l'équipement actuel
 
 Rédige un conseil de coach (3-5 phrases) :
@@ -54,6 +61,8 @@ Réponds en français.`,
   persistent_plateau: (d) => `
 Signal détecté dans WorkoutBuddy :
 - Exercice : ${d.exercise_name_fr}
+- Matériel : ${JSON.stringify(d.equipment_required || [])}
+- Résistance approximative : ${!!d.resistance_is_approximate}
 - Plateau persistant sur ${d.sessions_checked} séances (delta : ${d.delta_pct}%)
 - Charge actuelle : ${d.current_weight_kg} kg
 - Plus petit incrément disponible : ${d.min_increment_kg} kg

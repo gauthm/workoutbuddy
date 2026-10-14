@@ -1,4 +1,5 @@
 import { inject } from '/vendor/vue.esm-browser.prod.js'
+import { t } from '../../i18n.js'
 
 export default {
   name: 'PageHeader',
@@ -9,12 +10,12 @@ export default {
 
   setup() {
     const router = inject('router')
-    return { router }
+    return { router, t }
   },
 
   template: `
     <header class="page-header">
-      <button v-if="showBack" class="page-header__back" @click="router.back()">‹</button>
+      <button v-if="showBack" class="page-header__back" :aria-label="t('common.back')" @click="router.back()">‹</button>
       <h1 class="page-header__title">{{ title }}</h1>
       <div class="page-header__actions">
         <slot name="actions" />

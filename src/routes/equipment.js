@@ -1,19 +1,27 @@
 import express from 'express'
 import { getDb } from '../db/database.js'
 import { calculateAchievableLoads } from '../services/equipmentCalc.js'
+import { isFiniteNumber } from '../services/validation.js'
 
 const router = express.Router()
 const db = getDb()
 
-const VALID_CATEGORIES = [
-  'barbell', 'ez_bar',
-  'plate', 'dumbbell_plate',
-  'dumbbell_fixed', 'dumbbell_adjustable', 'dumbbell_loadable',
-  'kettlebell',
-  'resistance_band',
-  'bench', 'bench_adjustable',
-  'rack', 'pullup_bar', 'cable_machine', 'smith_machine', 'other',
-]
+export { ALL_EQUIPMENT_CATEGORIES as VALID_CATEGORIES } from '../../public/js/components/equipment/inventoryCatalog.js'
+import { ALL_EQUIPMENT_CATEGORIES as VALID_CATEGORIES } from '../../public/js/components/equipment/inventoryCatalog.js'
+
+export function validEquipment(item) {
+  if (!VALID_CATEGORIES.includes(item.category) || typeof item.name !== 'string' || !item.name.trim()) return false
+  if (item.count !== undefined && !isFiniteNumber(item.count, { min: 1, integer: true })) return false
+  if (item.category === 'plate' && (!item.count || item.count % 2 !== 0)) return false
+  for (const key of ['weight_kg','weight_min_kg','weight_max_kg','weight_step_kg','resistance_min_kg','resistance_max_kg']) {
+    if (item[key] === undefined || item[key] === null) continue
+    if (!isFiniteNumber(item[key], { min: key === 'weight_step_kg' ? 0.01 : 0 })) return false
+  }
+  if (item.category === 'resistance_band' && (![item.resistance_min_kg,item.resistance_max_kg].every(Number.isFinite) || item.resistance_min_kg <= 0 || item.resistance_min_kg >= item.resistance_max_kg)) return false
+  if (item.category === 'kettlebell' && (!Number.isFinite(item.weight_kg) || item.weight_kg <= 0)) return false
+  if (item.category === 'dumbbell_adjustable' && (![item.weight_min_kg,item.weight_max_kg,item.weight_step_kg].every(Number.isFinite) || item.weight_min_kg >= item.weight_max_kg || item.weight_step_kg <= 0)) return false
+  return item.notes === undefined || item.notes === null || typeof item.notes === 'string'
+}
 
 // Déclaré AVANT les routes paramétrées : sinon 'achievable-loads' serait pris comme :id
 router.get('/achievable-loads', (req, res) => {
@@ -69,12 +77,12 @@ router.post('/', (req, res) => {
     }
 
     // Validation nom
-    if (!name?.trim()) {
+    if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'MISSING_NAME' })
     }
 
     // Validation count pair pour plate et dumbbell_plate
-    if (['plate', 'dumbbell_plate'].includes(category)) {
+    if (category === 'plate') {
       const n = parseInt(count) || 1
       if (n < 2 || n % 2 !== 0) {
         return res.status(400).json({
@@ -84,9 +92,8 @@ router.post('/', (req, res) => {
       }
     }
 
-    // dumbbell_loadable : count toujours 2
-    const effectiveCount =
-      category === 'dumbbell_loadable' ? 2 : (parseInt(count) || 1)
+    // La quantité représente le nombre réel de poignées ou d'haltères.
+    const effectiveCount = count ?? (category === 'dumbbell_loadable' ? 2 : 1)
 
     // Validation champs haltères réglables
     if (category === 'dumbbell_adjustable') {
@@ -101,6 +108,7 @@ router.post('/', (req, res) => {
       }
     }
 
+    if (!validEquipment(req.body)) return res.status(400).json({ error: 'INVALID_EQUIPMENT_VALUES' })
     const result = db.prepare(`
       INSERT INTO equipment_item
         (category, name, weight_kg, count, weight_min_kg, weight_max_kg,
@@ -131,6 +139,9 @@ router.put('/:id', (req, res) => {
   try {
     const existing = db.prepare('SELECT * FROM equipment_item WHERE id = ?').get(req.params.id)
     if (!existing) return res.status(404).json({ error: 'EQUIPMENT_NOT_FOUND' })
+
+    const merged = { ...existing, ...req.body }
+    if (!validEquipment(merged)) return res.status(400).json({ error: 'INVALID_EQUIPMENT_VALUES' })
 
     const fields = [
       'category', 'name', 'weight_kg', 'count',

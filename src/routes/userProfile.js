@@ -7,6 +7,7 @@ const db     = getDb()
 // Champs modifiables avec leurs types et contraintes
 const PROFILE_SCHEMA = {
   display_name:              { type: 'string_nullable' },
+  date_of_birth:             { type: 'date_nullable' },
   age:                       { type: 'number_nullable', min: 10, max: 100 },
   sex:                       { type: 'enum_nullable', enum: ['male','female','other','prefer_not_to_say'] },
   weight_kg:                 { type: 'number_nullable', min: 20, max: 500 },
@@ -35,16 +36,23 @@ function parseProfile(row) {
   }
 }
 
-function validateField(key, value) {
+export function validateField(key, value) {
   const schema = PROFILE_SCHEMA[key]
   if (!schema) return { valid: false, error: `Champ inconnu : ${key}` }
 
   if (value === null || value === undefined) {
-    if (['string_nullable','number_nullable','enum_nullable'].includes(schema.type)) return { valid: true }
+    if (['string_nullable','number_nullable','enum_nullable','date_nullable'].includes(schema.type)) return { valid: true }
     if (schema.type !== 'json_array') return { valid: false, error: `${key} ne peut pas être null.` }
   }
 
   switch (schema.type) {
+    case 'date_nullable': {
+      if (value === null) break
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+        !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0,10) !== value || value > new Date().toISOString().slice(0,10) || value < '1900-01-01')
+        return { valid:false,error:'date_of_birth invalide.' }
+      break
+    }
     case 'string':
     case 'string_nullable':
       if (value !== null && typeof value !== 'string') return { valid: false, error: `${key} doit être une chaîne.` }
@@ -52,8 +60,8 @@ function validateField(key, value) {
     case 'number':
     case 'number_nullable': {
       if (value === null) break
-      const n = Number(value)
-      if (isNaN(n)) return { valid: false, error: `${key} doit être un nombre.` }
+      const n = value
+      if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: `${key} doit être un nombre.` }
       if (schema.min !== undefined && n < schema.min) return { valid: false, error: `${key} ≥ ${schema.min}.` }
       if (schema.max !== undefined && n > schema.max) return { valid: false, error: `${key} ≤ ${schema.max}.` }
       break
@@ -73,6 +81,21 @@ function validateField(key, value) {
       break
   }
   return { valid: true }
+}
+
+export function resetProfile(db) {
+    db.prepare(`
+      UPDATE user_profile SET
+        display_name = NULL, age = NULL, date_of_birth = NULL, sex = NULL, weight_kg = NULL, height_cm = NULL,
+        fitness_level = NULL, primary_goal = NULL, secondary_goals = '[]',
+        target_weight_kg = NULL, sport_practiced = NULL,
+        sessions_per_week = NULL, session_duration_min = NULL,
+        prefers_exercise_variation = 1,
+        injury_notes = NULL, medical_notes = NULL,
+        onboarding_completed = 0, onboarding_step = 'not_started',
+        updated_at = datetime('now')
+      WHERE id = 1
+    `).run()
 }
 
 // ── GET /user-profile ─────────────────────────────────────────
@@ -130,18 +153,7 @@ router.put('/', (req, res) => {
 // Reset complet du profil singleton (jamais suppression de la ligne id=1)
 router.delete('/', (req, res) => {
   try {
-    db.prepare(`
-      UPDATE user_profile SET
-        display_name = NULL, age = NULL, sex = NULL, weight_kg = NULL, height_cm = NULL,
-        fitness_level = NULL, primary_goal = NULL, secondary_goals = '[]',
-        target_weight_kg = NULL, sport_practiced = NULL,
-        sessions_per_week = NULL, session_duration_min = NULL,
-        prefers_exercise_variation = 1,
-        injury_notes = NULL, medical_notes = NULL,
-        onboarding_completed = 0, onboarding_step = 'not_started',
-        updated_at = datetime('now')
-      WHERE id = 1
-    `).run()
+    resetProfile(db)
     const row = db.prepare('SELECT * FROM user_profile WHERE id = 1').get()
     res.json(parseProfile(row))
   } catch (err) {

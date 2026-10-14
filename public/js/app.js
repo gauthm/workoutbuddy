@@ -3,12 +3,13 @@ import { router } from './router.js'
 import { store } from './store.js'
 import { i18n, t } from './i18n.js'
 import { settings as settingsApi } from './api.js'
+import { migratePainPreferences } from './utils/pain.js'
 import AppShell from './components/layout/AppShell.js'
 
 async function init() {
   // Charger les settings depuis le serveur
   try {
-    const data = await settingsApi.get()
+    const data = await migratePainPreferences(await settingsApi.get())
     store.setSettings(data)
     // Appliquer la langue
     const lang = data.language || 'fr'

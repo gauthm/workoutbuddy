@@ -17,6 +17,7 @@ async function request(method, path, body = undefined) {
     const err = new Error(data.error || `HTTP ${res.status}`)
     err.status = res.status
     err.detail = data.detail
+    err.details = data.details
     throw err
   }
   return data
@@ -48,18 +49,26 @@ export const equipment = {
 export const settings = {
   get:         ()     => request('GET', '/settings'),
   update:      (body) => request('PUT', '/settings', body),
-  testAI:      ()     => request('POST', '/settings/test-ai'),
-  listModels:  ()     => request('GET', '/settings/ai-models'),
+  save:        (body) => request('POST', '/settings/save', body),
+  testAI:      (body) => request('POST', '/settings/test-ai', body),
+  listModels:  (body) => body ? request('POST', '/settings/ai-models', body) : request('GET', '/settings/ai-models'),
 }
 
 // ── Programmes (stubs pour tâches futures) ───────────────────
 export const programs = {
+  preview:    (body) => request('POST', '/programs/preview', body),
+  generate:   (body) => request('POST', '/programs/generate', body),
   list:       (params = {}) => request('GET', '/programs?' + new URLSearchParams(params)),
   get:        (id)          => request('GET', `/programs/${id}`),
   update:     (id, body)    => request('PUT', `/programs/${id}`, body),
   delete:     (id)          => request('DELETE', `/programs/${id}`),
   activate:   (id)          => request('POST', `/programs/${id}/activate`),
   nextSession:(id)          => request('GET', `/programs/${id}/next-session`),
+}
+
+export const programExercises = {
+  alternatives: id => request('GET', `/template-exercises/${id}/alternatives`),
+  replace: (id,body) => request('POST', `/template-exercises/${id}/replace`,body),
 }
 
 // ── Sessions ─────────────────────────────────────────────────
@@ -110,10 +119,10 @@ export const userProfile = {
 
 // ── Coach IA ──────────────────────────────────────────────────
 export const coach = {
+  chat: (body, { signal } = {}) => fetch(`${BASE}/ai/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal }),
   advice:              ()        => request('GET', '/ai/advice'),
   dismissAdvice:       (id)      => request('POST', `/ai/advice/${id}/dismiss`),
   purchasedAdvice:     (id)      => request('POST', `/ai/advice/${id}/purchased`),
-  applyAction:         (body)    => request('POST', '/ai/apply-action', body),
   generateAdvice:      ()        => request('POST', '/ai/generate-equipment-advice'),
   conversations:        ()          => request('GET', '/ai/conversations'),
   messages:             (id)        => request('GET', `/ai/conversations/${id}/messages`),
@@ -145,6 +154,7 @@ export const exportImport = {
 
   // Reset partiel : stats et historique uniquement
   resetStats: () => request('POST', '/reset-stats'),
+  resetAll: () => request('POST', '/reset-all'),
 
   // Backup manuel
   backup: () => request('POST', '/backup'),

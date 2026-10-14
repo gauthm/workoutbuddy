@@ -1,37 +1,14 @@
 import { reactive, watch, inject } from '/vendor/vue.esm-browser.prod.js'
 import { equipment as api } from '../../api.js'
 import { t } from '../../i18n.js'
+import { ALL_EQUIPMENT_CATEGORIES } from './inventoryCatalog.js'
 
-const CATEGORIES = [
-  'barbell', 'ez_bar',
-  'plate',
-  'dumbbell_adjustable', 'dumbbell_loadable',
-  'kettlebell',
-  'resistance_band',
-  'bench', 'bench_adjustable',
-  'rack', 'pullup_bar', 'cable_machine', 'smith_machine', 'other',
-]
-
-const CATEGORY_LABELS = {
-  barbell:             'Barre droite',
-  ez_bar:              'Barre EZ',
-  plate:               'Disque (compatible barre)',
-  dumbbell_adjustable: 'Haltère réglable (sélecteur)',
-  dumbbell_loadable:   'Haltère à disques (poignée)',
-  kettlebell:          'Kettlebell',
-  resistance_band:     'Élastique',
-  bench:               'Banc plat',
-  bench_adjustable:    'Banc inclinable / réglable',
-  rack:                'Rack / Cage de squat',
-  pullup_bar:          'Barre de traction',
-  cable_machine:       'Machine câble / Poulie',
-  smith_machine:       'Smith machine',
-  other:               'Autre',
-}
+const CATEGORIES = ALL_EQUIPMENT_CATEGORIES
 
 export default {
   name: 'EquipmentForm',
   props: {
+    custom: { type: Boolean, default: false },
     item: { type: Object, default: null }  // null = création, objet = édition
   },
   emits: ['saved','cancel'],
@@ -40,7 +17,7 @@ export default {
     const store = inject('store')
 
     const blank = () => ({
-      category: 'barbell', name: '', weight_kg: '',
+      category: props.custom ? 'other' : 'barbell', name: '', weight_kg: '',
       count: 1, weight_min_kg: '', weight_max_kg: '',
       weight_step_kg: '', resistance_min_kg: '', resistance_max_kg: '', notes: ''
     })
@@ -75,10 +52,6 @@ export default {
         }
       }
 
-      // Forcer count=2 pour dumbbell_loadable
-      if (form.category === 'dumbbell_loadable') {
-        form.count = 2
-      }
 
       // Validation haltère réglable
       if (form.category === 'dumbbell_adjustable') {
@@ -99,12 +72,8 @@ export default {
         for (const [k, v] of Object.entries(form)) {
           body[k] = (v === '' ? null : v)
         }
-        if (props.item) {
-          await api.update(props.item.id, body)
-        } else {
-          await api.create(body)
-        }
-        emit('saved')
+        const item = props.item ? await api.update(props.item.id, body) : await api.create(body)
+        emit('saved', item)
       } catch (err) {
         store.showToast(err.message, 'error')
       } finally {
@@ -114,18 +83,17 @@ export default {
 
     // Afficher les champs selon la catégorie
     const showWeight       = () => ['barbell','ez_bar','dumbbell_loadable','kettlebell'].includes(form.category)
-    const showCount        = () => ['plate','kettlebell'].includes(form.category)
+    const showCount        = () => ['plate','kettlebell','dumbbell_loadable'].includes(form.category)
     const countMustBePair  = () => ['plate'].includes(form.category)
-    const countIsLocked    = () => form.category === 'dumbbell_loadable'
     const showAdjustable   = () => form.category === 'dumbbell_adjustable'
     const showResistance   = () => form.category === 'resistance_band'
     const showNoNumericFields = () =>
-      ['bench','bench_adjustable','rack','pullup_bar','smith_machine','other'].includes(form.category)
+      ['bench','bench_adjustable','rack','pullup_bar','roman_chair', 'dip_station', 'gym_mat', 'ab_wheel', 'leg_press', 'leg_extension', 'leg_curl', 'lat_pulldown', 'seated_row', 'chest_press', 'shoulder_press', 'pec_deck', 'treadmill', 'stationary_bike', 'elliptical', 'rowing_machine','smith_machine','other'].includes(form.category)
 
     return {
       form, saving, save, t,
-      CATEGORIES, CATEGORY_LABELS,
-      showWeight, showCount, countMustBePair, countIsLocked,
+      CATEGORIES,
+      showWeight, showCount, countMustBePair,
       showAdjustable, showResistance, showNoNumericFields,
       isEdit: !!props.item,
     }
@@ -133,18 +101,15 @@ export default {
 
   template: `
     <form @submit.prevent="save">
-      <h2 class="modal__title">
-        {{ isEdit ? t('common.edit') : t('equipment.add') }}
-      </h2>
-      <div class="form-group">
-        <label class="form-label">{{ t('equipment.category') }}</label>
-        <select class="form-select" v-model="form.category">
-          <option v-for="c in CATEGORIES" :key="c" :value="c">{{ CATEGORY_LABELS[c] }}</option>
+      <div v-if="!custom" class="form-group">
+        <label class="form-label" for="EquipmentForm-form-category">{{ t('equipment.category') }}</label>
+        <select id="EquipmentForm-form-category" class="form-select" v-model="form.category">
+          <option v-for="c in CATEGORIES" :key="c" :value="c">{{ t('equipment.category_' + c) }}</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">{{ t('equipment.name') }}</label>
-        <input class="form-input" v-model="form.name" required />
+        <label class="form-label" for="EquipmentForm-form-name">{{ t('equipment.name') }}</label>
+        <input id="EquipmentForm-form-name" class="form-input" v-model="form.name" required />
       </div>
 
       <!-- Poids -->
@@ -175,28 +140,19 @@ export default {
           v-model="form.count" />
       </div>
 
-      <!-- Quantité verrouillée pour dumbbell_loadable -->
-      <div v-if="countIsLocked()" class="form-group">
-        <label class="form-label">{{ t('equipment.count') }}</label>
-        <div style="padding:0.6rem 0.75rem;background:var(--color-surface-2);
-          border-radius:var(--radius-sm);color:var(--color-text-muted);font-size:0.9rem">
-          {{ t('equipment.handle_count_locked') }}
-        </div>
-      </div>
-
       <!-- Haltère réglable -->
       <template v-if="showAdjustable()">
         <div class="form-group">
-          <label class="form-label">Poids minimum (kg)</label>
-          <input class="form-input" type="number" step="0.5" min="0" v-model="form.weight_min_kg" />
+          <label class="form-label" for="EquipmentForm-form-weight_min_kg">Poids minimum (kg)</label>
+          <input id="EquipmentForm-form-weight_min_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.weight_min_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label">Poids maximum (kg)</label>
-          <input class="form-input" type="number" step="0.5" min="0" v-model="form.weight_max_kg" />
+          <label class="form-label" for="EquipmentForm-form-weight_max_kg">Poids maximum (kg)</label>
+          <input id="EquipmentForm-form-weight_max_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.weight_max_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label">Incrément (kg)</label>
-          <input class="form-input" type="number" step="0.5" min="0.5"
+          <label class="form-label" for="EquipmentForm-form-weight_step_kg">Incrément (kg)</label>
+          <input id="EquipmentForm-form-weight_step_kg" class="form-input" type="number" step="0.5" min="0.5"
             v-model="form.weight_step_kg" placeholder="ex: 2.5" />
         </div>
       </template>
@@ -204,17 +160,17 @@ export default {
       <!-- Élastique -->
       <template v-if="showResistance()">
         <div class="form-group">
-          <label class="form-label">Résistance min (kg équiv.)</label>
-          <input class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_min_kg" />
+          <label class="form-label" for="EquipmentForm-form-resistance_min_kg">Résistance min (kg équiv.)</label>
+          <input id="EquipmentForm-form-resistance_min_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_min_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label">Résistance max (kg équiv.)</label>
-          <input class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_max_kg" />
+          <label class="form-label" for="EquipmentForm-form-resistance_max_kg">Résistance max (kg équiv.)</label>
+          <input id="EquipmentForm-form-resistance_max_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_max_kg" />
         </div>
       </template>
 
       <!-- Banc, rack, etc. : afficher un texte explicatif -->
-      <div v-if="showNoNumericFields()" class="form-group">
+      <div v-if="!custom && showNoNumericFields()" class="form-group">
         <p style="font-size:0.85rem;color:var(--color-text-muted)">
           <template v-if="form.category === 'bench_adjustable'">
             ✅ {{ t('equipment.bench_adjustable_hint') }}

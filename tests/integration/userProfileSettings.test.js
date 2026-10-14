@@ -76,38 +76,17 @@ describe('T8.3 — Profil : champs effaçables et reset', () => {
   })
 })
 
-describe('T8.3 — Gate apply-action sur onboarding_completed', () => {
-
-  it('create_program refusé si profil incomplet', async () => {
-    await request(app).delete('/api/v1/user-profile')   // profil vierge
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'create_program', explanation: 'Test.',
-        data: { name: 'P', goal: 'strength', level: 'beginner', days_per_week: 3 } }
+describe('Conseiller en lecture seule, quel que soit le profil', () => {
+  for (const completed of [false,true]) {
+    it(`refuse les modifications même avec onboarding_completed=${completed}`, async () => {
+      await request(app).put('/api/v1/user-profile').send({onboarding_completed:completed})
+      for (const action of ['create_program','add_equipment','complete_user_profile']) {
+        const res = await request(app).post('/api/v1/ai/apply-action').send({action:{
+          action,explanation:'Ancienne action',data:{name:'Test',goal:'strength',level:'beginner',days_per_week:3,age:50}
+        }})
+        assert.equal(res.status,403)
+        assert.equal(res.body.error,'COACH_READ_ONLY')
+      }
     })
-    assert.equal(res.status, 400)
-    assert.ok(res.body.details.some(d => d.includes('onboarding')))
-  })
-
-  it('create_program accepté après complétion du profil', async () => {
-    await request(app).put('/api/v1/user-profile').send({ onboarding_completed: true })
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'create_program', explanation: 'Test.',
-        data: { name: 'P', goal: 'strength', level: 'beginner', days_per_week: 3 } }
-    })
-    assert.equal(res.status, 201)
-  })
-
-  it('add_equipment et complete_user_profile NON bloqués pendant l\'onboarding', async () => {
-    await request(app).delete('/api/v1/user-profile')
-    const eq = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'add_equipment', explanation: 'Test.',
-        data: { category: 'barbell', name: 'Barre 20kg', weight_kg: 20 } }
-    })
-    assert.equal(eq.status, 201)
-    const pf = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'complete_user_profile', explanation: 'Étape.',
-        data: { onboarding_step: 'asking_basics' } }
-    })
-    assert.equal(pf.status, 201)
-  })
+  }
 })

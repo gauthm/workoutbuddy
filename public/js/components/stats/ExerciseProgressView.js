@@ -2,6 +2,7 @@ import { reactive, onMounted, onUnmounted, inject, nextTick }
   from '/vendor/vue.esm-browser.prod.js'
 import { stats as statsApi, exercises as exercisesApi } from '../../api.js'
 import { t } from '../../i18n.js'
+import { estimate1RM } from '../../utils/rm.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -43,13 +44,13 @@ export default {
         ])
         state.exercise = exercise
         state.data     = progress.data
-        state.formula  = progress.formula
-        await nextTick()
-        renderChart()
+        recalculate()
       } catch (err) {
         state.error = err.message
       } finally {
         state.loading = false
+        await nextTick()
+        renderChart()
       }
     }
 
@@ -58,20 +59,30 @@ export default {
       try {
         const progress = await statsApi.exercise(props.id, { days })
         state.data    = progress.data
-        state.formula = progress.formula
+        recalculate()
         await nextTick()
         renderChart()
-      } catch (_) {}
+      } catch (err) { state.error = err.message }
+    }
+
+    function recalculate() {
+      state.data = state.data.map(row => ({ ...row,
+        estimated_1rm_kg: Math.round(estimate1RM(row.weight_kg, row.reps, state.formula) * 100) / 100,
+      }))
     }
 
     async function changeFormula(formula) {
       state.formula = formula
-      // Recalculer côté client (même données, formule différente)
-      // Pour une vraie recalculation, recharger depuis l'API
-      await load()
+      recalculate()
+      await nextTick()
+      renderChart()
     }
 
     function renderChart() {
+      const styles = getComputedStyle(document.documentElement)
+      const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
+      const textColor = styles.getPropertyValue('--color-text').trim()
+      const gridColor = styles.getPropertyValue('--color-border').trim()
       if (!window.Chart) return
       const canvas = document.getElementById('exercise-progress-chart')
       if (!canvas || !state.data.length) return
@@ -108,12 +119,12 @@ export default {
               // 'category' (fallback documenté du plan) : le bundle UMD
               // de Chart.js 4 n'inclut pas d'adaptateur de date, 'time' échouerait
               type:  'category',
-              ticks: { color: '#888', maxTicksLimit: 8 },
-              grid:  { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: mutedColor, maxTicksLimit: 8 },
+              grid:  { color: gridColor },
             },
             y: {
-              ticks: { color: '#888', callback: (v) => `${v} kg` },
-              grid:  { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: mutedColor, callback: (v) => `${v} kg` },
+              grid:  { color: gridColor },
             },
           },
         },

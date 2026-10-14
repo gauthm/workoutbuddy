@@ -1,6 +1,6 @@
 // Retourne la date du jour au format YYYY-MM-DD
 export function isoDate(d = new Date()) {
-  return d.toISOString().slice(0, 10)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 // Retourne la semaine ISO au format YYYY-Www (ex: "2025-W27")
@@ -49,4 +49,10 @@ export function formatDuration(seconds) {
   const m = Math.floor((seconds % 3600) / 60)
   if (h > 0) return `${h}h ${m}min`
   return `${m}min`
+}
+
+export function parseUtcTimestamp(value) {
+  if (typeof value !== 'string') return NaN
+  const normalized = value.replace(' ', 'T')
+  return Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized) ? normalized : normalized + 'Z')
 }

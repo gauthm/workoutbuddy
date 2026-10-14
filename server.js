@@ -21,6 +21,7 @@ import { scheduleWeeks } from './src/services/sessionScheduler.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
+app.use('/api/v1/import', express.json({ limit: '20mb' }))
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
 
@@ -42,7 +43,17 @@ app.use('/api/v1', exportImportRouter)
 // ── Fallback SPA ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next()
+  if (path.extname(req.path)) return res.status(404).end()
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
+
+app.use('/api', (_req, res) => res.status(404).json({ error: 'NOT_FOUND' }))
+app.use((err, _req, res, _next) => {
+  if (res.headersSent) return _next(err)
+  if (err.type === 'entity.too.large') return res.status(413).json({ error: 'PAYLOAD_TOO_LARGE' })
+  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'INVALID_JSON' })
+  console.error('[HTTP]', err.message)
+  res.status(500).json({ error: 'INTERNAL_ERROR' })
 })
 
 // ── Démarrage ─────────────────────────────────────────────────
@@ -64,13 +75,16 @@ async function bootstrap() {
   // Précédence : variables d'environnement > table settings > défauts
   const portRow = db.prepare("SELECT value FROM settings WHERE key='network_port'").get()
   const hostRow = db.prepare("SELECT value FROM settings WHERE key='network_host'").get()
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10)
+  const port = process.env.PORT ? Number(process.env.PORT)
     : portRow ? JSON.parse(portRow.value) : 3000
   const host = process.env.HOST || (hostRow ? JSON.parse(hostRow.value) : '127.0.0.1')
 
-  app.listen(port, host, () => {
-    console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Port réseau invalide.')
+  await new Promise((resolve, reject) => {
+    const server = app.listen(port, host, resolve)
+    server.once('error', reject)
   })
+  console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
 }
 
 const isMain = process.argv[1] &&

@@ -17,7 +17,7 @@ export default {
       <div class="program-card__header">
         <span class="program-card__name">{{ program.name }}</span>
         <span v-if="program.is_active" class="badge badge--active">
-          {{ t('programs.active_badge') }}
+          {{ t(program.is_finished ? 'programs.finished_badge' : 'programs.active_badge') }}
         </span>
       </div>
       <div class="program-card__meta">

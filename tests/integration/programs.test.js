@@ -53,12 +53,12 @@ describe('T2.1 — API Programmes', () => {
     assert.equal(check.body.is_active, true)
   })
 
-  it('PUT /programs/:id met à jour le programme', async () => {
+  it('PUT /programs/:id verrouille les champs autres que la durée', async () => {
     const res = await request(app).put(`/api/v1/programs/${programId}`).send({
       description: 'Programme modifié'
     })
-    assert.equal(res.status, 200)
-    assert.equal(res.body.description, 'Programme modifié')
+    assert.equal(res.status, 403)
+    assert.equal(res.body.error, 'PROGRAM_FIELDS_LOCKED')
   })
 
   it('POST /programs/:id/templates crée un template', async () => {

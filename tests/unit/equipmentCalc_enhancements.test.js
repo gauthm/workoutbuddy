@@ -120,6 +120,20 @@ describe('isEquipmentAvailable — bench_adjustable satisfait bench', () => {
 
 // ── Tests cas limites ─────────────────────────────────────────
 describe('cas limites', () => {
+  it('une seule poignée suffit à un exercice unilatéral', () => {
+    const r = calculateAchievableLoads([{ category: 'dumbbell_loadable', weight_kg: 2, count: 1 }, dumbPlate(1, 3)], EX_DUMB)
+    assert.deepEqual(r.loads_kg, [2, 4])
+  })
+  it('deux haltères répartissent les disques disponibles sur quatre côtés', () => {
+    const r = calculateAchievableLoads([dumbHandle(2), dumbPlate(1, 4)], { ...EX_DUMB, is_unilateral: 0 })
+    assert.deepEqual(r.loads_kg, [2, 4])
+  })
+  it('les quantités de plusieurs lignes de même poids se cumulent', () => {
+    const r = calculateAchievableLoads([dumbFixed(10, 1), dumbFixed(10, 1)], { ...EX_DUMB, is_unilateral: 0 })
+    assert.deepEqual(r.loads_kg, [10])
+    const discs = calculateAchievableLoads([dumbHandle(2), dumbPlate(1, 2), dumbPlate(1, 2)], { ...EX_DUMB, is_unilateral: 0 })
+    assert.deepEqual(discs.loads_kg, [2, 4])
+  })
   it('exercice sans équipement → loads=[0]', () => {
     const r = calculateAchievableLoads([], EX_NONE)
     assert.deepEqual(r.loads_kg, [0])

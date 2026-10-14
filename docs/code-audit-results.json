@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-13",
+  "automated": {
+    "command": "npm run test:in-process",
+    "passed": 293,
+    "failed": 0
+  },
+  "simulatedInteractions": {
+    "report": [
+      {
+        "name": "Accueil : programme et raccourcis",
+        "passed": true
+      },
+      {
+        "name": "Calendrier : date locale et replanification",
+        "passed": true
+      },
+      {
+        "name": "Programme : détail et noms des exercices",
+        "passed": true
+      },
+      {
+        "name": "Séance : grille/RPE/infobulle/validation",
+        "passed": true
+      },
+      {
+        "name": "Séance : aide et confirmation clavier",
+        "passed": true
+      },
+      {
+        "name": "Historique et détail de séance",
+        "passed": true
+      },
+      {
+        "name": "Statistiques : tous les records et volume",
+        "passed": true
+      },
+      {
+        "name": "Progression : graphique et formule",
+        "passed": true
+      },
+      {
+        "name": "Poids : graphique et ajout",
+        "passed": true
+      },
+      {
+        "name": "Coach : conversation, saisie longue et envoi",
+        "passed": true
+      },
+      {
+        "name": "Coach : historique accessible et focus",
+        "passed": true
+      },
+      {
+        "name": "Matériel : ajout dans une modale",
+        "passed": true
+      },
+      {
+        "name": "Paramètres : tous les accordéons et confirmations",
+        "passed": true
+      },
+      {
+        "name": "Exercices : recherche, filtres et douleurs",
+        "passed": true
+      },
+      {
+        "name": "Exercices : création et modification",
+        "passed": true
+      },
+      {
+        "name": "Langue : traduction immédiate des écrans",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  "liveUI": {
+    "origin": "http://localhost:3000",
+    "exerciseCount": 884,
+    "interactions": [
+      {
+        "name": "Accueil réel : raccourcis et création via le coach",
+        "passed": true
+      },
+      {
+        "name": "Exercices réels : recherche et filtres API",
+        "passed": true
+      },
+      {
+        "name": "Exercice réel : fiche et images",
+        "passed": true
+      },
+      {
+        "name": "Formulaire exercice : validation sans écriture",
+        "passed": true
+      },
+      {
+        "name": "Calendrier réel : navigation et sélection au clavier",
+        "passed": true
+      },
+      {
+        "name": "Matériel réel : ouverture, clavier et fermeture",
+        "passed": true
+      },
+      {
+        "name": "Paramètres réels : accordéons et formulaires",
+        "passed": true
+      },
+      {
+        "name": "Coach réel : historique et saisie sans envoi",
+        "passed": true
+      }
+    ],
+    "layout": {
+      "cases": 272,
+      "failures": []
+    },
+    "errors": [],
+    "badResponses": []
+  },
+  "selectChevron": {
+    "rightInset": "0.9rem (14.4px)",
+    "reservedSpace": "2.5rem (40px)"
+  },
+  "backendRestartRequired": true
+}

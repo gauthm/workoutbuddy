@@ -1,5 +1,7 @@
 import express from 'express'
+import { initializeTemplateProgression } from '../services/exerciseProgression.js'
 import { getDb } from '../db/database.js'
+import { getExerciseAlternatives, replaceTemplateExercise } from '../services/exerciseReplacement.js'
 
 const db = getDb()
 
@@ -85,9 +87,7 @@ templatesRouter.post('/:id/exercises', (req, res) => {
       rotation_group ?? null, notes ?? null
     )
 
-    db.prepare(
-      'INSERT INTO progression_state (template_exercise_id, current_weight_kg) VALUES (?,0)'
-    ).run(teResult.lastInsertRowid)
+    initializeTemplateProgression(db,teResult.lastInsertRowid)
 
     const te = db.prepare('SELECT * FROM template_exercise WHERE id = ?').get(teResult.lastInsertRowid)
     res.status(201).json(parseTemplateExercise(te))
@@ -98,6 +98,19 @@ templatesRouter.post('/:id/exercises', (req, res) => {
 })
 
 const templateExercisesRouter = express.Router()
+
+templateExercisesRouter.get('/:id/alternatives', (req,res) => {
+  try { res.json(getExerciseAlternatives(db,req.params.id)) }
+  catch(error) { res.status(error.status || 500).json({error:error.status ? error.message : 'INTERNAL_ERROR'}) }
+})
+
+templateExercisesRouter.post('/:id/replace', (req,res) => {
+  const body=req.body
+  if(!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).some(key=>!['exercise_id','expected_exercise_id'].includes(key)) ||
+    typeof body.exercise_id!=='string' || typeof body.expected_exercise_id!=='string') return res.status(400).json({error:'INVALID_REPLACEMENT'})
+  try { res.json(replaceTemplateExercise(db,req.params.id,body.exercise_id,body.expected_exercise_id)) }
+  catch(error) { res.status(error.status || 500).json({error:error.status ? error.message : 'INTERNAL_ERROR'}) }
+})
 
 templateExercisesRouter.put('/reorder', (req, res) => {
   try {

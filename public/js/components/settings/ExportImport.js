@@ -1,3 +1,4 @@
+import ModalDialog from '../common/ModalDialog.js'
 import { reactive, inject } from '/vendor/vue.esm-browser.prod.js'
 import { exportImport as api } from '../../api.js'
 import { t } from '../../i18n.js'
@@ -5,7 +6,7 @@ import ConfirmModal from '../common/ConfirmModal.js'
 
 export default {
   name: 'ExportImport',
-  components: { ConfirmModal },
+  components: { ModalDialog, ConfirmModal },
 
   setup() {
     const store = inject('store')
@@ -14,6 +15,7 @@ export default {
       exporting:         false,
       importing:         false,
       backingUp:         false,
+      resetting:         false,
       showImportConfirm: false,
       showResetConfirm:  false,
       pendingFile:       null,   // File object en attente de confirmation d'import
@@ -97,27 +99,16 @@ export default {
 
     // ── Réinitialisation ──────────────────────────────────────
     async function confirmReset() {
+      if (state.resetting) return
       state.showResetConfirm = false
+      state.resetting = true
       try {
-        // Import d'un payload vide (toutes les tables vidées)
-        const emptyPayload = {
-          version:     1,
-          app:         'workoutbuddy',
-          exported_at: new Date().toISOString(),
-          data: {
-            exercises: [], equipment_items: [], programs: [],
-            workout_templates: [], template_exercises: [],
-            progression_states: [], sessions: [], session_exercises: [],
-            set_logs: [], body_weights: [], personal_records: [],
-            equipment_advice: [], settings: {},
-          }
-        }
-        await api.importJson(emptyPayload)
+        await api.resetAll()
         store.showToast(t('settings.reset_done'), 'success')
         setTimeout(() => window.location.reload(), 1000)
       } catch (err) {
         store.showToast(err.message, 'error')
-      }
+      } finally { state.resetting = false }
     }
 
     // ── Réinitialisation stats/historique ─────────────────────
@@ -129,6 +120,7 @@ export default {
         store.showToast(t('settings.reset_stats_type_reset'), 'error')
         return
       }
+      if (resetStatsState.resetting) return
       resetStatsState.resetting = true
       try {
         await api.resetStats()
@@ -241,8 +233,8 @@ export default {
         </div>
         <button class="btn btn--secondary export-import__btn"
           style="color:var(--color-warning);border-color:var(--color-warning)"
-          @click="resetStatsState.show = true">
-          📊🗑
+          :aria-label="t('settings.reset_stats')" @click="resetStatsState.show = true">
+          🗑
         </button>
       </div>
 
@@ -257,7 +249,7 @@ export default {
           </div>
         </div>
         <button class="btn btn--danger export-import__btn"
-          @click="state.showResetConfirm = true">
+          :disabled="state.resetting" :aria-label="t('settings.reset')" @click="state.showResetConfirm = true">
           🗑
         </button>
       </div>
@@ -285,20 +277,15 @@ export default {
       />
 
       <!-- Modale de double confirmation stats -->
-      <div v-if="resetStatsState.show" class="modal-overlay"
-        @click.self="resetStatsState.show = false; resetStatsState.confirmText = ''">
-        <div class="modal">
-          <h2 class="modal__title" style="color:var(--color-warning)">
-            ⚠️ {{ t('settings.reset_stats') }}
-          </h2>
+      <ModalDialog v-if="resetStatsState.show" :title="t('settings.reset_stats')" @close="resetStatsState.show = false; resetStatsState.confirmText = ''">
           <p class="settings-reset-stats__desc">
             {{ t('settings.reset_stats_desc') }}
           </p>
           <div class="form-group">
-            <label class="form-label">
+            <label class="form-label" for="ExportImport-resetStatsState-confirmText">
               {{ t('settings.reset_stats_prompt', { word: 'RESET' }) }}
             </label>
-            <input
+            <input id="ExportImport-resetStatsState-confirmText"
               class="form-input settings-reset-stats__input"
               type="text"
               v-model="resetStatsState.confirmText"
@@ -317,8 +304,8 @@ export default {
               {{ resetStatsState.resetting ? t('common.loading') : t('settings.reset_stats_confirm_btn') }}
             </button>
           </div>
-        </div>
-      </div>
+
+      </ModalDialog>
     </div>
   `
 }

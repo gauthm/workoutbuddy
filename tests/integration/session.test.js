@@ -113,3 +113,19 @@ describe('T2.2 — Séance complète bout en bout', () => {
     assert.equal(pr.estimated_1rm_kg, 70)
   })
 })
+
+
+it('le détail expose les séries prévues et le repos du template sans créer de séries', async()=>{
+  const db=getDb()
+  const pid=db.prepare("INSERT INTO program(name,goal,level,days_per_week,progression_model) VALUES('Affichage','strength','beginner',3,'linear')").run().lastInsertRowid
+  const tid=db.prepare("INSERT INTO workout_template(program_id,name) VALUES(?,'T')").run(pid).lastInsertRowid
+  const teid=db.prepare("INSERT INTO template_exercise(workout_template_id,exercise_id,target_sets,target_reps_min,target_reps_max,rest_seconds) VALUES(?,'barbell_bench_press_medium_grip',5,6,10,120)").run(tid).lastInsertRowid
+  const sid=db.prepare("INSERT INTO session(name,scheduled_date,workout_template_id,program_id) VALUES('S','2026-10-13',?,?)").run(tid,pid).lastInsertRowid
+  db.prepare("INSERT INTO session_exercise(session_id,exercise_id,template_exercise_id) VALUES(?,'barbell_bench_press_medium_grip',?)").run(sid,teid)
+  const response=await request(app).get(`/api/v1/sessions/${sid}`)
+  assert.equal(response.status,200)
+  const exercise=response.body.exercises[0]
+  assert.equal(exercise.target_sets,5);assert.equal(exercise.rest_seconds,120)
+  assert.equal(exercise.target_reps_min,6);assert.equal(exercise.target_reps_max,10)
+  assert.deepEqual(exercise.sets,[])
+})

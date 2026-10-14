@@ -107,60 +107,13 @@ describe('T7.5 — API exclusion exercices', () => {
     assert.equal(res.body.error, 'MISSING_IS_EXCLUDED')
   })
 
-  // ── Action coach IA ────────────────────────────────────────
-  it('POST /ai/apply-action exclude_exercises → 201', async () => {
-    if (!realExerciseId2) return
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: {
-        action:      'exclude_exercises',
-        explanation: 'Test exclusion via action coach.',
-        data: {
-          exercise_ids: [realExerciseId2],
-          reason:       'Test limitation physique',
-        }
-      }
-    })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.applied, true)
-    assert.equal(res.body.result.type, 'exclude_exercises')
-    assert.equal(res.body.result.count, 1)
-    assert.ok(res.body.result.excluded.includes(realExerciseId2))
-
-    // Vérifier en DB
-    const exRes = await request(app).get(`/api/v1/exercises/${realExerciseId2}`)
-    assert.equal(exRes.body.is_excluded, true)
-    assert.equal(exRes.body.exclusion_reason, 'Test limitation physique')
-
-    // Nettoyer
-    await request(app)
-      .put(`/api/v1/exercises/${realExerciseId2}/toggle-exclusion`)
-      .send({ is_excluded: false })
-  })
-
-  it('POST /ai/apply-action exclude_exercises avec ID inconnu → 400', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: {
-        action:      'exclude_exercises',
-        explanation: 'Test ID invalide.',
-        data: {
-          exercise_ids: ['id_absolument_inexistant_xyz'],
-          reason:       'Test',
-        }
-      }
-    })
-    assert.equal(res.status, 400)
-    assert.equal(res.body.error, 'INVALID_ACTION_SCHEMA')
-    assert.ok(res.body.details.some(d => d.includes('id_absolument_inexistant_xyz')))
-  })
-
-  it('POST /ai/apply-action exclude_exercises tableau vide → 400', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: {
-        action:      'exclude_exercises',
-        explanation: 'Test tableau vide.',
-        data: { exercise_ids: [] }
-      }
-    })
-    assert.equal(res.status, 400)
+  it('le chat ne peut plus exclure des exercices', async () => {
+    const before = getDb().prepare('SELECT * FROM exercise WHERE id=?').get(realExerciseId2)
+    const res = await request(app).post('/api/v1/ai/apply-action').send({action:{
+      action:'exclude_exercises', explanation:'Ancienne action',data:{exercise_ids:[realExerciseId2],reason:'Test'}
+    }})
+    assert.equal(res.status,403)
+    assert.equal(res.body.error,'COACH_READ_ONLY')
+    assert.deepEqual(getDb().prepare('SELECT * FROM exercise WHERE id=?').get(realExerciseId2),before)
   })
 })

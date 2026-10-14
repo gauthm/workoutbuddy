@@ -12,9 +12,9 @@ export default {
   },
   template: `
     <div class="settings-section">
-      <button class="settings-section__toggle" @click="open = !open">
+      <button class="settings-section__toggle" :aria-expanded="open" @click="open = !open">
         <span class="settings-section__title">{{ title }}</span>
-        <span class="settings-section__chevron">{{ open ? '▲' : '▼' }}</span>
+        <span class="settings-section__chevron" aria-hidden="true">{{ open ? '▲' : '▼' }}</span>
       </button>
       <div v-show="open" class="settings-section__body">
         <slot />

@@ -10,3 +10,8 @@ export function getTimerWorker() {
   }
   return _worker
 }
+
+export function stopSessionTimers() {
+  _worker?.postMessage({ type: 'STOP_REST' })
+  _worker?.postMessage({ type: 'STOP_SESSION' })
+}

@@ -11,7 +11,7 @@ try { process.loadEnvFile(path.join(ROOT_DIR, '.env')) } catch (_) { /* absent :
 
 // DB_PATH surchargeable via l'environnement (défaut : ./data/workoutbuddy.db)
 const DB_PATH = process.env.DB_PATH
-  ? path.resolve(process.cwd(), process.env.DB_PATH)
+  ? (process.env.DB_PATH === ':memory:' ? ':memory:' : path.resolve(process.cwd(), process.env.DB_PATH))
   : path.join(ROOT_DIR, 'data', 'workoutbuddy.db')
 
 let instance = null
@@ -23,7 +23,7 @@ export function getDbPath() {
 export function getDb() {
   if (instance) return instance
 
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+  if (DB_PATH !== ':memory:') fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
   instance = new Database(DB_PATH)
   instance.pragma('journal_mode = WAL')
   instance.pragma('foreign_keys = ON')

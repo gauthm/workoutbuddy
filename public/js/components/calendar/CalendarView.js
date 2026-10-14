@@ -1,3 +1,4 @@
+import ModalDialog from '../common/ModalDialog.js'
 import { reactive, onMounted, computed, inject } from '/vendor/vue.esm-browser.prod.js'
 import { sessions as api } from '../../api.js'
 import { t } from '../../i18n.js'
@@ -5,12 +6,9 @@ import PageHeader    from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner   from '../common/ErrorBanner.js'
 import ConfirmModal  from '../common/ConfirmModal.js'
+import { isoDate } from '../../utils/date.js'
 
 // ── Helpers date ──────────────────────────────────────────────────────────
-
-function isoDate(d) {
-  return d.toISOString().slice(0, 10)
-}
 
 // Retourne le lundi de la semaine contenant la date
 function mondayOf(date) {
@@ -81,9 +79,11 @@ const STATUS_COLORS = {
 
 export default {
   name: 'CalendarView',
-  components: { PageHeader, LoadingSpinner, ErrorBanner, ConfirmModal },
+  components: { ModalDialog, PageHeader, LoadingSpinner, ErrorBanner, ConfirmModal },
 
-  setup() {
+  props: {embedded: {type:Boolean,default:false}},
+
+  setup(props) {
     const router  = inject('router')
     const store   = inject('store')
     const today   = new Date()
@@ -96,7 +96,7 @@ export default {
       sessions: [],               // Session[] du mois courant
 
       // Popup jour sélectionné
-      selectedDate:     null,
+      selectedDate:     props.embedded ? isoDate(today) : null,
       selectedSessions: [],
 
       // Modale replanification
@@ -134,7 +134,9 @@ export default {
     })
 
     // ── Chargement ────────────────────────────────────────────────
+    let loadRevision=0
     async function load() {
+      const revision=++loadRevision
       state.loading = true
       state.error   = null
       state.sessions = []
@@ -144,12 +146,14 @@ export default {
       const to   = isoDate(new Date(state.year, state.month + 1, 10))
 
       try {
-        const data = await api.list({ from, to, limit: 200 })
+        const data = await api.list({ from, to, limit: 200, active_program: 1 })
+        if(revision!==loadRevision)return
         state.sessions = data.sessions
+        state.selectedSessions=state.selectedDate ? data.sessions.filter(s=>s.scheduled_date===state.selectedDate) : []
       } catch (err) {
-        state.error = err.message
+        if(revision===loadRevision)state.error = err.message
       } finally {
-        state.loading = false
+        if(revision===loadRevision)state.loading = false
       }
     }
 
@@ -246,19 +250,20 @@ export default {
   },
 
   template: `
-    <div class="view">
-      <PageHeader :title="t('calendar.title')" />
+    <section :class="embedded ? 'calendar-embedded' : 'view'" :aria-label="t('calendar.title')">
+      <PageHeader v-if="!embedded" :title="t('calendar.title')" />
+      <h2 v-else class="dashboard-section__title">{{t('calendar.title')}}</h2>
 
-      <div class="view__content">
+      <div :class="embedded ? 'calendar-embedded__content' : 'view__content'">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else>
           <!-- Navigation mois -->
           <div class="calendar-nav">
-            <button class="calendar-nav__btn" @click="prevMonth()">‹</button>
+            <button class="calendar-nav__btn" :aria-label="t('calendar.previous_month')" @click="prevMonth()">‹</button>
             <span class="calendar-nav__label">{{ monthLabel }}</span>
-            <button class="calendar-nav__btn" @click="nextMonth()">›</button>
+            <button class="calendar-nav__btn" :aria-label="t('calendar.next_month')" @click="nextMonth()">›</button>
           </div>
 
           <!-- En-têtes jours -->
@@ -270,9 +275,11 @@ export default {
             </div>
 
             <!-- Cellules -->
-            <div
+            <button
               v-for="cell in grid" :key="cell.date"
               class="calendar-cell"
+              :aria-label="cell.date"
+              :aria-pressed="state.selectedDate === cell.date"
               :class="{
                 'calendar-cell--other-month': !cell.isCurrentMonth,
                 'calendar-cell--today':        cell.isToday,
@@ -292,7 +299,7 @@ export default {
                   :style="{ background: STATUS_COLORS[s.status] || STATUS_COLORS.planned }"
                 />
               </div>
-            </div>
+            </button>
           </div>
 
           <!-- Légende -->
@@ -365,12 +372,10 @@ export default {
       </div>
 
       <!-- Modale replanification -->
-      <div v-if="state.showReschedule" class="modal-overlay" @click.self="state.showReschedule=false">
-        <div class="modal">
-          <h2 class="modal__title">{{ t('calendar.reschedule_title') }}</h2>
+      <ModalDialog v-if="state.showReschedule" :title="t('calendar.reschedule_title')" @close="state.showReschedule = false">
           <div class="form-group">
-            <label class="form-label">{{ t('calendar.reschedule_date') }}</label>
-            <input class="form-input" type="date" v-model="state.newDate" />
+            <label class="form-label" for="CalendarView-state-newDate">{{ t('calendar.reschedule_date') }}</label>
+            <input id="CalendarView-state-newDate" class="form-input" type="date" v-model="state.newDate" />
           </div>
           <div class="modal__actions">
             <button class="btn btn--secondary" @click="state.showReschedule=false">
@@ -380,8 +385,8 @@ export default {
               {{ t('common.confirm') }}
             </button>
           </div>
-        </div>
-      </div>
+
+      </ModalDialog>
 
       <!-- Modale skip -->
       <ConfirmModal
@@ -391,6 +396,6 @@ export default {
         @confirm="doSkip()"
         @cancel="state.showSkip = false"
       />
-    </div>
+    </section>
   `
 }

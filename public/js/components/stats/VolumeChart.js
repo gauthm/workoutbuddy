@@ -1,5 +1,5 @@
 import { onMounted, onUnmounted, watch } from '/vendor/vue.esm-browser.prod.js'
-import { t } from '../../i18n.js'
+import { t, i18n } from '../../i18n.js'
 
 // Palette de couleurs par groupe musculaire
 const MUSCLE_COLORS = {
@@ -23,14 +23,22 @@ export default {
   props: {
     data:    { type: Array, default: () => [] },
     // data: [{ period: "2025-W27", volume_kg: float, sets?: int, muscle?: string }]
+    metric: {type:String,default:'volume'},
     groupBy: { type: String, default: 'week' }, // 'week' | 'muscle'
     canvasId:{ type: String, default: 'volume-chart' },
   },
 
   setup(props) {
     let chartInstance = null
+    let themeObserver=null
+    const value=row=>props.metric==='sets' ? Number(row.sets||0) : Number(row.volume_kg||0)
+    const unit=()=>props.metric==='sets' ? t('stats.sets_unit') : 'kg'
 
     function render() {
+      const styles = getComputedStyle(document.documentElement)
+      const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
+      const textColor = styles.getPropertyValue('--color-text').trim()
+      const gridColor = styles.getPropertyValue('--color-border').trim()
       if (!window.Chart) return
       if (!props.data || props.data.length === 0) return
 
@@ -46,8 +54,8 @@ export default {
           data: {
             labels: props.data.map(d => d.period),
             datasets: [{
-              label:           t('stats.volume_chart'),
-              data:            props.data.map(d => d.volume_kg),
+              label:           props.metric==='sets' ? t('stats.sets') : t('stats.volume'),
+              data:            props.data.map(value),
               backgroundColor: 'rgba(230,126,34,0.7)',
               borderColor:     '#e67e22',
               borderWidth:     1,
@@ -60,18 +68,18 @@ export default {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  label: (ctx) => `${Math.round(ctx.parsed.y)} kg`,
+                  label: (ctx) => `${Math.round(ctx.parsed.y)} ${unit()}`,
                 }
               },
             },
             scales: {
               x: {
-                ticks: { color: '#888', maxTicksLimit: 8, maxRotation: 45 },
+                ticks: { color: mutedColor, maxTicksLimit: 8, maxRotation: 45 },
                 grid:  { display: false },
               },
               y: {
-                ticks: { color: '#888', callback: (v) => `${v} kg` },
-                grid:  { color: 'rgba(255,255,255,0.05)' },
+                ticks: { color: mutedColor, callback: (v) => `${v} ${unit()}` },
+                grid:  { color: gridColor },
                 beginAtZero: true,
               },
             },
@@ -95,11 +103,11 @@ export default {
       }
       for (const d of props.data) {
         const m = d.muscle || 'other'
-        volumeMap[m].set(d.period, (volumeMap[m].get(d.period) || 0) + d.volume_kg)
+        volumeMap[m].set(d.period, (volumeMap[m].get(d.period) || 0) + value(d))
       }
 
       const datasets = muscles.map(m => ({
-        label:           m,
+        label:           t('muscles.' + m),
         data:            periods.map(p => Math.round(volumeMap[m].get(p) * 100) / 100),
         backgroundColor: MUSCLE_COLORS[m] || MUSCLE_COLORS.other,
         stack:           'volume',
@@ -113,19 +121,19 @@ export default {
           responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: { color: '#e8e8e8', font: { size: 10 }, boxWidth: 12 },
+              labels: { color: textColor, font: { size: 10 }, boxWidth: 12 },
             },
           },
           scales: {
             x: {
               stacked: true,
-              ticks:   { color: '#888', maxTicksLimit: 8 },
+              ticks:   { color: mutedColor, maxTicksLimit: 8 },
               grid:    { display: false },
             },
             y: {
               stacked: true,
-              ticks:   { color: '#888', callback: (v) => `${v} kg` },
-              grid:    { color: 'rgba(255,255,255,0.05)' },
+              ticks:   { color: mutedColor, callback: (v) => `${v} ${unit()}` },
+              grid:    { color: gridColor },
               beginAtZero: true,
             },
           },
@@ -133,14 +141,15 @@ export default {
       })
     }
 
-    watch(() => [props.data, props.groupBy], render, { deep: true })
-    onMounted(render)
-    onUnmounted(() => { if (chartInstance) { chartInstance.destroy(); chartInstance = null } })
+    watch(() => [props.data, props.groupBy, props.metric, i18n.locale], render, { deep: true })
+    onMounted(()=>{render();themeObserver=new MutationObserver(render);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})})
+    onUnmounted(() => { themeObserver?.disconnect(); if (chartInstance) { chartInstance.destroy(); chartInstance = null } })
+    return {t}
   },
 
   template: `
     <div class="chart-container">
-      <canvas :id="canvasId" />
+      <canvas :id="canvasId" role="img" :aria-label="metric === 'sets' ? t('stats.sets') : t('stats.volume')" />
     </div>
   `
 }

@@ -18,7 +18,7 @@ export default {
         style="color:var(--color-text-muted);font-size:0.9rem;padding:1rem 0">
         {{ t('stats.no_records') }}
       </div>
-      <div
+      <button type="button"
         v-for="r in records.slice(0, limit)" :key="r.id || r.exercise_id + r.reps"
         class="pr-row"
         @click="router.push('#/stats/exercise/' + r.exercise_id)">
@@ -32,7 +32,7 @@ export default {
           <span class="pr-row__rm-value">{{ r.estimated_1rm_kg }} kg</span>
           <span class="pr-row__rm-label">1RM</span>
         </div>
-      </div>
+      </button>
     </div>
   `
 }

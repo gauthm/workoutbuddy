@@ -36,21 +36,27 @@ export default {
   name: 'RestTimer',
   props: {
     duration:      { type: Number, required: true },  // secondes
+    deadline:      { type: Number, default: null },
     active:        { type: Boolean, default: false },
     soundEnabled:  { type: Boolean, default: true },
     vibrEnabled:   { type: Boolean, default: true },
   },
-  emits: ['complete', 'skip'],
+  emits: ['complete', 'skip', 'adjust'],
 
   setup(props, { emit }) {
-    const remaining   = ref(props.duration)
+    const initialRemaining=()=>props.deadline ? Math.max(0,Math.ceil((props.deadline-Date.now())/1000)) : props.duration
+    const remaining   = ref(initialRemaining())
     const worker = getTimerWorker()
     let wakeLock = null
+    let disposed = false
 
     async function acquireWakeLock() {
       try {
         if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen')
+          if (wakeLock && !wakeLock.released) return
+          const lock = await navigator.wakeLock.request('screen')
+          if (disposed || !props.active) await lock.release()
+          else wakeLock = lock
         }
       } catch (_) { /* Wake Lock non supporté, silencieux */ }
     }
@@ -83,8 +89,8 @@ export default {
 
     watch(() => props.active, async (val) => {
       if (val) {
-        remaining.value = props.duration
-        worker.postMessage({ type: 'START_REST', payload: { duration_seconds: props.duration } })
+        remaining.value = initialRemaining()
+        worker.postMessage({ type: 'START_REST', payload: { duration_seconds: initialRemaining() } })
         await acquireWakeLock()
       } else {
         worker.postMessage({ type: 'STOP_REST' })
@@ -94,10 +100,15 @@ export default {
 
     onMounted(() => {
       worker.addEventListener('message', onMessage)
+      if (props.active) {
+        worker.postMessage({ type: 'START_REST', payload: { duration_seconds: initialRemaining() } })
+        acquireWakeLock()
+      }
       document.addEventListener('visibilitychange', onVisibilityChange)
     })
 
     onUnmounted(() => {
+      disposed = true
       worker.removeEventListener('message', onMessage)
       document.removeEventListener('visibilitychange', onVisibilityChange)
       releaseWakeLock()
@@ -107,6 +118,14 @@ export default {
       worker.postMessage({ type: 'SKIP_REST' })
       emit('skip')
     }
+
+    function adjust(seconds) {
+      if (remaining.value <= 0) return
+      remaining.value = Math.max(0,remaining.value+seconds)
+      worker.postMessage({type:'ADJUST_REST',payload:{seconds}})
+      emit('adjust',{seconds,remaining:remaining.value})
+    }
+    const formatted=()=>`${Math.floor(remaining.value/60)}:${String(remaining.value%60).padStart(2,'0')}`
 
     // Cercle SVG
     const RADIUS = 28
@@ -122,7 +141,7 @@ export default {
       return 'var(--color-danger)'
     }
 
-    return { remaining, skip, circumference, RADIUS, dashOffset, strokeColor, t }
+    return { remaining, skip, adjust, formatted, circumference, RADIUS, dashOffset, strokeColor, t }
   },
 
   template: `
@@ -145,14 +164,14 @@ export default {
         <!-- Texte -->
         <text x="40" y="45" text-anchor="middle"
           fill="var(--color-text)" font-size="16" font-weight="700">
-          {{ remaining }}s
+          {{ formatted() }}
         </text>
       </svg>
-      <button class="btn btn--secondary"
-        style="padding:0.3rem 0.9rem;font-size:0.8rem;margin-top:0.3rem"
-        @click="skip()">
-        {{ t('session.rest_skip') }}
-      </button>
+      <div class="rest-timer__actions">
+        <button type="button" class="btn btn--secondary btn--sm" :aria-label="t('session.rest_less')" @click="adjust(-15)">−15 s</button>
+        <button type="button" class="btn btn--secondary btn--sm" :aria-label="t('session.rest_more')" @click="adjust(15)">+15 s</button>
+        <button type="button" class="btn btn--secondary btn--sm" @click="skip()">{{ t('session.rest_skip') }}</button>
+      </div>
     </div>
   `
 }

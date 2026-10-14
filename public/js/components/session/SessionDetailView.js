@@ -22,16 +22,23 @@ export default {
     async function load() {
       state.loading = true; state.error = null
       try { state.session = await api.get(props.id) }
-      catch (err) { state.error = err.message }
+      catch (err) {
+        if (err.status === 404) {
+          store.showToast(t('session.unavailable'), 'info')
+          router.replace('#/session/history')
+        } else state.error = err.message
+      }
       finally { state.loading = false }
     }
 
     async function doDelete() {
+      if (deleteState.deleting) return
       deleteState.deleting = true
       try {
         await api.delete(props.id)
         store.showToast(t('session.deleted'), 'success')
-        router.push('#/session/history')
+        // Retirer le détail supprimé de l'entrée courante de navigation.
+        router.replace('#/session/history')
       } catch (err) {
         store.showToast(err.message, 'error')
       } finally {
@@ -88,7 +95,7 @@ export default {
           <button
             v-if="state.session && state.session.status !== 'in_progress'"
             class="btn btn--danger btn--full"
-            style="margin:1rem"
+            style="margin:1rem 0"
             @click="deleteState.show = true">
             🗑 {{ t('session.delete') }}
           </button>

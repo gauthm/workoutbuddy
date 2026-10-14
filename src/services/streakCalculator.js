@@ -1,3 +1,4 @@
+import { localIsoDate } from './date.js'
 /**
  * Calcule les streaks de l'utilisateur à partir des séances complétées.
  *
@@ -74,7 +75,7 @@ export function calculateStreaks(db) {
 // ── Helpers date ─────────────────────────────────────────────────────────
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10)
+  return localIsoDate()
 }
 
 /**

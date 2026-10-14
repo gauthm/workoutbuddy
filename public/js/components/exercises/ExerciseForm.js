@@ -39,7 +39,7 @@ export default {
       try {
         const ex = await api.get(props.id)
         if (!ex.is_custom) {
-          state.error = 'Impossible de modifier un exercice intégré.'
+          state.error = t('exercises.builtin_readonly')
           return
         }
         Object.assign(state.form, {
@@ -66,21 +66,21 @@ export default {
 
     async function save() {
       if (!state.form.name_fr.trim()) {
-        store.showToast('Le nom français est obligatoire.', 'error')
+        store.showToast(t('exercises.name_required'), 'error')
         return
       }
       if (!state.form.primary_muscles.length) {
-        store.showToast('Choisir au moins un muscle primaire.', 'error')
+        store.showToast(t('exercises.primary_required'), 'error')
         return
       }
       state.saving = true
       try {
         if (isEdit) {
           await api.update(props.id, state.form)
-          store.showToast('Exercice modifié.', 'success')
+          store.showToast(t('exercises.updated'), 'success')
         } else {
           await api.create(state.form)
-          store.showToast('Exercice créé.', 'success')
+          store.showToast(t('exercises.created'), 'success')
         }
         router.back()
       } catch (err) {
@@ -106,16 +106,16 @@ export default {
 
         <form v-else @submit.prevent="save" class="exercise-form">
           <div class="form-group">
-            <label class="form-label">Nom (français) *</label>
-            <input class="form-input" v-model="state.form.name_fr" required />
+            <label class="form-label" for="ExerciseForm-state-form-name_fr">{{ t('exercises.form_name_fr') }}</label>
+            <input id="ExerciseForm-state-form-name_fr" class="form-input" v-model="state.form.name_fr" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Nom (anglais)</label>
-            <input class="form-input" v-model="state.form.name_en" />
+            <label class="form-label" for="ExerciseForm-state-form-name_en">{{ t('exercises.form_name_en') }}</label>
+            <input id="ExerciseForm-state-form-name_en" class="form-input" v-model="state.form.name_en" />
           </div>
           <div class="form-group">
-            <label class="form-label">{{ t('exercises.filter_movement') }}</label>
-            <select class="form-select" v-model="state.form.movement_pattern">
+            <label class="form-label" for="ExerciseForm-state-form-movement_pattern">{{ t('exercises.filter_movement') }}</label>
+            <select id="ExerciseForm-state-form-movement_pattern" class="form-select" v-model="state.form.movement_pattern">
               <option v-for="mv in MOVEMENTS" :key="mv" :value="mv">
                 {{ t('movement.' + mv) }}
               </option>
@@ -146,7 +146,7 @@ export default {
           <div class="form-group">
             <label class="form-label">
               <input type="checkbox" v-model="state.form.is_unilateral" />
-              Exercice unilatéral (un bras / une jambe)
+              {{ t('exercises.form_unilateral') }}
             </label>
           </div>
           <button type="submit" class="btn btn--primary btn--full" :disabled="state.saving">

@@ -151,3 +151,16 @@ describe('resolveProgressionModel', () => {
     assert.equal(resolveProgressionModel(te, null), 'double_progression')
   })
 })
+
+describe('Progression à charge fixe',()=>{
+  it('conserve les répétitions atteintes lorsque le matériel ne permet pas de monter la charge',()=>{
+    for(const weight of [0,20]){
+      const result=computeNextState({current_weight_kg:weight,current_target_reps:12,consecutive_failures:0},
+        Array.from({length:3},()=>({weight_kg:weight,reps:12})),
+        {progression_model:'double_progression',target_sets:3,target_reps_min:8,target_reps_max:12},
+        null,[weight],{})
+      assert.equal(result.current_weight_kg,weight)
+      assert.equal(result.current_target_reps,12)
+    }
+  })
+})

@@ -1,6 +1,7 @@
 import { ref } from '/vendor/vue.esm-browser.prod.js'
 import { estimate1RM, rmTable } from '../../utils/rm.js'
 import { t } from '../../i18n.js'
+import { useDialog } from '../../utils/dialog.js'
 
 export default {
   name: 'ExerciseHelp',
@@ -13,22 +14,22 @@ export default {
   },
   emits: ['close'],
 
-  setup(props) {
+  setup(props, { emit }) {
     const imgIndex = ref(0)
     const rm = props.lastWeight && props.lastReps
       ? estimate1RM(props.lastWeight, props.lastReps, props.formula)
       : 0
     const table = rm > 0 ? rmTable(rm, props.formula).filter(r => r.reps <= 12) : []
-    return { imgIndex, rm, table, t }
+    return { imgIndex, rm, table, t, dialogRef: useDialog(() => emit('close')) }
   },
 
   template: `
     <div class="modal-overlay" @click.self="$emit('close')">
-      <div class="modal" style="border-radius:var(--radius-lg);max-height:85dvh;overflow-y:auto">
+      <div ref="dialogRef" class="modal" role="dialog" aria-modal="true" :aria-label="exercise.name_fr" tabindex="-1" style="border-radius:var(--radius-lg);max-height:85dvh;overflow-y:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
           <h2 class="modal__title" style="margin:0">{{ exercise.name_fr }}</h2>
           <button style="background:none;border:none;color:var(--color-text-muted);font-size:1.5rem;cursor:pointer"
-            @click="$emit('close')">✕</button>
+            :aria-label="t('common.close')" @click="$emit('close')">✕</button>
         </div>
 
         <!-- Images -->

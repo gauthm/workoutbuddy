@@ -1,29 +1,24 @@
-// Note : les Web Workers ne sont pas disponibles dans node:test.
-// Ce test simule la logique du worker manuellement.
-
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import vm from 'node:vm'
 
-// Logique extraite du worker pour test unitaire
 function createWorkerLogic() {
-  let restRemaining = 0
+  let clock = 0, nextId = 0
   const messages = []
-  const logic = {
-    postMessage(msg) { messages.pop(); messages.push(msg) },
-    getMessages() { return [...messages] },
-    handle(e) {
-      const { type, payload } = e.data
-      if (type === 'START_REST') {
-        restRemaining = payload.duration_seconds
-        logic.postMessage({ type: 'REST_TICK', remaining: restRemaining })
-      }
-      if (type === 'SKIP_REST') {
-        restRemaining = 0
-        logic.postMessage({ type: 'REST_COMPLETE' })
-      }
-    }
+  const intervals = new Map()
+  const self = { postMessage(message) { messages.push(message) } }
+  const context = vm.createContext({ self, Date: { now: () => clock },
+    setInterval(fn) { const id = ++nextId; intervals.set(id,fn); return id },
+    clearInterval(id) { intervals.delete(id) },
+  })
+  vm.runInContext(fs.readFileSync(new URL('../../public/js/timer-worker.js',import.meta.url),'utf8'),context)
+  return {
+    handle: event => self.onmessage(event),
+    getMessages: () => messages.slice(-1),
+    allMessages: () => messages,
+    advance(ms) { clock += ms; for(const fn of [...intervals.values()]) fn() },
   }
-  return logic
 }
 
 describe('T2.5 — Timer Worker Logic', () => {
@@ -42,4 +37,37 @@ describe('T2.5 — Timer Worker Logic', () => {
     const msgs = logic.getMessages()
     assert.equal(msgs[0].type, 'REST_COMPLETE')
   })
+  it('un tick retardé utilise le temps réellement écoulé',()=>{
+    const logic=createWorkerLogic()
+    logic.handle({data:{type:'START_REST',payload:{duration_seconds:90}}})
+    logic.advance(30000)
+    assert.equal(logic.getMessages()[0].remaining,60)
+    logic.advance(60000)
+    assert.equal(logic.getMessages()[0].type,'REST_COMPLETE')
+  })
+  it('le chronomètre de séance récupère les ticks manqués',()=>{
+    const logic=createWorkerLogic()
+    logic.handle({data:{type:'START_SESSION',payload:{elapsed_seconds:60}}})
+    logic.advance(120000)
+    assert.equal(logic.getMessages()[0].elapsed,180)
+  })
+  it('ajuster le repos conserve le temps déjà écoulé',()=>{
+    const logic=createWorkerLogic()
+    logic.handle({data:{type:'START_REST',payload:{duration_seconds:90}}})
+    logic.advance(30000)
+    logic.handle({data:{type:'ADJUST_REST',payload:{seconds:15}}})
+    assert.equal(logic.getMessages()[0].remaining,75)
+    logic.advance(10000)
+    logic.handle({data:{type:'ADJUST_REST',payload:{seconds:-15}}})
+    assert.equal(logic.getMessages()[0].remaining,50)
+  })
+  it('retirer le reste du repos termine le compteur une seule fois',()=>{
+    const logic=createWorkerLogic()
+    logic.handle({data:{type:'START_REST',payload:{duration_seconds:10}}})
+    logic.handle({data:{type:'ADJUST_REST',payload:{seconds:-15}}})
+    assert.equal(logic.getMessages()[0].type,'REST_COMPLETE')
+    logic.advance(10000)
+    assert.equal(logic.allMessages().filter(m=>m.type==='REST_COMPLETE').length,1)
+  })
+
 })

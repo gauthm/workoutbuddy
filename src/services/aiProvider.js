@@ -23,13 +23,18 @@ async function* readLines(body) {
   const reader  = body.getReader()
   const decoder = new TextDecoder()
   let   buffer  = ''
+  try {
   while (true) {
     const { done, value } = await reader.read()
-    if (done) { if (buffer.trim()) yield buffer; break }
+    if (done) { buffer += decoder.decode(); if (buffer.trim()) yield buffer; break }
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')
     buffer = lines.pop()
     for (const line of lines) yield line
+  }
+  } finally {
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
   }
 }
 
@@ -40,7 +45,7 @@ async function* readLines(body) {
  *
  * Compatible OpenAI, Groq, Mistral, Ollama, LM Studio, OpenRouter.
  */
-export async function* streamChat(messages, aiSettings) {
+export async function* streamChat(messages, aiSettings, { signal } = {}) {
   const { base_url, api_key, model } = aiSettings
 
   if (!base_url || !model) {
@@ -51,6 +56,9 @@ export async function* streamChat(messages, aiSettings) {
   const url        = normalizeBaseUrl(base_url) + '/chat/completions'
   const controller = new AbortController()
   const timeout    = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+  const abort = () => controller.abort()
+  signal?.addEventListener('abort', abort, { once: true })
+  if (signal?.aborted) controller.abort()
 
   try {
     const res = await fetch(url, {
@@ -71,8 +79,8 @@ export async function* streamChat(messages, aiSettings) {
 
     let usage = null
     for await (const line of readLines(res.body)) {
-      if (!line.startsWith('data: ')) continue
-      const raw = line.slice(6).trim()
+      if (!line.startsWith('data:')) continue
+      const raw = line.slice(5).trim()
       if (raw === '[DONE]') { yield { type: 'done', usage }; return }
       if (!raw) continue
       let parsed
@@ -96,6 +104,7 @@ export async function* streamChat(messages, aiSettings) {
     }
   } finally {
     clearTimeout(timeout)
+    signal?.removeEventListener('abort', abort)
   }
 }
 

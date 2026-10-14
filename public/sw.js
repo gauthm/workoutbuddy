@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v15'
+const CACHE_NAME = 'workoutbuddy-v51'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -16,8 +16,12 @@ const PRECACHE_URLS = [
   '/js/timer-worker.js',
   '/js/timer-worker-singleton.js',
   '/js/utils/rm.js',
+  '/js/utils/muscles.js',
+  '/js/utils/pain.js',
   '/js/utils/weight.js',
+  '/js/utils/warmup.js',
   '/js/utils/date.js',
+  '/js/utils/dialog.js',
   '/js/components/layout/AppShell.js',
   '/js/components/layout/BottomNav.js',
   '/js/components/layout/PageHeader.js',
@@ -25,6 +29,7 @@ const PRECACHE_URLS = [
   '/js/components/common/ErrorBanner.js',
   '/js/components/common/EmptyState.js',
   '/js/components/common/ConfirmModal.js',
+  '/js/components/common/ModalDialog.js',
   '/js/components/common/Toast.js',
   '/js/components/exercises/ExerciseListView.js',
   '/js/components/exercises/ExerciseCard.js',
@@ -32,6 +37,10 @@ const PRECACHE_URLS = [
   '/js/components/exercises/ExerciseFilter.js',
   '/js/components/exercises/ExerciseForm.js',
   '/js/components/equipment/EquipmentView.js',
+  '/js/components/equipment/EquipmentEditor.js',
+  '/js/components/equipment/inventoryCatalog.js',
+  '/js/components/equipment/DumbbellInventory.js',
+  '/js/components/equipment/DumbbellRows.js',
   '/js/components/equipment/EquipmentItemRow.js',
   '/js/components/equipment/EquipmentForm.js',
   '/js/components/calendar/CalendarView.js',

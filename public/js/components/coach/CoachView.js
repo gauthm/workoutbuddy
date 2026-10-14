@@ -1,21 +1,20 @@
-import { reactive, ref, onMounted, inject, nextTick }
+import ModalDialog from '../common/ModalDialog.js'
+import { reactive, ref, onMounted, onBeforeUnmount, inject, nextTick }
   from '/vendor/vue.esm-browser.prod.js'
 import { coach as coachApi, userProfile as profileApi } from '../../api.js'
 import { t } from '../../i18n.js'
 import PageHeader        from '../layout/PageHeader.js'
 import LoadingSpinner    from '../common/LoadingSpinner.js'
 import ChatMessage       from './ChatMessage.js'
-import ActionPreview     from './ActionPreview.js'
 import AdviceCard        from './AdviceCard.js'
 import UserProfileCard   from './UserProfileCard.js'
-import OnboardingBanner  from './OnboardingBanner.js'
 import ConfirmModal      from '../common/ConfirmModal.js'
 
 export default {
   name: 'CoachView',
-  components: {
+  components: { ModalDialog,
     PageHeader, LoadingSpinner,
-    ChatMessage, ActionPreview, AdviceCard, UserProfileCard, OnboardingBanner,
+    ChatMessage, AdviceCard, UserProfileCard,
     ConfirmModal,
   },
 
@@ -30,9 +29,6 @@ export default {
       loadingInit:    true,
       isStreaming:    false,
       input:          '',
-      pendingActions: [],    // actions reçues du stream, en attente de confirmation
-      currentActionIdx: 0,  // index dans pendingActions
-      applying:       false,
       notConfigured:  false,
       showProfile:    false,
       conversationId: null,
@@ -44,6 +40,8 @@ export default {
 
     const inputRef       = ref(null)
     const messagesEndRef = ref(null)
+    let streamController = null
+    onBeforeUnmount(() => { streamController?.abort() })
 
     async function scrollToBottom() {
       await nextTick()
@@ -72,18 +70,7 @@ export default {
       } catch (_) {}
       finally { state.loadingInit = false }
 
-      // Démarrage automatique demandé (ex : "créer mon programme avec le coach")
-      if (store.coachAutoStart) {
-        store.coachAutoStart = false
-        await startOnboarding()
-      }
     })
-
-    // ── Démarrage de l'onboarding ──────────────────────────────
-    async function startOnboarding() {
-      // Envoyer un message invisible qui déclenche l'onboarding dans le prompt
-      await sendMessage('Bonjour ! Je veux configurer mon profil et créer mon programme.', true)
-    }
 
     // ── Envoi d'un message ─────────────────────────────────────
     async function sendMessage(text, silent = false) {
@@ -91,7 +78,6 @@ export default {
       if (!trimmed || state.isStreaming) return
 
       if (!silent) state.input = ''
-      state.pendingActions = []
       state.currentActionIdx = 0
 
       // Message utilisateur
@@ -104,14 +90,11 @@ export default {
       state.isStreaming = true
 
       try {
-        const res = await fetch('/api/v1/ai/chat', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            message: trimmed,
-            ...(state.conversationId ? { conversation_id: state.conversationId } : {}),
-          }),
-        })
+        streamController = new AbortController()
+        const res = await coachApi.chat({
+          message: trimmed,
+          ...(state.conversationId ? { conversation_id: state.conversationId } : {}),
+        }, { signal: streamController.signal })
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
@@ -145,9 +128,6 @@ export default {
               assistantMsg.content += event.content
               await scrollToBottom()
             }
-            if (event.type === 'action') {
-              state.pendingActions.push(event.action)
-            }
             if (event.type === 'error') {
               assistantMsg.content   = event.message
               assistantMsg.isError   = true
@@ -161,6 +141,7 @@ export default {
         }
 
       } catch (err) {
+        if (err.name === 'AbortError') return
         assistantMsg.content    = `${t('coach.error_generic')} : ${err.message}`
         assistantMsg.isError    = true
         assistantMsg.isStreaming = false
@@ -169,69 +150,6 @@ export default {
         state.isStreaming = false
         await scrollToBottom()
       }
-    }
-
-    // ── Confirmation d'une action ──────────────────────────────
-    async function applyCurrentAction() {
-      if (!state.pendingActions.length || state.applying) return
-      state.applying = true
-
-      // Si plusieurs actions, les appliquer toutes en lot
-      if (state.pendingActions.length > 1) {
-        try {
-          const res = await fetch('/api/v1/ai/apply-actions', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actions: state.pendingActions }),
-          })
-          const data = await res.json()
-          if (!res.ok) throw new Error((data.details||[]).join('; ') || data.error)
-          store.showToast(t('coach.actions_applied', { n: data.applied }), 'success')
-          await refreshAfterActions(data.results)
-        } catch (err) {
-          store.showToast(t('coach.action_error', { error: err.message }), 'error')
-        }
-      } else {
-        // Une seule action
-        try {
-          const res = await fetch('/api/v1/ai/apply-action', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: state.pendingActions[0] }),
-          })
-          const data = await res.json()
-          if (!res.ok) throw new Error((data.details||[]).join('; ') || data.error)
-          store.showToast(t('coach.action_applied'), 'success')
-          await refreshAfterActions([data.result])
-        } catch (err) {
-          store.showToast(t('coach.action_error', { error: err.message }), 'error')
-        }
-      }
-
-      state.pendingActions   = []
-      state.currentActionIdx = 0
-      state.applying         = false
-    }
-
-    async function refreshAfterActions(results) {
-      // Rediriger selon les résultats
-      const programResult = results?.find(r => r?.type === 'program')
-      const sessionResult = results?.find(r => r?.type === 'session')
-
-      // Rafraîchir le profil si mis à jour
-      if (results?.some(r => r?.type === 'profile')) {
-        state.profile = await profileApi.get()
-      }
-
-      if (programResult) {
-        setTimeout(() => router.push('#/programs/' + programResult.id), 800)
-      } else if (sessionResult) {
-        setTimeout(() => router.push('#/session/history'), 800)
-      }
-    }
-
-    function cancelActions() {
-      state.pendingActions   = []
-      state.currentActionIdx = 0
-      state.messages.push({ role: 'assistant', content: t('coach.action_cancelled') })
     }
 
     // ── Historique des conversations ───────────────────────────
@@ -244,8 +162,7 @@ export default {
         const conv = await coachApi.createConversation()
         state.conversationId = conv.id
         state.messages       = []
-        state.pendingActions = []
-        state.showHistory    = false
+          state.showHistory    = false
         await refreshConversations()
       } catch (err) { store.showToast(err.message, 'error') }
     }
@@ -264,8 +181,7 @@ export default {
         const detail = await coachApi.messages(conv.id)
         state.conversationId = conv.id
         state.messages       = detail.messages.map(m => ({ role: m.role, content: m.content }))
-        state.pendingActions = []
-        state.showHistory    = false
+          state.showHistory    = false
         await scrollToBottom()
       } catch (err) { store.showToast(err.message, 'error') }
     }
@@ -297,7 +213,7 @@ export default {
 
     // ── Gestion clavier ────────────────────────────────────────
     function onKeydown(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         e.preventDefault()
         sendMessage()
       }
@@ -314,8 +230,7 @@ export default {
 
     return {
       state, inputRef, messagesEndRef,
-      sendMessage, startOnboarding,
-      applyCurrentAction, cancelActions,
+      sendMessage,
       newConversation, openHistoryPanel, selectConversation,
       renameConversation, askDeleteConversation, confirmDeleteConversation,
       onAdviceDismissed, onAdvicePurchased,
@@ -328,12 +243,12 @@ export default {
       <PageHeader :title="t('coach.title')">
         <template #actions>
           <button class="icon-btn" @click="openHistoryPanel()"
-            :title="t('coach.history_title')">🕘</button>
+            :title="t('coach.history_title')" :aria-label="t('coach.history_title')">🕘</button>
           <button class="icon-btn" @click="newConversation()"
-            :title="t('coach.new_conversation')">＋</button>
+            :title="t('coach.new_conversation')" :aria-label="t('coach.new_conversation')">＋</button>
           <button v-if="state.profile?.fitness_level" class="icon-btn"
             @click="state.showProfile = !state.showProfile"
-            :title="t('coach.profile_title')">👤</button>
+            :title="t('coach.profile_title')" :aria-label="t('coach.profile_title')">👤</button>
         </template>
       </PageHeader>
 
@@ -341,6 +256,7 @@ export default {
         <LoadingSpinner v-if="state.loadingInit" />
 
         <template v-else>
+          <p class="settings-notice coach-readonly">{{ t('coach.readonly') }}</p>
           <!-- Profil (accordéon) -->
           <div v-if="state.showProfile && state.profile">
             <UserProfileCard :profile="state.profile" />
@@ -359,13 +275,6 @@ export default {
             />
           </div>
 
-          <!-- Onboarding Banner (si profil incomplet et pas encore de messages) -->
-          <OnboardingBanner
-            v-if="!state.profile?.onboarding_completed && !state.messages.length"
-            @start="startOnboarding()"
-            @skip="router.push('#/settings')"
-          />
-
           <!-- Provider non configuré -->
           <div v-if="state.notConfigured && !state.messages.length"
             class="coach-view__not-configured">
@@ -378,7 +287,7 @@ export default {
           <!-- Zone de messages -->
           <div class="coach-view__messages">
             <!-- Placeholder si vide et profil complet -->
-            <div v-if="!state.messages.length && state.profile?.onboarding_completed"
+            <div v-if="!state.messages.length"
               class="coach-view__empty">
               <div style="font-size:3rem;margin-bottom:0.75rem">🤖</div>
               <p style="color:var(--color-text-muted);text-align:center;padding:0 2rem;font-size:0.9rem">
@@ -391,29 +300,13 @@ export default {
               :message="msg"
             />
 
-            <!-- Actions en attente -->
-            <template v-if="state.pendingActions.length && !state.isStreaming">
-              <ActionPreview
-                v-for="(action, idx) in state.pendingActions" :key="idx"
-                :action="action"
-                :index="idx"
-                :total="state.pendingActions.length"
-                :applying="state.applying"
-                @confirm="applyCurrentAction()"
-                @cancel="cancelActions()"
-              />
-            </template>
-
             <div ref="messagesEndRef" style="height:16px" />
           </div>
         </template>
       </div>
 
       <!-- Panneau historique des conversations -->
-      <div v-if="state.showHistory" class="modal-overlay"
-        @click.self="state.showHistory = false">
-        <div class="modal coach-history">
-          <h2 class="modal__title">{{ t('coach.history_title') }}</h2>
+      <ModalDialog v-if="state.showHistory" :title="t('coach.history_title')" @close="state.showHistory = false">
 
           <div v-if="!state.conversations.length && !state.loadingHistory"
             class="coach-history__empty">{{ t('coach.history_empty') }}</div>
@@ -429,12 +322,12 @@ export default {
               </div>
             </div>
             <button class="coach-history__btn" :title="t('coach.rename')"
-              @click.stop="renameConversation(c)">✏️</button>
+              @click.stop="renameConversation(c)" :aria-label="t('coach.rename')">✏️</button>
             <button class="coach-history__btn" :title="t('common.delete')"
-              @click.stop="askDeleteConversation(c)">🗑</button>
+              @click.stop="askDeleteConversation(c)" :aria-label="t('common.delete')">🗑</button>
           </div>
-        </div>
-      </div>
+
+      </ModalDialog>
 
       <ConfirmModal
         v-if="state.deleteTarget"
@@ -453,6 +346,7 @@ export default {
           class="coach-view__input"
           v-model="state.input"
           :placeholder="t('coach.placeholder')"
+          :aria-label="t('coach.placeholder')"
           :disabled="state.isStreaming || state.loadingInit"
           rows="1"
           @keydown="onKeydown"
@@ -460,6 +354,7 @@ export default {
         />
         <button
           class="coach-view__send"
+          :aria-label="t('coach.send')"
           :disabled="!state.input.trim() || state.isStreaming || state.loadingInit"
           @click="sendMessage()">
           {{ state.isStreaming ? '…' : '↑' }}

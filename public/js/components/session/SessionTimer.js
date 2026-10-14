@@ -1,3 +1,4 @@
+import { parseUtcTimestamp } from '../../utils/date.js'
 import { ref, onMounted, onUnmounted } from '/vendor/vue.esm-browser.prod.js'
 import { getTimerWorker } from '../../timer-worker-singleton.js'
 
@@ -33,9 +34,9 @@ export default {
       // Calculer le nombre de secondes écoulées depuis le démarrage
       const elapsedSec = Math.max(
         0,
-        Math.floor((Date.now() - new Date(props.startedAt + 'Z').getTime()) / 1000)
+        Math.floor((Date.now() - parseUtcTimestamp(props.startedAt)) / 1000)
       )
-      worker.postMessage({ type: 'START_SESSION', payload: { elapsed_seconds: elapsedSec } })
+      worker.postMessage({ type: 'START_SESSION', payload: { elapsed_seconds: Number.isFinite(elapsedSec) ? elapsedSec : 0 } })
     })
 
     onUnmounted(() => {

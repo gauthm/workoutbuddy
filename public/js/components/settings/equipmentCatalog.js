@@ -73,6 +73,7 @@ export const EQUIPMENT_CATALOG = [
   },
   {
     key: 'structures', labelKey: 'settings.equip_group_structures', items: [
+      { key: 'roman_chair', category: 'roman_chair', name: 'Chaise romaine', fields: [], defaults: {} },
       { key: 'rack',          category: 'rack',          name: 'Rack / Cage',        fields: [], defaults: {} },
       { key: 'pullup_bar',    category: 'pullup_bar',    name: 'Barre de traction',  fields: [], defaults: {} },
       { key: 'cable_machine', category: 'cable_machine', name: 'Poulie / câble',     fields: [], defaults: {} },

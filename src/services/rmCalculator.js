@@ -24,22 +24,20 @@ export function estimate1RM(weightKg, reps, formula = 'epley') {
   return Math.round(fn(weightKg, reps) * 100) / 100
 }
 
-/**
- * Génère un tableau RM pour N=1..15 répétitions.
- * Inversion de la formule Epley pour tous les modèles
- * (approximation conservative, suffisante pour l'affichage).
- * @param {number} estimated1rm - 1RM de référence
- * @param {string} formula      - utilisé pour le libellé uniquement
- * @returns {{ reps: number, weight_kg: number }[]}
- */
+// Invert the selected formula, keeping the original weight convention (e.g. per dumbbell).
+export function weightForReps(estimated1rm, reps, formula = 'epley') {
+  if (!Number.isFinite(estimated1rm) || estimated1rm <= 0 || !Number.isInteger(reps) || reps < 1 || reps > 15) return 0
+  const factor = reps === 1 ? 1 : (FORMULAS[formula] || FORMULAS.epley)(1, reps)
+  const weight = estimated1rm / factor
+  return Number.isFinite(weight) && weight > 0 ? Math.round(weight * 10) / 10 : 0
+}
+
+export function estimate10RM(weightKg, reps, formula = 'epley') {
+  if (!Number.isFinite(weightKg) || weightKg <= 0 || !Number.isInteger(reps) || reps < 1) return 0
+  return weightForReps(estimate1RM(weightKg,reps,formula),10,formula)
+}
+
 export function rmTable(estimated1rm, formula = 'epley') {
-  if (!estimated1rm || estimated1rm <= 0) return []
-  const result = []
-  for (let n = 1; n <= 15; n++) {
-    const w = n === 1
-      ? estimated1rm
-      : estimated1rm / (1 + n / 30)  // inversion Epley
-    result.push({ reps: n, weight_kg: Math.round(w * 10) / 10 })
-  }
-  return result
+  if (!Number.isFinite(estimated1rm) || estimated1rm <= 0) return []
+  return Array.from({length:15}, (_,i) => ({reps:i+1,weight_kg:weightForReps(estimated1rm,i+1,formula)}))
 }

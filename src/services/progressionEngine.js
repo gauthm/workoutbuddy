@@ -35,6 +35,8 @@ export function computeNextState(
   achievableLoads,
   settings
 ) {
+  // Bands provide a nominal resistance range, not discrete load increments.
+  if (settings.resistance_is_approximate) achievableLoads = [state.current_weight_kg]
   const model = resolveProgressionModel(templateExercise, program)
 
   switch (model) {
@@ -115,6 +117,10 @@ function doubleProgression(state, sets, te, achievable, settings) {
       || minIncrement(achievable)
       || 2.5
     const newW = roundDownToAchievable(state.current_weight_kg + increment, achievable)
+    if (newW <= state.current_weight_kg + 0.001) {
+      return { current_weight_kg:state.current_weight_kg,current_target_reps:maxR,consecutive_failures:0,
+        explanation:`Objectif atteint. Charge disponible maximale : maintien à ${state.current_weight_kg} kg et ${maxR} reps.` }
+    }
     return {
       current_weight_kg:    newW,
       current_target_reps:  minR,

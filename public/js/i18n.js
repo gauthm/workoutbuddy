@@ -1,6 +1,5 @@
 import { reactive } from '/vendor/vue.esm-browser.prod.js'
 
-let currentLocale = 'fr'
 const locales = {}
 
 async function loadLocale(lang) {
@@ -20,14 +19,13 @@ export const i18n = reactive({
   async setLocale(lang) {
     await loadLocale(lang)
     this.locale = lang
-    currentLocale = lang
     document.documentElement.lang = lang
   }
 })
 
 // t('key') ou t('key', { name: 'John' }) → interpolation {{name}}
 export function t(key, params = {}) {
-  const dict = locales[currentLocale] || locales['fr'] || {}
+  const dict = locales[i18n.locale] || locales['fr'] || {}
   let str = dict[key]
   if (str === undefined) {
     // Fallback sur fr si locale courante ne contient pas la clé
@@ -40,7 +38,7 @@ export function t(key, params = {}) {
 // tm('chest') → t('muscles.chest'), fallback sur le nom brut si introuvable
 export function tm(muscle) {
   const key = 'muscles.' + muscle
-  const dict = locales[currentLocale] || locales['fr'] || {}
+  const dict = locales[i18n.locale] || locales['fr'] || {}
   let str = dict[key]
   if (str === undefined) str = locales['fr']?.[key]
   if (str === undefined) return muscle

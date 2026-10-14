@@ -38,7 +38,7 @@ describe('T5.5 — Coach View API', () => {
     assert.equal(res.body.onboarding_completed, false)
   })
 
-  it('POST /ai/apply-actions lot d\'onboarding', async () => {
+  it('POST /ai/apply-actions ancien lot d\'onboarding refusé', async () => {
     const res = await request(app).post('/api/v1/ai/apply-actions').send({
       actions: [
         {
@@ -69,16 +69,15 @@ describe('T5.5 — Coach View API', () => {
         },
       ]
     })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.applied, 3)
-    assert.equal(res.body.errors.length, 0)
+    assert.equal(res.status, 403)
+    assert.equal(res.body.error, 'COACH_READ_ONLY')
   })
 
-  it('GET /user-profile après onboarding → completed=true', async () => {
+  it('GET /user-profile après ancien lot → profil inchangé', async () => {
     const res = await request(app).get('/api/v1/user-profile')
     assert.equal(res.status, 200)
-    assert.equal(res.body.onboarding_completed, true)
-    assert.equal(res.body.display_name, 'Alex')
+    assert.equal(res.body.onboarding_completed, false)
+    assert.equal(res.body.display_name, null)
   })
 
   it('GET /ai/advice retourne tableau', async () => {

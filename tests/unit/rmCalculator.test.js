@@ -1,6 +1,7 @@
+import { estimate10RM as client10RM } from '../../public/js/utils/rm.js'
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { estimate1RM, rmTable, FORMULAS } from '../../src/services/rmCalculator.js'
+import { estimate1RM, rmTable, FORMULAS, estimate10RM } from '../../src/services/rmCalculator.js'
 
 describe('rmCalculator', () => {
   it('Epley: 100kg×3 → 110kg', () => {
@@ -34,4 +35,26 @@ describe('rmCalculator', () => {
   it('rmTable vide si RM=0', () => {
     assert.deepEqual(rmTable(0), [])
   })
+})
+
+// Every model must invert its own curve, rather than always dividing by Epley.
+describe('Conversion RM selon la formule sélectionnée',()=>{
+  for(const formula of Object.keys(FORMULAS)) {
+    it(`${formula}: dix reps à 40 kg correspondent à un 10RM de 40 kg`,()=>{
+      assert.equal(rmTable(estimate1RM(40,10,formula),formula)[9].weight_kg,40)
+    })
+    it(`${formula}: cohérence aller-retour de 1 à 15 reps`,()=>{
+      for(let reps=1;reps<=15;reps++) {
+        const table=rmTable(estimate1RM(50,reps,formula),formula)
+        assert.ok(Math.abs(table[reps-1].weight_kg-50)<=0.1)
+      }
+    })
+  }
+})
+
+it('10RM client et serveur concordent pour les cinq formules et les saisies invalides',()=>{
+  for(const formula of Object.keys(FORMULAS)) for(const [weight,reps] of [[40,10],[55,8],[20,1],[0,10],[NaN,8],[50,0],[Infinity,8],[40,8.5]]) {
+    assert.equal(client10RM(weight,reps,formula),estimate10RM(weight,reps,formula))
+    assert.ok(Number.isFinite(client10RM(weight,reps,formula)))
+  }
 })

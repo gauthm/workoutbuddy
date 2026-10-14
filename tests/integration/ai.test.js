@@ -28,69 +28,29 @@ describe('T5.3 — API Chat Expert', () => {
     assert.equal(res.status, 503)
   })
 
-  it('POST /ai/apply-action complete_user_profile', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: {
-        action: 'complete_user_profile',
-        explanation: 'Onboarding terminé.',
-        data: { age: 30, sex: 'male', fitness_level: 'intermediate', primary_goal: 'hypertrophy', sessions_per_week: 4, onboarding_completed: true, onboarding_step: 'completed' }
-      }
+  for (const action of ['complete_user_profile','create_program','update_program','activate_program',
+    'create_session','schedule_sessions','add_equipment','swap_exercise','update_progression_state',
+    'update_settings','trigger_deload','exclude_exercises']) {
+    it(`le conseiller ne peut pas exécuter ${action}`, async () => {
+      const db = getDb()
+      const snapshot = () => ['program','user_profile','equipment_item','settings','exercise','progression_state','session']
+        .map(table => db.prepare(`SELECT * FROM ${table}`).all())
+      const before = snapshot()
+      const res = await request(app).post('/api/v1/ai/apply-action').send({ action:{ action,
+        explanation:'Ancienne conversation',data:{ name:'Test', goal:'strength',level:'beginner',days_per_week:3,age:35,category:'bench',theme:'light' } } })
+      assert.equal(res.status,403)
+      assert.equal(res.body.error,'COACH_READ_ONLY')
+      assert.deepEqual(snapshot(),before)
     })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.applied, true)
-  })
-
-  it('POST /ai/apply-action create_program', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: {
-        action: 'create_program',
-        explanation: 'PPL pour hypertrophie.',
-        data: {
-          name: 'PPL Coach IA', goal: 'hypertrophy', level: 'intermediate', days_per_week: 3,
-          templates: [{ name: 'Push', exercises: [{ exercise_id: 'barbell_bench_press_medium_grip', target_sets: 4, target_reps_min: 8, target_reps_max: 12 }] }]
-        }
-      }
-    })
-    assert.equal(res.status, 201)
-    assert.ok(res.body.result.id > 0)
-  })
-
-  it('POST /ai/apply-action activate_program', async () => {
-    const progRes = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'create_program', explanation: 'Test.', data: { name: 'Test', goal: 'strength', level: 'beginner', days_per_week: 3 } }
-    })
-    const pid = progRes.body.result.id
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'activate_program', explanation: 'Activer le programme.', data: { program_id: pid } }
-    })
-    assert.equal(res.status, 201)
-  })
-
-  it('POST /ai/apply-action add_equipment', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'add_equipment', explanation: 'Ajout barre olympique.', data: { category: 'barbell', name: 'Barre olympique coach', weight_kg: 20, count: 1 } }
-    })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.result.type, 'equipment')
-  })
-
-  it('POST /ai/apply-action exercise_id invalide → 400', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-action').send({
-      action: { action: 'create_program', explanation: 'Test.', data: { name: 'X', goal: 'strength', level: 'beginner', days_per_week: 3, templates: [{ name: 'A', exercises: [{ exercise_id: 'exercice_qui_nexiste_pas' }] }] } }
-    })
-    assert.equal(res.status, 400)
-    assert.ok(res.body.details.some(d => d.includes('exercice_qui_nexiste_pas')))
-  })
-
-  it('POST /ai/apply-actions lot de 3 actions', async () => {
-    const res = await request(app).post('/api/v1/ai/apply-actions').send({
-      actions: [
-        { action: 'complete_user_profile', explanation: 'Profil.', data: { age: 25 } },
-        { action: 'add_equipment', explanation: 'Banc.', data: { category: 'bench', name: 'Banc réglable' } },
-        { action: 'update_settings', explanation: 'Repos.', data: { default_rest_seconds: 120 } },
-      ]
-    })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.applied, 3)
+  }
+  it('les anciens lots sont refusés sans aucune écriture', async () => {
+    const db = getDb(), before = db.prepare('SELECT * FROM user_profile').get()
+    const res = await request(app).post('/api/v1/ai/apply-actions').send({actions:[
+      {action:'complete_user_profile',explanation:'Ancien onboarding',data:{age:40}},
+      {action:'update_settings',explanation:'Ancien réglage',data:{theme:'light'}}
+    ]})
+    assert.equal(res.status,403)
+    assert.equal(res.body.error,'COACH_READ_ONLY')
+    assert.deepEqual(db.prepare('SELECT * FROM user_profile').get(),before)
   })
 })
