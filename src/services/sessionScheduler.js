@@ -38,14 +38,15 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
 
     // Séances déjà planifiées dans la plage
     const existing = db.prepare(`
-      SELECT scheduled_date, workout_template_id
+      SELECT scheduled_date, original_scheduled_date, workout_template_id
       FROM session
       WHERE program_id = ?
         AND status IN ('planned','in_progress','completed','skipped')
-        AND scheduled_date BETWEEN ? AND ?
-    `).all(program.id, today, endOfRange)
+        AND (scheduled_date BETWEEN ? AND ? OR original_scheduled_date BETWEEN ? AND ?)
+    `).all(program.id, today, endOfRange, today, endOfRange)
 
-    const existingDates = new Set(existing.map(s => s.scheduled_date))
+    // Keep the original slot occupied when a workout was performed on another day.
+    const existingDates = new Set(existing.flatMap(s => [s.scheduled_date,s.original_scheduled_date].filter(Boolean)))
 
     // Déterminer quel template utiliser en premier
     const lastCompleted = db.prepare(`
@@ -77,9 +78,9 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
       nextTemplateIdx++
 
       db.prepare(`
-        INSERT INTO session (name, scheduled_date, workout_template_id, program_id, status)
-        VALUES (?, ?, ?, ?, 'planned')
-      `).run(template.name, date, template.id, program.id)
+        INSERT INTO session (name, scheduled_date, original_scheduled_date, workout_template_id, program_id, status)
+        VALUES (?, ?, ?, ?, ?, 'planned')
+      `).run(template.name, date, date, template.id, program.id)
 
       created++
     }

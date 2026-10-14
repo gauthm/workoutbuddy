@@ -214,3 +214,5 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Fiabilité : sept parcours API complets sur base isolée (programme/calendrier, séance/progression, suppression/historique, export/import, réglages, remplacement, rollback d’import invalide), intégrés à `npm test` ; commande `npm run test:journeys` et documentation. Validation : 386 tests réussis et contrôles Playwright des réglages sur quatre tailles d’écran.
 
 - [x] Documentation : réduire CODEBASE.md à un index et actualiser le README (installation, fonctionnement actuel, données, sauvegardes et tests).
+
+- [x] Séance hors du jour prévu : déplacer au jour local du premier démarrage, garder original_scheduled_date, conserver les autres séances et empêcher le planificateur de recréer le créneau d’origine. Reprise et export/import compatibles ; migration 014, six tests ciblés et 392 tests réussis. Base sauvegardée et serveur relancé.

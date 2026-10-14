@@ -1,6 +1,6 @@
 import { saveProgressionEvent, rebuildExerciseProgression, saveExerciseProgression, synchronizeTemplateProgression } from '../services/exerciseProgression.js'
 import { cannotStartProgram } from '../services/programLifecycle.js'
-import { parseUtcTimestamp } from '../services/date.js'
+import { localIsoDate, parseUtcTimestamp } from '../services/date.js'
 import { refreshPersonalRecords } from '../services/personalRecords.js'
 import { createBackup } from '../db/backup.js'
 import express from 'express'
@@ -84,10 +84,10 @@ router.post('/from-template/:templateId', (req, res) => {
 
     const sessionId = db.transaction(() => {
       const sResult = db.prepare(`
-        INSERT INTO session (name, scheduled_date, workout_template_id, program_id, is_deload)
-        VALUES (?,?,?,?,?)
+        INSERT INTO session (name, scheduled_date, original_scheduled_date, workout_template_id, program_id, is_deload)
+        VALUES (?,?,?,?,?,?)
       `).run(
-        tpl.name, scheduled_date, tpl.id,
+        tpl.name, scheduled_date, scheduled_date, tpl.id,
         tpl.program_id || null,
         program?.is_in_deload ? 1 : 0
       )
@@ -133,10 +133,10 @@ router.post('/', (req, res) => {
     if (!scheduled_date)     return res.status(400).json({ error: 'MISSING_DATE' })
 
     const result = db.prepare(`
-      INSERT INTO session (name, scheduled_date, workout_template_id, program_id, is_deload)
-      VALUES (?,?,?,?,?)
+      INSERT INTO session (name, scheduled_date, original_scheduled_date, workout_template_id, program_id, is_deload)
+      VALUES (?,?,?,?,?,?)
     `).run(
-      name.trim(), scheduled_date,
+      name.trim(), scheduled_date, scheduled_date,
       workout_template_id || null,
       program_id || null,
       is_deload ? 1 : 0
@@ -203,34 +203,36 @@ router.post('/:id/start', (req, res) => {
       })
     }
 
-    // Scheduled sessions initially store only their template; prepare their exercises once.
-    if (session.workout_template_id && !db.prepare('SELECT id FROM session_exercise WHERE session_id=? LIMIT 1').get(session.id)) {
-      db.prepare(`INSERT INTO session_exercise (session_id,exercise_id,template_exercise_id,order_index)
-        SELECT ?,exercise_id,id,order_index FROM template_exercise WHERE workout_template_id=? ORDER BY order_index`)
-        .run(session.id, session.workout_template_id)
-    }
+    const updated = db.transaction(() => {
+      // Scheduled sessions initially store only their template; prepare their exercises once.
+      if (session.workout_template_id && !db.prepare('SELECT id FROM session_exercise WHERE session_id=? LIMIT 1').get(session.id)) {
+        db.prepare(`INSERT INTO session_exercise (session_id,exercise_id,template_exercise_id,order_index)
+          SELECT ?,exercise_id,id,order_index FROM template_exercise WHERE workout_template_id=? ORDER BY order_index`)
+          .run(session.id, session.workout_template_id)
+      }
 
-    if (session.program_id) {
-      expireProgramDeload(db,session.program_id)
-      reviewProgramWeek(db,session.program_id)
-      const current = db.prepare('SELECT is_in_deload FROM program WHERE id=?').get(session.program_id)
-      session.is_deload = current?.is_in_deload ? 1 : 0
-      db.prepare('UPDATE session SET is_deload=? WHERE id=?').run(session.is_deload,session.id)
-    }
+      if (session.program_id) {
+        expireProgramDeload(db,session.program_id)
+        reviewProgramWeek(db,session.program_id)
+        const current = db.prepare('SELECT is_in_deload FROM program WHERE id=?').get(session.program_id)
+        session.is_deload = current?.is_in_deload ? 1 : 0
+        db.prepare('UPDATE session SET is_deload=? WHERE id=?').run(session.is_deload,session.id)
+      }
 
-    db.prepare(`
-      UPDATE session SET status = 'in_progress', started_at = datetime('now'),
-      updated_at = datetime('now') WHERE id = ?
-    `).run(req.params.id)
+      db.prepare(`
+        UPDATE session SET status = 'in_progress', started_at = datetime('now'),
+        original_scheduled_date=COALESCE(original_scheduled_date,scheduled_date), scheduled_date=?,
+        updated_at = datetime('now') WHERE id = ?
+      `).run(localIsoDate(),req.params.id)
 
-    for (const row of db.prepare('SELECT template_exercise_id FROM session_exercise WHERE session_id=? AND template_exercise_id IS NOT NULL').all(session.id)) {
-      synchronizeTemplateProgression(db,row.template_exercise_id)
-    }
-    // ── Calcul des ajustements coach (déterministe, lecture seule) ──
-    const adjustments = computeSessionAdjustments(db, session)
-
-    const updated = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
-    res.json({ ...updated, adjustments })
+      for (const row of db.prepare('SELECT template_exercise_id FROM session_exercise WHERE session_id=? AND template_exercise_id IS NOT NULL').all(session.id)) {
+        synchronizeTemplateProgression(db,row.template_exercise_id)
+      }
+      // ── Calcul des ajustements coach (déterministe, lecture seule) ──
+      const started = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
+      return { ...started, adjustments: computeSessionAdjustments(db,started) }
+    })()
+    res.json(updated)
   } catch (err) {
     console.error('[POST /sessions/:id/start]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })

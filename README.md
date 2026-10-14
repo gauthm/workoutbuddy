@@ -50,6 +50,8 @@ Depuis la fiche du programme, un exercice peut être remplacé par une alternati
 
 ### Séances et progression
 
+Une séance peut être démarrée un autre jour que celui prévu. Elle apparaît alors au jour réel de son démarrage ; sa date prévue d’origine reste enregistrée, sans recréer de séance à cette date ni déplacer les autres séances. Reprendre une séance en cours conserve son jour de démarrage.
+
 Pendant une séance, saisir la charge et les répétitions des séries proposées, puis les valider. Une série validée par erreur peut être annulée. Le bouton Échauffement affiche les consignes sans ajouter de série au programme.
 
 La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages avancés.

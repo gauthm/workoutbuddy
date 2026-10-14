@@ -313,13 +313,13 @@ router.post('/import', (req, res) => {
             INSERT INTO session
               (id, workout_template_id, program_id, name, scheduled_date, started_at,
                completed_at, status, duration_seconds, total_volume_kg, rpe_avg,
-               is_deload, notes, created_at, updated_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               is_deload, notes, created_at, updated_at, original_scheduled_date)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
           `).run(
             s.id, s.workout_template_id, s.program_id, s.name, s.scheduled_date,
             s.started_at, s.completed_at, s.status, s.duration_seconds,
             s.total_volume_kg, s.rpe_avg, s.is_deload, s.notes,
-            s.created_at, s.updated_at
+            s.created_at, s.updated_at, s.original_scheduled_date ?? s.scheduled_date
           )
         }
         counts.sessions = d.sessions.length
