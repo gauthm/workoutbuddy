@@ -66,7 +66,7 @@ async (page) => {
     await page.getByRole('button',{name:/Enregistrer l.inventaire/}).click();await page.waitForTimeout(150)
     assert(items.find(i=>i.category==='resistance_band').resistance_max_kg===18,'Sauvegarde globale perd la résistance')
     await page.evaluate(()=>location.hash='#/exercises/material')
-    
+
     await page.locator('.equipment-editor details').first().waitFor()
     for(const summary of await page.locator('.equipment-editor details > summary').all())await summary.click()
     await group('kettlebell').locator('form').first().waitFor()
@@ -92,7 +92,7 @@ async (page) => {
     const layouts=[]
     for(const hash of ['#/equipment','#/exercises/material']){
       await page.evaluate(hash=>location.hash=hash,hash);await page.waitForTimeout(120)
-      
+
       await page.locator('.equipment-editor details').first().waitFor()
       for(const detail of await page.locator('.equipment-editor details').all())if(!await detail.evaluate(el=>el.open))await detail.locator('summary').click()
       for(const width of [320,390,768,1280]){

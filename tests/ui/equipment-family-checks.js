@@ -51,7 +51,7 @@ async page => {
     assert(await page.locator('[data-family="specialized"]').getByRole('checkbox',{name:'Mon accessoire',exact:true}).count()===0,'Équipement personnalisé dans Strongman')
     for(const hash of ['#/equipment','#/exercises/material']){
       await page.evaluate(hash=>location.hash=hash,hash);await page.waitForTimeout(100)
-      
+
       await page.locator('.inventory-family').first().waitFor()
       for(const summary of await page.locator('.inventory-family > summary').all())await summary.evaluate(e=>{if(!e.parentElement.open)e.click()})
       for(const width of [320,390,768,1280])for(const theme of ['light','dark']){
