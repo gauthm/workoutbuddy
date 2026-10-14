@@ -146,7 +146,7 @@ export default {
       const to   = isoDate(new Date(state.year, state.month + 1, 10))
 
       try {
-        const data = await api.list({ from, to, limit: 200, active_program: 1 })
+        const data = await api.list({ from, to, limit: 200, calendar: 1 })
         if(revision!==loadRevision)return
         state.sessions = data.sessions
         state.selectedSessions=state.selectedDate ? data.sessions.filter(s=>s.scheduled_date===state.selectedDate) : []

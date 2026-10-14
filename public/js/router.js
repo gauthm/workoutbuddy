@@ -3,8 +3,8 @@ import { reactive } from '/vendor/vue.esm-browser.prod.js'
 // Toutes les routes définies — ordre important : spécifiques avant génériques
 const ROUTE_DEFS = [
   { re: /^#\/?$/,                          name: 'DashboardView',         params: [] },
-  { re: /^#\/exercises\/new$/,             name: 'ExerciseFormView',      params: [] },
-  { re: /^#\/exercises\/([^/]+)\/edit$/,   name: 'ExerciseEditView',      params: ['id'] },
+  { re: /^#\/exercises\/new$/,             name: 'ExerciseListView',      params: [] },
+  { re: /^#\/exercises\/([^/]+)\/edit$/,   name: 'ExerciseDetailView',      params: ['id'] },
   { re: /^#\/exercises\/material$/, name: 'ExerciseListView', params: [], defaults: { tab: 'material' } },
   { re: /^#\/exercises\/pain$/, name: 'ExerciseListView', params: [], defaults: { tab: 'pain' } },
   { re: /^#\/exercises\/([^/]+)$/,         name: 'ExerciseDetailView',    params: ['id'] },

@@ -109,8 +109,18 @@ export function estimateSessionMinutes(exercises) {
       (ex.target_sets - 1) * ex.rest_seconds / 60, 0))
 }
 
-const BASE_EXERCISES = ['bodyweight_squat','pushups','crunches','barbell_bench_press_medium_grip',
+const BASE_EXERCISES = ['bodyweight_squat','pushups','pullups','chin_up','crunches','barbell_bench_press_medium_grip',
   'barbell_squat','dumbbell_bench_press','one_arm_dumbbell_row','lat_pulldown','seated_cable_rows']
+
+// Prefer usable external resistance, while leaving useful bodyweight movements in
+// the pool. A bench supports a movement; it does not itself make it loaded.
+const RESISTANCE_EQUIPMENT = new Set(['dumbbell_fixed','dumbbell_loadable','dumbbell_adjustable',
+  'barbell','ez_bar','kettlebell','resistance_band','cable_machine','lat_pulldown','seated_row',
+  'leg_press','leg_extension','leg_curl','chest_press','shoulder_press','calf_machine','smith_machine'])
+function equipmentPreference(exercise) {
+  const loaded=exercise.equipment_required.some(category=>RESISTANCE_EQUIPMENT.has(category))
+  return loaded ? 24 + (exercise.equipment_required.includes('bench_adjustable') ? 6 : 0) : 0
+}
 
 export function generateProgram(params, allExercises, equipmentItems, painfulMuscles=[]) {
   const { goal, level, days_per_week, priority_muscles = [] } = params
@@ -141,8 +151,8 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
         const patternCount = selected.filter(item => item.pattern === ex.movement_pattern && ex.movement_pattern !== 'other').length
         const familiarity = BASE_EXERCISES.includes(ex.id) ? 12 : 0
         const coverage = ex.primary_muscles.filter(m => !covered.has(m)).length * 5
-        return familiarity + coverage + (ex.mechanic === 'compound' ? 8 : 0) - patternCount * 20 -
-          (weeklyExposure.get(ex.id) || 0) * 2 - (ex.is_unilateral ? 2 : 0)
+        return familiarity + coverage + (ex.mechanic === 'compound' ? 24 : 0) + equipmentPreference(ex) - patternCount * 20 -
+          (weeklyExposure.get(ex.id) || 0) * 18 - (ex.is_unilateral ? 2 : 0)
       }
       candidates.sort((a,b) => score(b) - score(a) || a.id.localeCompare(b.id, 'en'))
       const exercise = candidates[0]
@@ -173,10 +183,12 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
         selected.map(ex=>ex===item ? {...ex,target_sets:ex.target_sets+1} : ex)) <= budget)
       if (grow) { grow.target_sets++; continue }
       if (selected.length >= maxExercises) break
-      const candidates = available.filter(ex=>!used.has(ex.id) && ex.primary_muscles.some(m=>allowedMuscles.includes(m)))
+      const candidates = available.filter(ex=>!used.has(ex.id) && ex.primary_muscles.some(m=>allowedMuscles.includes(m)) &&
+        (!['push_horizontal','push_vertical','pull_horizontal','pull_vertical'].includes(ex.movement_pattern) ||
+          !selected.some(item=>item.pattern === ex.movement_pattern)))
       const score = ex => ex.primary_muscles.filter(m=>priority_muscles.includes(m)).length*8 +
-        ex.primary_muscles.filter(m=>!covered.has(m)).length*5 -
-        selected.filter(item=>item.pattern===ex.movement_pattern).length*10 - (weeklyExposure.get(ex.id)||0)*2
+        ex.primary_muscles.filter(m=>!covered.has(m)).length*5 + equipmentPreference(ex) -
+        selected.filter(item=>item.pattern===ex.movement_pattern).length*10 - (weeklyExposure.get(ex.id)||0)*8
       candidates.sort((a,b)=>score(b)-score(a) || a.id.localeCompare(b.id,'en'))
       let added = false
       for (const ex of candidates) {

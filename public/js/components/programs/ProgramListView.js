@@ -30,7 +30,7 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="t('programs.title')"><template #actions><button class="btn btn--primary" @click="router.push('#/programs/new')">{{ t('programs.new') }}</button></template></PageHeader>
+      <PageHeader :title="t('programs.title')"><template #actions><button v-if="state.programs.length" class="btn btn--primary" @click="router.push('#/programs/new')">{{ t('programs.new') }}</button></template></PageHeader>
       <div class="view__content">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />

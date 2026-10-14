@@ -227,3 +227,12 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Validation : 405 tests réussis et parcours Playwright complet sur choix musculaires, 45/60 min, compteurs, photos et retour à la liste, contrôles à 320/390/768/1280 px. Règles de progression sur charge réellement abaissée et échecs répétés, et compatibilité banc réglable/plat vérifiées.
 
 - [x] Historique : légende des points de statut, avec Complétée/En cours/Planifiée et Sautée si présente ; En cours en bleu, Planifiée en orange, même repère dans le calendrier. Libellés accessibles sur les points. Validation : 405 tests et contrôle navigateur à 320/390/768/1280 px.
+
+- [x] Retirer l’ajout d’exercices personnalisés : utiliser le catalogue intégré provenant de la base gratuite.
+- [x] Calendrier : vérifier pourquoi la séance complétée aujourd’hui « Séance découverte » n’affiche pas de point vert.
+
+- [x] Générateur : privilégier le matériel utilisable et varier les mouvements principaux entre séances, développé à plat A / incliné B avec haltères à disques et banc réglable. Garder des mouvements au poids du corps pertinents, sans retirer les contrôles de niveau, disponibilité, volume et exclusions. Quatre nouveaux tests API ; 409 tests passent.
+- [x] Calendrier : montrer les séances réellement complétées/en cours, y compris « Séance découverte » sans programme, tout en réservant les plans et séances sautées au programme actif.
+- [x] Création : un seul bouton Nouveau programme sur la page Programmes vide ; même libellé dans la vue Séance. Vérifications navigateur des états vides, de l’absence d’ajout d’exercice et du point vert de la séance sans programme.
+
+- [x] Messages sans programme : « Aucun programme actif. » sur accueil/programmes/séance, suppression des anciennes références à la création par le coach dans les libellés de création.

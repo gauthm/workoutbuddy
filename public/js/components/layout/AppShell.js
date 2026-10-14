@@ -9,7 +9,6 @@ import Toast from '../common/Toast.js'
 import DashboardView        from '../../views/DashboardView.js'
 import ExerciseListView     from '../exercises/ExerciseListView.js'
 import ExerciseDetailView   from '../exercises/ExerciseDetailView.js'
-import ExerciseFormView     from '../exercises/ExerciseForm.js'
 import EquipmentView        from '../equipment/EquipmentView.js'
 import ProgramListView      from '../programs/ProgramListView.js'
 import ProgramDetailView    from '../programs/ProgramDetailView.js'
@@ -37,8 +36,6 @@ const VIEW_MAP = {
   DashboardView,
   ExerciseListView,
   ExerciseDetailView,
-  ExerciseFormView,
-  ExerciseEditView:      ExerciseFormView,
   EquipmentView,
   // Jalons suivants — placeholders pour l'instant :
   ProgramListView,

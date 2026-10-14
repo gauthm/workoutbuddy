@@ -159,13 +159,7 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="t('exercises.title')">
-        <template #actions>
-          <button v-if="state.activeTab === 'list'" class="btn btn--primary"
-            style="padding:0.4rem 0.75rem;font-size:0.85rem"
-            @click="router.push('#/exercises/new')">+</button>
-        </template>
-      </PageHeader>
+      <PageHeader :title="t('exercises.title')" />
 
       <!-- Onglets -->
       <div class="exercise-tabs">

@@ -29,10 +29,11 @@ function autoBackup() {
 // ── GET /sessions ─────────────────────────────────────────────
 router.get('/', (req, res) => {
   try {
-    if (req.query.active_program==='1') scheduleWeeks(db)
+    if (req.query.active_program==='1' || req.query.calendar==='1') scheduleWeeks(db)
     let sql = 'SELECT * FROM session WHERE 1=1'
     const params = []
     if (req.query.active_program === '1') sql += " AND program_id = (SELECT id FROM program WHERE is_active = 1 LIMIT 1) AND status IN ('completed','in_progress','planned','skipped')"
+    if (req.query.calendar === '1') sql += " AND (status IN ('completed','in_progress') OR (program_id=(SELECT id FROM program WHERE is_active=1 LIMIT 1) AND status IN ('planned','skipped')))"
     if (req.query.from)       { sql += ' AND scheduled_date >= ?'; params.push(req.query.from) }
     if (req.query.to)         { sql += ' AND scheduled_date <= ?'; params.push(req.query.to) }
     if (req.query.status)     { sql += ' AND status = ?';          params.push(req.query.status) }

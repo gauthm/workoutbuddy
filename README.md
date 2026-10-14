@@ -24,13 +24,15 @@ Ouvrir [http://localhost:3000](http://localhost:3000). `npm start` lance le serv
 
 La création suit un questionnaire avec des choix prédéfinis : objectif, niveau, jours d’entraînement, durée de séance, durée totale, priorités musculaires et mesures personnelles. Les priorités musculaires sont regroupées en haut et bas du corps, avec sélection de tout un groupe ou de plusieurs muscles sans limite de deux. Le moteur cherche à utiliser le temps de séance choisi avec des séries et exercices supplémentaires adaptés, sans dépasser ce temps ni ses limites de volume ; un avertissement explique les séances plus courtes. Des explications accompagnent les objectifs et un aperçu permet de consulter les séances avant de créer le programme.
 
-Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances complétées, en cours, planifiées ou sautées de ce programme. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
+Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances réellement complétées ou en cours, même hors programme, et les séances planifiées ou sautées du seul programme actif. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
 
 La durée totale peut être limitée ou illimitée. Une durée limitée est comptée depuis la première activation ; une réactivation conserve ce point de départ. À la fin, les nouvelles séances sont bloquées et l’historique reste accessible. Prolonger le programme reprend la planification.
 
 Depuis la fiche du programme, deux paramètres sont modifiables : la durée totale et les jours d’entraînement, en conservant le nombre de jours initial. Le niveau, l’objectif et la durée de séance restent ceux du programme créé.
 
 ### Exercices et matériel
+
+L’interface utilise le catalogue d’exercices importé et ne propose plus d’ajout d’exercice personnalisé.
 
 La page **Exercices et Matériel** regroupe trois onglets : Exercices, Douleurs et Matériel. La recherche et les filtres permettent de choisir un muscle, un mouvement, une famille de matériel ou les exercices réalisables avec l’inventaire. Le compteur de l’onglet Exercices indique le nombre de mouvements restants après les filtres, douleurs et exclusions ; les exclusions sont signalées séparément. Consulter une fiche puis revenir conserve les filtres et la position de défilement. Les photos disposent de boutons précédent et suivant.
 
@@ -57,6 +59,8 @@ Pendant une séance, saisir la charge et les répétitions des séries proposée
 La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages avancés.
 
 La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements.
+
+À la création, le moteur privilégie les exercices utilisant le matériel disponible et répartit les variantes entre les séances, par exemple développé à plat en A et incliné en B avec un banc réglable. Des exercices au poids du corps restent possibles quand ils sont pertinents ou que le matériel manque. Une charge ajoutée manuellement à un exercice au poids du corps est enregistrée ; le moteur ne propose pas encore automatiquement de lest optionnel.
 
 Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Supprimer une séance recalcule les acquis à partir de l’historique restant. Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
 

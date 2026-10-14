@@ -61,18 +61,7 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader
-        :title="state.exercise?.name_fr || '…'"
-        :show-back="true"
-      >
-        <template #actions v-if="state.exercise?.is_custom">
-          <button class="btn btn--secondary"
-            style="padding:0.4rem 0.75rem;font-size:0.85rem"
-            @click="router.push('#/exercises/' + state.exercise.id + '/edit')">
-            {{ t('common.edit') }}
-          </button>
-        </template>
-      </PageHeader>
+      <PageHeader :title="state.exercise?.name_fr || '…'" :show-back="true" />
 
       <div class="view__content" style="padding:0 1rem">
         <LoadingSpinner v-if="state.loading" />

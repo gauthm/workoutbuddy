@@ -180,7 +180,7 @@ export default {
           </button>
           <button v-else class="btn btn--primary" style="margin-top:1rem"
             @click="router.push('#/coach')">
-            {{ t('programs.create_via_coach') }}
+            {{ t('programs.new') }}
           </button>
         </EmptyState>
         <!-- Séance active -->
