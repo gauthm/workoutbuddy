@@ -1383,8 +1383,15 @@ body:has(.settings-save-dock) .toast { bottom: calc(var(--nav-space) + 8rem); }
 
 .program-muscle-group { grid-column: 1 / -1; width: 100%; }
 .program-muscle-group__all { font-weight: 600; margin-bottom: .5rem; }
-.exercise-detail__image-controls { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
-.exercise-detail__image-controls .btn { min-width: 0; font-size: .85rem; }
+
 .exercise-tabs__exclusions { font-size: .7rem; color: var(--color-text-muted); white-space: nowrap; }
 
 .history-legend { margin-bottom: 1rem; }
+
+.exercise-motion { margin: 1rem 0; text-align: center; }
+.exercise-motion__frames { display: grid; justify-items: center; align-items: center; }
+.exercise-motion__frame { grid-area: 1 / 1; max-width: 100%; max-height: var(--motion-height); border-radius: var(--radius-md); object-fit: contain; opacity: 0; }
+.exercise-motion__frame--visible { opacity: 1; }
+.exercise-motion__controls { display: flex; justify-content: center; align-items: center; gap: .75rem; margin-top: .5rem; }
+.session-exit-actions { display: grid; gap: .75rem; margin-top: 1rem; }
+.session-exit-actions .btn { white-space: normal; }

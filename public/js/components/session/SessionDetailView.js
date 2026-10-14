@@ -18,6 +18,7 @@ export default {
 
     const state = reactive({ loading: false, error: null, session: null })
     const deleteState = reactive({ show: false, deleting: false })
+    const resetState = reactive({show:false,busy:false})
 
     async function load() {
       state.loading = true; state.error = null
@@ -47,8 +48,30 @@ export default {
       }
     }
 
+    async function doReset() {
+      if(resetState.busy)return
+      resetState.busy=true
+      try {
+        await api.reset(props.id,'completed')
+        store.showToast(t('session.reset_done'),'success')
+        resetState.show=false
+        await load()
+      } catch(error){store.showToast(error.message,'error')}
+      finally{resetState.busy=false}
+    }
+    async function startAgain() {
+      if(resetState.busy)return
+      resetState.busy=true
+      try {
+        const session=await api.start(props.id)
+        store.setActiveSession(session);store.setPendingAdjustments(session.adjustments)
+        router.push('#/session')
+      } catch(error){store.showToast(error.message,'error')}
+      finally{resetState.busy=false}
+    }
+
     onMounted(load)
-    return { state, load, deleteState, doDelete, formatDuration, formatDate, t }
+    return { state, load, deleteState, doDelete, resetState, doReset, startAgain, formatDuration, formatDate, t }
   },
 
   template: `
@@ -74,7 +97,7 @@ export default {
               </div>
             </div>
             <div style="font-size:0.85rem;color:var(--color-text-muted)">
-              {{ t('session.completed_on') }} {{ state.session.scheduled_date }}
+              {{ t(state.session.status === 'completed' ? 'session.completed_on' : 'calendar.planned') }} {{ state.session.scheduled_date }}
             </div>
           </div>
 
@@ -92,6 +115,9 @@ export default {
             </div>
           </div>
 
+          <button v-if="state.session.status==='completed'" class="btn btn--secondary btn--full" :disabled="resetState.busy" @click="resetState.show=true">{{t('session.reset_workout')}}</button>
+          <button v-if="state.session.status==='planned'" class="btn btn--primary btn--full" :disabled="resetState.busy" @click="startAgain()">{{t('calendar.start')}}</button>
+
           <button
             v-if="state.session && state.session.status !== 'in_progress'"
             class="btn btn--danger btn--full"
@@ -101,6 +127,10 @@ export default {
           </button>
         </template>
       </div>
+
+      <ConfirmModal v-if="resetState.show" :title="t('session.reset_title')" :body="t('session.reset_help')"
+        :danger="true" :confirm-text="t('session.reset_workout')" :busy="resetState.busy"
+        @confirm="doReset()" @cancel="!resetState.busy && (resetState.show=false)" />
 
       <ConfirmModal
         v-if="deleteState.show"

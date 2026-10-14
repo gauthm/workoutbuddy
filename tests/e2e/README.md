@@ -34,12 +34,13 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | Fichier | Parcours et cas limites |
 | --- | --- |
 | `programs.spec.js` | Questionnaire, aperçu, activation, durée illimitée, jours valides/invalides, remplacement compatible |
-| `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue sans doublon |
-| `history.spec.js` | Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement |
+| `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue sans doublon, continuer/quitter sans enregistrer |
+| `history.spec.js` | Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement, réinitialisation d’une séance terminée |
 | `equipment.spec.js` | Ajout quantité/poids, sauvegarde persistante, saisie invalide et annulation du brouillon |
 | `settings.spec.js` | Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise |
 | `data.spec.js` | Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence invalide |
 | `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur |
+| `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
 
 `scripts/e2e-selection.js` décrit les dépendances. Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare les commits à cette référence, et ajoute les nouveaux fichiers non suivis.

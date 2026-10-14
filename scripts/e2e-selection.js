@@ -1,6 +1,8 @@
 // A shared dependency or an unknown source file triggers the complete suite.
-export const SUITES=['programs','sessions','history','equipment','settings','data','exercises','stats']
+export const SUITES=['programs','sessions','history','equipment','settings','data','exercises','stats','motion']
 const rules=[
+ [/^public\/js\/components\/exercises\/(?:ExerciseMotion|ExerciseDetailView)\.js$/,['exercises','sessions','motion']],
+ [/^public\/js\/components\/session\/(?:ExerciseHelp|ExerciseBlock)\.js$/,['sessions','motion']],
  [/^src\/routes\/(?:programs|templates)\.js$|^src\/services\/program(?:Generator|Planner|ExerciseCatalog|Lifecycle|WeeklyProgress)\.js$|^public\/js\/(?:components\/programs\/|utils\/programMuscles)/,['programs','sessions','history']],
  [/^src\/routes\/(?:sessions|sets)\.js$|^public\/js\/(?:components\/session\/|timer-worker)|^src\/services\/(?:progressionEngine|exerciseProgression|firstTimeSuggestion|warmup|deloadEngine|programReview|plateauDetector|rmCalculator|personalRecords)\.js$/,['sessions','history','data','stats']],
  [/^src\/services\/(?:sessionScheduler|date)\.js$|^public\/js\/components\/calendar\//,['programs','sessions','history']],

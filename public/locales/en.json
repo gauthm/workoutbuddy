@@ -787,5 +787,18 @@
   "common.next": "Next",
   "settings.import_custom_unsupported": "This backup contains a custom exercise without a recognized catalogue equivalent. No data was changed.",
   "calendar.restore": "Restore to planned",
-  "calendar.restored_toast": "Session restored to planned."
+  "calendar.restored_toast": "Session restored to planned.",
+  "exercises.motion_pause": "Pause animation",
+  "exercises.motion_play": "Play movement",
+  "exercises.images_unavailable": "Photos unavailable.",
+  "session.exit_title": "Leave this workout?",
+  "session.exit_help": "Finish keeps your validated sets and records the workout. Leaving without saving clears this attempt’s sets and restores the workout to planned.",
+  "session.continue_workout": "Continue workout",
+  "session.discard_exit": "Leave without saving",
+  "session.save_exit": "Finish and save",
+  "session.discarded": "Attempt discarded. The workout is planned again.",
+  "session.reset_workout": "Reset workout",
+  "session.reset_title": "Reset this workout?",
+  "session.reset_help": "Its sets and results will be cleared. The workout will become planned again and can be restarted. Your other workouts will be kept.",
+  "session.reset_done": "Workout reset. Progress and records have been recalculated."
 }

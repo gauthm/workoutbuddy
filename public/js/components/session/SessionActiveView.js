@@ -1,3 +1,4 @@
+import ModalDialog from '../common/ModalDialog.js'
 import { reactive, onMounted, inject, computed } from '/vendor/vue.esm-browser.prod.js'
 import {
   sessions as sessionsApi,
@@ -9,7 +10,6 @@ import PageHeader    from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import EmptyState    from '../common/EmptyState.js'
 import ErrorBanner   from '../common/ErrorBanner.js'
-import ConfirmModal  from '../common/ConfirmModal.js'
 import ExerciseBlock from './ExerciseBlock.js'
 import SessionTimer  from './SessionTimer.js'
 import RestTimer from './RestTimer.js'
@@ -20,7 +20,7 @@ export default {
   name: 'SessionActiveView',
   components: {
     PageHeader, LoadingSpinner, EmptyState, ErrorBanner,
-    ConfirmModal, ExerciseBlock, SessionTimer, RestTimer, SessionAdjustmentBanner
+    ModalDialog, ExerciseBlock, SessionTimer, RestTimer, SessionAdjustmentBanner
   },
 
   setup() {
@@ -114,7 +114,7 @@ export default {
     }
 
     async function completeSession() {
-      if (!state.session) return
+      if (!state.session || state.completing) return
       state.completing = true
       try {
         await sessionsApi.complete(state.session.id)
@@ -129,6 +129,18 @@ export default {
       }
     }
 
+    async function discardSession() {
+      if(!state.session || state.completing)return
+      state.completing=true
+      try {
+        await sessionsApi.reset(state.session.id,'in_progress')
+        store.clearActiveSession()
+        store.showToast(t('session.discarded'),'info')
+        router.replace('#/')
+      } catch(error){store.showToast(error.message,'error')}
+      finally{state.completing=false;state.showCompleteConfirm=false}
+    }
+
     onMounted(() => {
       // Les ajustements coach arrivent de POST /sessions/:id/start (store, non persistant)
       state.adjustments = store.pendingAdjustments || []
@@ -136,7 +148,7 @@ export default {
       load()
     })
 
-    return { store, state, load, completeSession, router, t, progress, remainingSets, activeRest, setsChanged, startRest, setReverted, adjustRest, clearRest, nextExercise }
+    return { store, state, load, completeSession, discardSession, router, t, progress, remainingSets, activeRest, setsChanged, startRest, setReverted, adjustRest, clearRest, nextExercise }
   },
 
   template: `
@@ -216,15 +228,16 @@ export default {
           :sound-enabled="store.getSetting('timer_sound_enabled',true)" :vibr-enabled="store.getSetting('timer_vibration_enabled',true)"
           @adjust="adjustRest" @complete="clearRest" @skip="clearRest" />
       </div>
-      <!-- Confirmation terminer -->
-      <ConfirmModal
-        v-if="state.showCompleteConfirm"
-        :title="t('session.complete_confirm')"
-        :body="remainingSets > 0 ? t('session.finish_remaining',{n:remainingSets}) : t('session.all_logged')"
-        :confirm-text="t('session.complete')"
-        @confirm="completeSession()"
-        @cancel="state.showCompleteConfirm = false"
-      />
+      <ModalDialog v-if="state.showCompleteConfirm" :title="t('session.exit_title')"
+        @close="!state.completing && (state.showCompleteConfirm=false)">
+        <p class="modal__body">{{t('session.exit_help')}}</p>
+        <p v-if="remainingSets>0" class="modal__body">{{t('session.finish_remaining',{n:remainingSets})}}</p>
+        <div class="session-exit-actions">
+          <button class="btn btn--secondary" :disabled="state.completing" @click="state.showCompleteConfirm=false">{{t('session.continue_workout')}}</button>
+          <button class="btn btn--danger" :disabled="state.completing" @click="discardSession()">{{t('session.discard_exit')}}</button>
+          <button class="btn btn--primary" :disabled="state.completing" @click="completeSession()">{{t('session.save_exit')}}</button>
+        </div>
+      </ModalDialog>
     </div>
   `
 }

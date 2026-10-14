@@ -78,6 +78,7 @@ export const sessions = {
   start:        (id)          => request('POST', `/sessions/${id}/start`),
   complete:     (id)          => request('POST', `/sessions/${id}/complete`),
   skip:         (id)          => request('POST', `/sessions/${id}/skip`),
+  reset:        (id, expectedStatus) => request('POST', `/sessions/${id}/reset`, {expected_status:expectedStatus}),
   unskip:       (id)          => request('POST', `/sessions/${id}/unskip`),
   update:       (id, body)    => request('PUT', `/sessions/${id}`, body),
   delete:       (id)          => request('DELETE', `/sessions/${id}`),

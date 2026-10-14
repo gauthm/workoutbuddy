@@ -41,7 +41,7 @@ export async function trainThroughUI(page,request,program){
     }
   }
   await page.getByRole('banner').getByRole('button',{name:L('session.complete'),exact:true}).click()
-  await page.getByRole('dialog').getByRole('button',{name:L('session.complete'),exact:true}).click()
+  await page.getByRole('dialog').getByRole('button',{name:L('session.save_exit'),exact:true}).click()
   await expect.poll(async()=>(await get(request,`/sessions/${active.id}`)).status).toBe('completed')
   await page.waitForURL('**/#/session/history')
   return get(request,`/sessions/${active.id}`)

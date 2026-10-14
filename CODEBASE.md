@@ -38,7 +38,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | --- | --- |
 | Création des programmes | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
 | Planification et durée | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
-| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js` |
+| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js` |
 | Remplacement et contraintes | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
 | Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
 | Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
@@ -52,7 +52,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
 | Accueil | `js/views/DashboardView.js` |
 | Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
-| Exercices, douleurs, filtres | `js/components/exercises/` |
+| Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
 | Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
 | Questionnaire et fiche programme | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |

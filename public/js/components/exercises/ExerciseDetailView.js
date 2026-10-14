@@ -1,6 +1,7 @@
+import ExerciseMotion from './ExerciseMotion.js'
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { exercises as api } from '../../api.js'
-import { estimate1RM, rmTable } from '../../utils/rm.js'
+import { estimate1RM } from '../../utils/rm.js'
 import { t, tm } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
@@ -9,7 +10,7 @@ import ErrorBanner    from '../common/ErrorBanner.js'
 export default {
   name: 'ExerciseDetailView',
   props: { id: { type: String, required: true } },
-  components: { PageHeader, LoadingSpinner, ErrorBanner },
+  components: { PageHeader, LoadingSpinner, ErrorBanner, ExerciseMotion },
 
   setup(props) {
     const router = inject('router')
@@ -18,7 +19,6 @@ export default {
     const state = reactive({
       loading: false, error: null,
       exercise: null, history: [],
-      imageIndex: 0,
     })
 
     async function load() {
@@ -55,8 +55,7 @@ export default {
       return { rm: estimate1RM(bestSet.weight_kg, bestSet.reps, formula), set: bestSet }
     }
 
-    function moveImage(delta) { state.imageIndex=(state.imageIndex+delta+state.exercise.image_paths.length)%state.exercise.image_paths.length }
-    return { state, moveImage, load, router, t, tm, lastRM }
+    return { state, load, router, t, tm, lastRM }
   },
 
   template: `
@@ -68,31 +67,7 @@ export default {
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else-if="state.exercise">
-          <!-- Images -->
-          <div v-if="state.exercise.image_paths.length" class="exercise-detail__images">
-            <img
-              :key="state.imageIndex"
-              :src="'/exercises/images/' + state.exercise.image_paths[state.imageIndex]"
-              :alt="state.exercise.name_fr"
-              class="exercise-detail__img"
-              @error="$event.target.style.display='none'"
-            />
-            <div v-if="state.exercise.image_paths.length > 1" class="exercise-detail__image-controls">
-              <button class="btn btn--secondary" @click="moveImage(-1)" :aria-label="t('exercises.image_previous')">‹ {{ t('common.previous') }}</button>
-              <span aria-live="polite">{{ state.imageIndex + 1 }} / {{ state.exercise.image_paths.length }}</span>
-              <button class="btn btn--secondary" @click="moveImage(1)" :aria-label="t('exercises.image_next')">{{ t('common.next') }} ›</button>
-            </div>
-            <div v-if="state.exercise.image_paths.length > 1" class="exercise-detail__dots">
-              <button
-                v-for="(_, i) in state.exercise.image_paths" :key="i"
-                class="exercise-detail__dot"
-                :aria-label="t('exercises.image_number', { number: i + 1 })"
-                :aria-pressed="i === state.imageIndex"
-                :class="{ 'exercise-detail__dot--active': i === state.imageIndex }"
-                @click="state.imageIndex = i"
-              />
-            </div>
-          </div>
+          <ExerciseMotion v-if="state.exercise.image_paths.length" :paths="state.exercise.image_paths" :name="state.exercise.name_fr" />
 
           <!-- Muscles -->
           <section class="detail-section">

@@ -1,3 +1,4 @@
+import { resetSession } from '../services/sessionReset.js'
 import { saveProgressionEvent, rebuildExerciseProgression, saveExerciseProgression, synchronizeTemplateProgression } from '../services/exerciseProgression.js'
 import { cannotStartProgram } from '../services/programLifecycle.js'
 import { localIsoDate, parseUtcTimestamp } from '../services/date.js'
@@ -21,8 +22,8 @@ import { scheduleWeeks }              from '../services/sessionScheduler.js'
 const router = express.Router()
 const db = getDb()
 
-function autoBackup() {
-  try { return createBackup(db, getDbPath()) }
+function autoBackup(options) {
+  try { return createBackup(db, getDbPath(),options) }
   catch (err) { console.warn('[backup] Erreur :', err.message) }
 }
 
@@ -712,6 +713,18 @@ router.delete('/:id', (req, res) => {
   } catch (err) {
     console.error('[DELETE /sessions/:id]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
+  }
+})
+
+// Clear one attempted/completed workout while preserving its planning identity.
+router.post('/:id/reset', (req,res) => {
+  try {
+    const current=db.prepare('SELECT status FROM session WHERE id=?').get(req.params.id)
+    if(current && ['in_progress','completed'].includes(req.body?.expected_status) && current.status===req.body.expected_status)autoBackup({force:true})
+    res.json(resetSession(db,req.params.id,req.body?.expected_status))
+  } catch(error) {
+    if(!error.status)console.error('[POST /sessions/:id/reset]',error.message)
+    res.status(error.status || 500).json({error:error.status?error.message:'INTERNAL_ERROR'})
   }
 })
 

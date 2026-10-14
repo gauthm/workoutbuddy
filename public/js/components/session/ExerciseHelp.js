@@ -1,10 +1,10 @@
-import { ref } from '/vendor/vue.esm-browser.prod.js'
+import ExerciseMotion from '../exercises/ExerciseMotion.js'
 import { estimate1RM, rmTable } from '../../utils/rm.js'
 import { t } from '../../i18n.js'
 import { useDialog } from '../../utils/dialog.js'
 
 export default {
-  name: 'ExerciseHelp',
+  name: 'ExerciseHelp', components:{ExerciseMotion},
   props: {
     exercise:      { type: Object, required: true },
     lastWeight:    { type: Number, default: 0 },
@@ -15,12 +15,11 @@ export default {
   emits: ['close'],
 
   setup(props, { emit }) {
-    const imgIndex = ref(0)
     const rm = props.lastWeight && props.lastReps
       ? estimate1RM(props.lastWeight, props.lastReps, props.formula)
       : 0
     const table = rm > 0 ? rmTable(rm, props.formula).filter(r => r.reps <= 12) : []
-    return { imgIndex, rm, table, t, dialogRef: useDialog(() => emit('close')) }
+    return { rm, table, t, dialogRef: useDialog(() => emit('close')) }
   },
 
   template: `
@@ -32,20 +31,7 @@ export default {
             :aria-label="t('common.close')" @click="$emit('close')">✕</button>
         </div>
 
-        <!-- Images -->
-        <div v-if="exercise.image_paths?.length" style="text-align:center;margin-bottom:1rem">
-          <img :src="'/exercises/images/' + exercise.image_paths[imgIndex]"
-            :alt="exercise.name_fr"
-            style="max-height:180px;border-radius:var(--radius-md);object-fit:cover"
-            @error="$event.target.style.display='none'" />
-          <div v-if="exercise.image_paths.length > 1"
-            style="display:flex;justify-content:center;gap:6px;margin-top:6px">
-            <span v-for="(_, i) in exercise.image_paths" :key="i"
-              style="width:8px;height:8px;border-radius:50%;cursor:pointer"
-              :style="{ background: i===imgIndex ? 'var(--color-primary)' : 'var(--color-border)' }"
-              @click="imgIndex=i" />
-          </div>
-        </div>
+        <ExerciseMotion v-if="exercise.image_paths?.length" :paths="exercise.image_paths" :name="exercise.name_fr" :max-height="180" />
 
         <!-- Instructions -->
         <div v-if="exercise.instructions_fr?.length" class="detail-section">

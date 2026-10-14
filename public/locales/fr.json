@@ -787,5 +787,18 @@
   "common.next": "Suivant",
   "settings.import_custom_unsupported": "Cette sauvegarde contient un exercice personnalisé sans équivalent reconnu dans le catalogue. Aucune donnée n’a été modifiée.",
   "calendar.restore": "Remettre en planifiée",
-  "calendar.restored_toast": "Séance remise en planifiée."
+  "calendar.restored_toast": "Séance remise en planifiée.",
+  "exercises.motion_pause": "Mettre en pause",
+  "exercises.motion_play": "Lire le mouvement",
+  "exercises.images_unavailable": "Photos indisponibles.",
+  "session.exit_title": "Quitter la séance ?",
+  "session.exit_help": "Terminer conserve les séries validées et enregistre la séance. Quitter sans enregistrer efface les séries de cet essai et remet la séance en planifiée.",
+  "session.continue_workout": "Continuer la séance",
+  "session.discard_exit": "Quitter sans enregistrer",
+  "session.save_exit": "Terminer et enregistrer",
+  "session.discarded": "Essai annulé. La séance est de nouveau planifiée.",
+  "session.reset_workout": "Réinitialiser la séance",
+  "session.reset_title": "Réinitialiser cette séance ?",
+  "session.reset_help": "Ses séries et ses résultats seront effacés. La séance redeviendra planifiée et pourra être recommencée. Tes autres séances seront conservées.",
+  "session.reset_done": "Séance réinitialisée. Les progrès et les records ont été recalculés."
 }
