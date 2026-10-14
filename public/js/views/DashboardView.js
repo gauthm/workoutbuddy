@@ -50,7 +50,7 @@ export default {
           v-else
           icon="🏋️"
           :message="t('session.no_program')">
-          <button class="btn btn--primary" style="margin-top:1rem"
+          <button class="btn btn--primary"
             @click="router.push('#/programs/new')">
             {{ t('programs.new') }}
           </button>

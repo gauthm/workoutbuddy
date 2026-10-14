@@ -174,12 +174,12 @@ export default {
           v-else-if="!state.session"
           icon="🏋️"
           :message="state.activeProgram ? t('session.no_active') : t('session.no_program')">
-          <button v-if="state.activeProgram" class="btn btn--primary" style="margin-top:1rem"
+          <button v-if="state.activeProgram" class="btn btn--primary"
             @click="router.push('#/programs/' + state.activeProgram.id)">
             {{ t('session.go_program') }}
           </button>
-          <button v-else class="btn btn--primary" style="margin-top:1rem"
-            @click="router.push('#/coach')">
+          <button v-else class="btn btn--primary"
+            @click="router.push('#/programs/new')">
             {{ t('programs.new') }}
           </button>
         </EmptyState>

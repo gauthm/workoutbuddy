@@ -236,3 +236,5 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Création : un seul bouton Nouveau programme sur la page Programmes vide ; même libellé dans la vue Séance. Vérifications navigateur des états vides, de l’absence d’ajout d’exercice et du point vert de la séance sans programme.
 
 - [x] Messages sans programme : « Aucun programme actif. » sur accueil/programmes/séance, suppression des anciennes références à la création par le coach dans les libellés de création.
+
+- [x] États vides : même alignement du bouton Nouveau programme dans Programmes et Séance (marge spécifique retirée, accueil harmonisé) ; corriger aussi la destination du bouton de Séance vers le questionnaire. 409 tests et position identique vérifiée à 320/390/768/1280 px.
