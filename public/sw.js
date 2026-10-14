@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v58'
+const CACHE_NAME = 'workoutbuddy-v59'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -36,7 +36,6 @@ const PRECACHE_URLS = [
   '/js/components/exercises/ExerciseCard.js',
   '/js/components/exercises/ExerciseDetailView.js',
   '/js/components/exercises/ExerciseFilter.js',
-  '/js/components/exercises/ExerciseForm.js',
   '/js/components/equipment/EquipmentView.js',
   '/js/components/equipment/EquipmentEditor.js',
   '/js/components/equipment/inventoryCatalog.js',
@@ -45,16 +44,13 @@ const PRECACHE_URLS = [
   '/js/components/equipment/EquipmentItemRow.js',
   '/js/components/equipment/EquipmentForm.js',
   '/js/components/calendar/CalendarView.js',
-  '/js/components/coach/ActionPreview.js',
   '/js/components/coach/AdviceCard.js',
   '/js/components/coach/ChatMessage.js',
   '/js/components/coach/CoachView.js',
-  '/js/components/coach/OnboardingBanner.js',
   '/js/components/coach/UserProfileCard.js',
   '/js/components/programs/ExerciseSelector.js',
   '/js/components/programs/ProgramCard.js',
   '/js/components/programs/ProgramDetailView.js',
-  '/js/components/programs/ProgramForm.js',
   '/js/components/programs/ProgramGenerator.js',
   '/js/components/programs/ProgramListView.js',
   '/js/components/session/AITooltip.js',

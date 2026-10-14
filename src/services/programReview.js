@@ -28,7 +28,7 @@ export function reviewProgramWeek(db, programId, now = new Date()) {
   if (program.is_in_deload) { decision='recovery'; evidence.reason='already_in_deload' }
   else if (sessions.length < 2) { decision='insufficient_data'; evidence.reason='not_enough_workouts' }
   else {
-    const deload = shouldDeload(program,settings,db)
+    const deload = shouldDeload(program,settings,db,now)
     if (evidence.high_effort_sessions >= 2 && evidence.high_effort_sessions >= sessions.length / 2 || deload.should) {
       decision='deload'; evidence.reason=deload.should ? deload.reason : 'repeated_high_effort'
     }

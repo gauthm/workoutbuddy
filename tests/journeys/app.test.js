@@ -40,7 +40,7 @@ beforeEach(async () => {
     ai_api_key: '', ai_base_url: '', ai_model: '',
   })
   for (const item of [
-    { category: 'dumbbell_adjustable', name: 'Pair', count: 2, weight_min_kg: 2, weight_max_kg: 40, weight_step_kg: 2 },
+    { category: 'dumbbell_adjustable', name: 'Pair', count: 2, weight_min_kg: 2, weight_max_kg: 40, weight_step_kg: 1 },
     { category: 'bench', name: 'Bench', count: 1 },
     { category: 'pullup_bar', name: 'Pull-up bar', count: 1 },
   ]) await post('/equipment', item, 201)

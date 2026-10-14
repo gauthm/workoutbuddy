@@ -12,7 +12,7 @@ import { detectProgramPlateau } from './plateauDetector.js'
  * @param {object}  db
  * @returns {{ should: bool, reason?: 'scheduled'|'plateau', detail?: string }}
  */
-export function shouldDeload(program, settings, db) {
+export function shouldDeload(program, settings, db, now = new Date()) {
   if (program.is_in_deload) {
     return { should: false }
   }
@@ -20,8 +20,8 @@ export function shouldDeload(program, settings, db) {
   // ── Déclencheur 1 : deload planifié ──────────────────────────────
   if (program.deload_auto_enabled) {
     const freqWeeks = program.deload_frequency_weeks || 6
-    const refDate   = program.last_deload_date || program.created_at
-    const weeksSince = weeksBetween(refDate, new Date().toISOString())
+    const refDate   = program.last_deload_date || program.started_on || program.created_at
+    const weeksSince = weeksBetween(refDate, now.toISOString())
 
     if (weeksSince >= freqWeeks) {
       return {
@@ -83,6 +83,8 @@ export function computeDeloadTargets(
   } else {
     weight = Math.round(targetW * 100) / 100
   }
+
+  weight = Math.min(progressionState.current_weight_kg,weight)
 
   const targetSets = Math.max(
     minSets,

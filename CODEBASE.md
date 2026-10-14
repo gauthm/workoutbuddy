@@ -43,7 +43,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
 | Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
 | Coach IA | `aiProvider.js`, `systemPromptBuilder.js`, `coachingAdvisor.js`, `adviceTextGenerator.js`, `actionStreamParser.js` |
-| Utilitaires et compatibilité | `date.js`, `validation.js`, `rotationEngine.js` |
+| Utilitaires et compatibilité | `date.js`, `validation.js`, `rotationEngine.js`, `catalogueCleanup.js` |
 
 ## Interface — `public/`
 

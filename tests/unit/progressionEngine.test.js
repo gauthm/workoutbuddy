@@ -110,7 +110,7 @@ describe('rpe_based', () => {
   const state = { current_weight_kg: 80, consecutive_failures: 0 }
 
   it('RPE << cible → augmentation', () => {
-    const sets = [{ reps: 8, rpe: 6.0 }]  // diff = -2 → pct = 5%
+    const sets = Array(3).fill({ reps: 8, rpe: 6.0 })  // all planned sets, diff -2 → +5%
     const r = computeNextState(state, sets, te, { progression_model: 'rpe_based' }, LOADS, SETTINGS)
     assert.ok(r.current_weight_kg > 80, `Attendu > 80, obtenu ${r.current_weight_kg}`)
   })

@@ -7,9 +7,7 @@ export const store = reactive({
   activeRest: null,
   activeRestExerciseId: null,
   activeSession: null,       // session en cours (status='in_progress')
-  pendingAction: null,       // action IA en attente de confirmation
-  pendingAdjustments: [],    // ajustements coach retournés par POST /sessions/:id/start
-  coachAutoStart:    false,  // true → le coach démarre une conversation automatiquement
+  pendingAdjustments: [],    // ajustements du moteur retournés par POST /sessions/:id/start
   toast:         null,       // { id, message, type:'success'|'error'|'info'|'warning' }
   _toastTimer:   null,
 
@@ -34,14 +32,6 @@ export const store = reactive({
     this.activeRest = null
     this.activeRestExerciseId = null
     stopSessionTimers()
-  },
-
-  setPendingAction(action) {
-    this.pendingAction = action
-  },
-
-  clearPendingAction() {
-    this.pendingAction = null
   },
 
   setPendingAdjustments(adjustments) {

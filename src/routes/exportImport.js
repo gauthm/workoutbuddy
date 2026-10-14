@@ -1,3 +1,4 @@
+import { isKnownCatalogueAlias, mergeCatalogueAliases } from '../services/catalogueCleanup.js'
 import { resetProfile } from './userProfile.js'
 import { createBackup } from '../db/backup.js'
 import express   from 'express'
@@ -137,6 +138,7 @@ router.post('/import', (req, res) => {
         || db.prepare('SELECT id FROM exercise WHERE id = ? AND is_custom = 0').get(exercise.id)) {
         return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Identifiant d’exercice personnalisé invalide ou dupliqué.' })
       }
+      if (!isKnownCatalogueAlias(db,exercise)) return res.status(400).json({ error:'UNSUPPORTED_CUSTOM_EXERCISE' })
       customIds.add(exercise.id)
     }
 
@@ -464,6 +466,8 @@ router.post('/import', (req, res) => {
           counts.coach_messages = (counts.coach_messages || 0) + 1
         }
       }
+      mergeCatalogueAliases(db)
+      counts.exercises=0
     })()
 
     res.json({ imported: counts })

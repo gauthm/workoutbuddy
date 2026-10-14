@@ -43,7 +43,7 @@ describe('T1.4 — API Exercices', () => {
     assert.equal(res.body.error, 'EXERCISE_NOT_FOUND')
   })
 
-  it('POST /exercises crée un exercice custom', async () => {
+  it('POST /exercises interdit la création personnalisée', async () => {
     const res = await request(app)
       .post('/api/v1/exercises')
       .send({
@@ -54,18 +54,18 @@ describe('T1.4 — API Exercices', () => {
         primary_muscles: ['biceps'],
         equipment_required: ['dumbbell_fixed']
       })
-    assert.equal(res.status, 201)
-    assert.equal(res.body.is_custom, true)
-    assert.equal(res.body.name_fr, 'Curl marteau')
+    assert.equal(res.status, 403)
+    assert.equal(res.body.error, 'EXERCISE_CATALOG_READ_ONLY')
+    assert.equal(getDb().prepare('SELECT COUNT(*) AS n FROM exercise WHERE is_custom=1').get().n,0)
   })
 
-  it('POST /exercises sans name_fr retourne 400', async () => {
+  it('POST /exercises reste interdit sans nom', async () => {
     const res = await request(app)
       .post('/api/v1/exercises')
       .send({ name_en: 'Test', category: 'strength',
               movement_pattern: 'other', primary_muscles: ['core'] })
-    assert.equal(res.status, 400)
-    assert.equal(res.body.error, 'MISSING_NAME_FR')
+    assert.equal(res.status, 403)
+    assert.equal(res.body.error, 'EXERCISE_CATALOG_READ_ONLY')
   })
 
   it('DELETE builtin retourne 403', async () => {

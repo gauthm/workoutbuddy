@@ -32,7 +32,7 @@ Depuis la fiche du programme, deux paramètres sont modifiables : la durée tota
 
 ### Exercices et matériel
 
-L’interface utilise le catalogue d’exercices importé et ne propose plus d’ajout d’exercice personnalisé.
+L’interface et le moteur utilisent uniquement le catalogue importé de free-exercise-db. L’ajout et la modification d’exercices personnalisés sont bloqués côté API. Les anciens doublons « Curl marteau » sont rattachés à Hammer Curls, avec conservation des séances, séries, exclusions et de la progression la plus récente.
 
 La page **Exercices et Matériel** regroupe trois onglets : Exercices, Douleurs et Matériel. La recherche et les filtres permettent de choisir un muscle, un mouvement, une famille de matériel ou les exercices réalisables avec l’inventaire. Le compteur de l’onglet Exercices indique le nombre de mouvements restants après les filtres, douleurs et exclusions ; les exclusions sont signalées séparément. Consulter une fiche puis revenir conserve les filtres et la position de défilement. Les photos disposent de boutons précédent et suivant.
 
@@ -58,9 +58,13 @@ Pendant une séance, saisir la charge et les répétitions des séries proposée
 
 La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages avancés.
 
-La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements.
+La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements. La fin de séance et l’enregistrement des progrès forment une seule transaction : en cas d’échec du calcul, la séance reste en cours et peut être terminée à nouveau.
 
-À la création, le moteur privilégie les exercices utilisant le matériel disponible et répartit les variantes entre les séances, par exemple développé à plat en A et incliné en B avec un banc réglable. Des exercices au poids du corps restent possibles quand ils sont pertinents ou que le matériel manque. Une charge ajoutée manuellement à un exercice au poids du corps est enregistrée ; le moteur ne propose pas encore automatiquement de lest optionnel.
+Pour débuter, le moteur limite chaque exercice à trois séries et utilise la double progression, y compris pour un objectif de force, avec une plage initiale de 8–12 répétitions. Les poids des haltères sont exprimés par haltère ; le calcul de départ distingue un mouvement à deux haltères d’un mouvement à un bras. Les hausses automatiques restent limitées à 10 % de la charge ou 1 kg pour les petites charges ; si le matériel impose un saut supérieur, la charge est maintenue. Une série menée à l’échec (RPE ≥ 9,5 ou RIR = 0) bloque une nouvelle hausse immédiate. Les cibles s’ajustent au matériel actuel sans effacer les performances passées.
+
+Ces règles sont des choix de programmation, avec des repères issus des recommandations [ACSM 2026](https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/) : entraînement progressif des grands groupes musculaires, volume adapté et absence d’obligation d’aller à l’échec. Elles ne constituent pas une validation individuelle des charges de départ.
+
+À la création, le moteur privilégie les exercices utilisant le matériel disponible et répartit les variantes entre les séances, par exemple développé à plat en A et incliné en B avec un banc réglable. La sélection inclut notamment le squat et le soulevé de terre avec haltères, le développé au sol et le rowing avec une kettlebell. Les exigences matérielles restent propres à chaque mouvement du catalogue : un haltère ne remplace pas automatiquement une kettlebell. Des exercices au poids du corps restent possibles quand ils sont pertinents ou que le matériel manque. L’estimation du temps compte les deux côtés des exercices unilatéraux. Une charge ajoutée manuellement à un exercice au poids du corps est enregistrée ; le moteur ne propose pas encore automatiquement de lest optionnel.
 
 Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Supprimer une séance recalcule les acquis à partir de l’historique restant. Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
 
@@ -100,10 +104,10 @@ Ces fonctions se trouvent dans **Réglages → Réglages avancés → Données**
 
 | Action | Contenu ou effet |
 | --- | --- |
-| Export JSON | Programmes, séances types, séances, créneaux supprimés, séries, poids corporel, records, progressions, contexte de calcul, bilans, inventaire, exercices personnalisés, profil, conversations et réglages ; clé API exclue |
+| Export JSON | Programmes, séances types, séances, créneaux supprimés, séries, poids corporel, records, progressions, contexte de calcul, bilans, inventaire, exclusions d’exercices, profil, conversations et réglages ; clé API exclue |
 | CSV résumé des séances | Une ligne par séance, avec ses informations et totaux |
 | CSV détail des séries | Une ligne par série, avec exercice, charge, répétitions et autres mesures |
-| Import JSON | Restaure les données d’un export en remplaçant les données couvertes ; sauvegarde préalable et restauration transactionnelle |
+| Import JSON | Restaure les données d’un export en remplaçant les données couvertes ; sauvegarde préalable et restauration transactionnelle. Les doublons historiques reconnus sont fusionnés avec le catalogue ; un exercice custom sans équivalent reconnu bloque l’import avant toute modification |
 | Sauvegarde locale | Copie cohérente de SQLite dans `data/backups/`, ou le dossier `backups/` voisin de la base configurée |
 | Réinitialiser stats et historique | Efface séances, séries, records, poids corporel, acquis et bilans ; conserve programmes, inventaire, profil, réglages et douleurs |
 | Réinitialisation générale | Efface les données utilisateur et les douleurs ; conserve le catalogue intégré et les paramètres de l’application |

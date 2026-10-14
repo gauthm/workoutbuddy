@@ -15,7 +15,7 @@ const { migrate } = await import('../../src/db/migrate.js')
 const db = getDb()
 migrate(db)
 const { app } = await import('../../server.js')
-db.prepare("INSERT INTO exercise (id,name_fr,name_en,category,movement_pattern,primary_muscles,is_custom) VALUES ('audit_ex','Audit','Audit','strength','core','[]',1)").run()
+db.prepare("INSERT INTO exercise (id,name_fr,name_en,category,movement_pattern,primary_muscles,is_custom) VALUES ('audit_ex','Audit','Audit','strength','core','[]',0)").run()
 const today = new Date().toISOString().slice(0,10)
 beforeEach(() => {
   db.transaction(() => {

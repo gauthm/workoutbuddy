@@ -32,7 +32,7 @@ router.get('/', (req, res) => {
     if (req.query.available !== undefined && !['0','1'].includes(req.query.available)) {
       return res.status(400).json({ error: 'INVALID_AVAILABLE_FILTER' })
     }
-    let sql = 'SELECT * FROM exercise WHERE 1=1'
+    let sql = 'SELECT * FROM exercise WHERE is_custom=0'
     const params = []
 
     if (req.query.movement) {
@@ -86,69 +86,8 @@ router.get('/', (req, res) => {
   }
 })
 
-router.post('/', (req, res) => {
-  try {
-    const {
-      name_fr, name_en, category, force, mechanic, movement_pattern,
-      primary_muscles, secondary_muscles, equipment_required,
-      instructions_fr, instructions_en, image_paths, is_unilateral
-    } = req.body
-
-    // Validations
-    if (!name_fr || !name_fr.trim()) {
-      return res.status(400).json({ error: 'MISSING_NAME_FR' })
-    }
-    if (!name_en || !name_en.trim()) {
-      return res.status(400).json({ error: 'MISSING_NAME_EN' })
-    }
-    const VALID_CATEGORIES = ['strength','cardio','stretching','plyometrics','olympic_weightlifting']
-    if (!VALID_CATEGORIES.includes(category)) {
-      return res.status(400).json({ error: 'INVALID_CATEGORY' })
-    }
-    const VALID_MOVEMENTS = [
-      'push_horizontal','push_vertical','pull_horizontal','pull_vertical',
-      'squat','hinge','lunge','carry','core','rotation','other'
-    ]
-    if (!VALID_MOVEMENTS.includes(movement_pattern)) {
-      return res.status(400).json({ error: 'INVALID_MOVEMENT_PATTERN' })
-    }
-    if (!Array.isArray(primary_muscles) || primary_muscles.length === 0) {
-      return res.status(400).json({ error: 'MISSING_PRIMARY_MUSCLES' })
-    }
-
-    // Générer un ID depuis name_en
-    const baseId = name_en.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    let id = baseId
-    let suffix = 2
-    while (db.prepare('SELECT id FROM exercise WHERE id = ?').get(id)) {
-      id = `${baseId}_${suffix++}`
-    }
-
-    db.prepare(`
-      INSERT INTO exercise
-        (id, name_fr, name_en, category, force, mechanic, movement_pattern,
-         primary_muscles, secondary_muscles, equipment_required,
-         instructions_fr, instructions_en, image_paths, is_custom, is_unilateral)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)
-    `).run(
-      id, name_fr.trim(), name_en.trim(), category,
-      force || null, mechanic || null, movement_pattern,
-      JSON.stringify(primary_muscles),
-      JSON.stringify(secondary_muscles || []),
-      JSON.stringify(equipment_required || []),
-      JSON.stringify(instructions_fr || []),
-      JSON.stringify(instructions_en || []),
-      JSON.stringify(image_paths || []),
-      is_unilateral ? 1 : 0
-    )
-
-    const created = db.prepare('SELECT * FROM exercise WHERE id = ?').get(id)
-    res.status(201).json(parseExercise(created))
-  } catch (err) {
-    console.error('[POST /exercises]', err.message)
-    res.status(500).json({ error: 'INTERNAL_ERROR' })
-  }
-})
+// The catalogue is supplied by free-exercise-db; user exclusions remain editable.
+router.post('/', (_req,res) => res.status(403).json({error:'EXERCISE_CATALOG_READ_ONLY'}))
 
 // Ordre important : routes spécifiques AVANT /:id
 router.get('/:id/history', (req, res) => {
@@ -308,79 +247,7 @@ router.get('/:id', (req, res) => {
   }
 })
 
-router.put('/:id', (req, res) => {
-  try {
-    const existing = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)
-    if (!existing) return res.status(404).json({ error: 'EXERCISE_NOT_FOUND' })
-    if (!existing.is_custom) {
-      return res.status(403).json({ error: 'CANNOT_EDIT_BUILTIN_EXERCISE' })
-    }
-
-    // Champs modifiables
-    const fields = [
-      'name_fr','name_en','category','force','mechanic','movement_pattern',
-      'is_unilateral'
-    ]
-    const arrayFields = [
-      'primary_muscles','secondary_muscles','equipment_required',
-      'instructions_fr','instructions_en','image_paths'
-    ]
-    const updates = []
-    const values = []
-
-    for (const f of fields) {
-      if (req.body[f] !== undefined) {
-        updates.push(`${f} = ?`)
-        values.push(req.body[f])
-      }
-    }
-    for (const f of arrayFields) {
-      if (req.body[f] !== undefined) {
-        updates.push(`${f} = ?`)
-        values.push(JSON.stringify(req.body[f]))
-      }
-    }
-
-    if (updates.length === 0) {
-      return res.status(400).json({ error: 'NO_FIELDS_TO_UPDATE' })
-    }
-
-    values.push(req.params.id)
-    db.prepare(`UPDATE exercise SET ${updates.join(', ')} WHERE id = ?`).run(...values)
-
-    const updated = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)
-    res.json(parseExercise(updated))
-  } catch (err) {
-    console.error('[PUT /exercises/:id]', err.message)
-    res.status(500).json({ error: 'INTERNAL_ERROR' })
-  }
-})
-
-router.delete('/:id', (req, res) => {
-  try {
-    const existing = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)
-    if (!existing) return res.status(404).json({ error: 'EXERCISE_NOT_FOUND' })
-    if (!existing.is_custom) {
-      return res.status(403).json({ error: 'CANNOT_DELETE_BUILTIN_EXERCISE' })
-    }
-
-    // Vérifier qu'il n'est pas utilisé dans un template
-    const inUse = db.prepare(
-      'SELECT COUNT(*) as n FROM template_exercise WHERE exercise_id = ?'
-    ).get(req.params.id)
-    if (inUse.n > 0) {
-      return res.status(409).json({
-        error: 'EXERCISE_IN_USE',
-        detail: `Utilisé dans ${inUse.n} template(s)`
-      })
-    }
-
-    db.prepare('DELETE FROM exercise WHERE id = ?').run(req.params.id)
-    res.status(204).end()
-  } catch (err) {
-    console.error('[DELETE /exercises/:id]', err.message)
-    res.status(500).json({ error: 'INTERNAL_ERROR' })
-  }
-})
+router.put('/:id', (_req,res) => res.status(403).json({error:'EXERCISE_CATALOG_READ_ONLY'}))
+router.delete('/:id', (_req,res) => res.status(403).json({error:'CANNOT_DELETE_BUILTIN_EXERCISE'}))
 
 export default router

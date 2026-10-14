@@ -27,9 +27,6 @@ async function request(method, path, body = undefined) {
 export const exercises = {
   list:      (params = {}) => request('GET', '/exercises?' + new URLSearchParams(params)),
   get:       (id)          => request('GET', `/exercises/${id}`),
-  create:    (body)        => request('POST', '/exercises', body),
-  update:    (id, body)    => request('PUT', `/exercises/${id}`, body),
-  delete:    (id)          => request('DELETE', `/exercises/${id}`),
   history:   (id, params)  => request('GET', `/exercises/${id}/history?` + new URLSearchParams(params)),
   rmHistory: (id, params)  => request('GET', `/exercises/${id}/rm-history?` + new URLSearchParams(params)),
   toggleExclusion: (id, body) => request('PUT', `/exercises/${id}/toggle-exclusion`, body),

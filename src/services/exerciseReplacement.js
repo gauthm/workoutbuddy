@@ -11,7 +11,7 @@ function parse(row) {
 export function findSimilarExercises(base, exercises, inventory, usedIds=[], painfulMuscles=[]) {
   const used=new Set(usedIds),loads=new Map()
   const candidates=exercises.filter(ex => {
-    if(ex.id===base.id || used.has(ex.id) || ex.is_excluded || isExerciseRestricted(ex,painfulMuscles) || ex.category!==base.category || ex.movement_pattern!==base.movement_pattern) return false
+    if(ex.is_custom || ex.id===base.id || used.has(ex.id) || ex.is_excluded || isExerciseRestricted(ex,painfulMuscles) || ex.category!==base.category || ex.movement_pattern!==base.movement_pattern) return false
     if(!base.primary_muscles.length || !ex.primary_muscles.includes(base.primary_muscles[0])) return false
     if(base.mechanic && ex.mechanic && base.mechanic!==ex.mechanic) return false
     if(base.force && ex.force && base.force!==ex.force) return false

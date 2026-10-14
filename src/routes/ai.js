@@ -190,11 +190,11 @@ router.post('/chat', async (req, res) => {
   const sendEvent = (data) => !res.destroyed && !res.writableEnded && res.write(`data: ${JSON.stringify(data)}\n\n`)
 
   let fullContent = ''
-  const pendingActions = []
   const parse = createActionStreamParser()
   const sendParsed = events => {
     for (const event of events) {
       if (event.type === 'action') continue
+      if (event.type === 'token') fullContent += event.content
       sendEvent(event)
     }
   }
@@ -206,11 +206,10 @@ router.post('/chat', async (req, res) => {
       if (event.type === 'error') { sendParsed(parse('', true)); sendEvent(event); break }
       if (event.type === 'done') {
         sendParsed(parse('', true))
-        sendEvent({ type: 'done', usage: event.usage, actions_count: pendingActions.length, conversation_id: conversation.id })
+        sendEvent({ type: 'done', usage: event.usage, actions_count: 0, conversation_id: conversation.id })
         break
       }
       if (event.type !== 'token') continue
-      fullContent += event.content
       sendParsed(parse(event.content))
     }
   } catch (err) {

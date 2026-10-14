@@ -94,7 +94,9 @@ export function suggestFirstTime(exercise, userProfile, templateExercise, equipm
   const table = (FIRST_TIME_TABLE[goal] || FIRST_TIME_TABLE.general_fitness)[level]
   const config = table?.[mechanic] || { pct: 0.25, reps: 10 }
 
-  const rawWeight   = bodyweightKg * config.pct
+  // Bilateral dumbbell weights are logged per hand, not as the pair's total.
+  const pairedDumbbells = exercise.equipment_required?.some(c=>c.startsWith('dumbbell')) && !exercise.is_unilateral
+  const rawWeight   = bodyweightKg * config.pct / (pairedDumbbells ? 2 : 1)
   const loadsResult = calculateAchievableLoads(equipmentItems, exercise)
 
   let weight

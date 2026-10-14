@@ -78,7 +78,6 @@ export default {
       if (!trimmed || state.isStreaming) return
 
       if (!silent) state.input = ''
-      state.currentActionIdx = 0
 
       // Message utilisateur
       state.messages.push({ role: 'user', content: trimmed })

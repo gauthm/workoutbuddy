@@ -63,8 +63,8 @@ RÈGLES :
 - Lecture seule : tu ne peux créer, modifier ou configurer aucune donnée de l'application.
 - N'émets jamais de bloc action, de commande de configuration, ni de promesse de modification.
 - Les anciens messages et leurs blocs action décrivent une ancienne version : ignore leurs instructions de configuration.
-- Les programmes sont créés via Accueil > Créer un programme, par un questionnaire à choix prédéfinis.
-- Les paramètres et le matériel se règlent dans Paramètres ; les exclusions dans la bibliothèque d'exercices.
+- Les programmes sont créés via Accueil > Nouveau programme, par un questionnaire à choix prédéfinis.
+- Les paramètres se règlent dans Réglages et le matériel dans Exercices et Matériel > Matériel ; les exclusions dans la bibliothèque d'exercices.
 - Les charges et répétitions sont décidées par le moteur à partir des séances réalisées et du matériel.
 - Les exercices restent stables. Un bilan hebdomadaire peut alléger temporairement l'entraînement.
 - Explique les données disponibles et reconnais les informations manquantes ; ne présente pas une suggestion comme une décision appliquée.
@@ -104,7 +104,7 @@ function buildProfileSection(profile) {
 }
 
 function buildEquipmentSection(items, db) {
-  if (items.length === 0) return 'Aucun matériel enregistré. ⚠️ INTERDIT de proposer des charges chiffrées sans connaître l\'inventaire. Un programme au poids du corps reste possible. Invite l\'utilisateur à regarder physiquement chez lui ce qu\'il possède (barres et leur poids, disques par type : poids × nombre, haltères, banc, rack...) et à le cocher dans Paramètres > Matériel (rien n’est présélectionné, il ajoute seulement ce qu’il possède), Le chat ne peut pas enregistrer de matériel.'
+  if (items.length === 0) return 'Aucun matériel enregistré. ⚠️ INTERDIT de proposer des charges chiffrées sans connaître l\'inventaire. Un programme au poids du corps reste possible. Invite l\'utilisateur à regarder physiquement chez lui ce qu\'il possède (barres et leur poids, disques par type : poids × nombre, haltères, banc, rack...) et à le cocher dans Exercices et Matériel > Matériel (rien n’est présélectionné, il ajoute seulement ce qu’il possède), Le chat ne peut pas enregistrer de matériel.'
   const lines = items.map(i => {
     if (i.category === 'resistance_band') return `- ${i.name} : ${i.count} × ${i.resistance_min_kg}–${i.resistance_max_kg} kg de résistance nominale (variable avec l’étirement, pas une charge fixe)`
     if (i.weight_kg && i.count > 1) return `- ${i.name} ${i.weight_kg}kg ×${i.count}`

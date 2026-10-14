@@ -16,7 +16,7 @@ export function isEquipmentAvailable(equipmentRequired, equipmentItems) {
   if (!equipmentRequired || equipmentRequired.length === 0) return true
 
   // Construire l'ensemble des catégories disponibles avec sous-types
-  const available = new Set(equipmentItems.map(i => i.category))
+  const available = new Set(equipmentItems.filter(i=>i.count === undefined || i.count>0).map(i => i.category))
 
   // bench_adjustable → satisfait bench
   if (available.has('bench_adjustable')) available.add('bench')

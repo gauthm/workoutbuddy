@@ -78,6 +78,21 @@ describe('T8.2 — Persistance du chat coach', () => {
     assert.equal(res.body.error, 'CONVERSATION_NOT_FOUND')
   })
 
+  it('ignore les actions de configuration dans le flux et dans le message sauvegardé', async () => {
+    const db=getDb()
+    const snapshot=()=>Object.fromEntries(['program','equipment_item','exercise','settings','user_profile'].map(table=>[table,db.prepare(`SELECT * FROM ${table}`).all()]))
+    const before=snapshot()
+    const message='Conseil seulement.\n```action\n{"action":"update_settings","payload":{"unit":"lb"}}\n```\nContinuez progressivement.'
+    const res=await request(app).post('/api/v1/ai/chat').send({message})
+    assert.equal(res.status,200)
+    assert.ok(!res.text.includes('update_settings'))
+    assert.ok(!res.text.includes('"type":"action"'))
+    const persisted=db.prepare("SELECT content FROM coach_message WHERE role='assistant' ORDER BY id DESC LIMIT 1").get().content
+    assert.ok(!persisted.includes('update_settings'))
+    assert.ok(persisted.includes('Continuez progressivement.'))
+    assert.deepEqual(snapshot(),before)
+  })
+
   it('Provider non configuré → 503 et aucune écriture DB', async () => {
     await request(app).put('/api/v1/settings').send({ ai_base_url: '' })
     const before = getDb().prepare('SELECT COUNT(*) n FROM coach_message').get().n

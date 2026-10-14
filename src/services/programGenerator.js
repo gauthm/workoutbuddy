@@ -105,12 +105,12 @@ export function validateProgramParams(params) {
 // Estimates include general warm-up, execution, rest between sets and exercise changes.
 export function estimateSessionMinutes(exercises) {
   return Math.ceil(5 + exercises.reduce((minutes, ex) =>
-    minutes + 1 + ex.target_sets * ex.target_reps_max * 3 / 60 +
+    minutes + 1 + ex.target_sets * ex.target_reps_max * 3 / 60 * (ex.is_unilateral ? 2 : 1) +
       (ex.target_sets - 1) * ex.rest_seconds / 60, 0))
 }
 
 const BASE_EXERCISES = ['bodyweight_squat','pushups','pullups','chin_up','crunches','barbell_bench_press_medium_grip',
-  'barbell_squat','dumbbell_bench_press','one_arm_dumbbell_row','lat_pulldown','seated_cable_rows']
+  'barbell_squat','dumbbell_squat','dumbbell_bench_press','one_arm_dumbbell_row','lat_pulldown','seated_cable_rows']
 
 // Prefer usable external resistance, while leaving useful bodyweight movements in
 // the pool. A bench supports a movement; it does not itself make it loaded.
@@ -127,8 +127,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
   const budget = params.session_duration_min || 60
   const available = allExercises.map(ex => generationCandidate(ex,level)).filter(ex => ex && !ex.is_excluded && !isExerciseRestricted(ex,painfulMuscles) &&
     (!ex.category || ex.category === 'strength') && isEquipmentAvailable(ex.equipment_required, equipmentItems) &&
-    (!(ex.equipment_required || []).some(c => c.startsWith('dumbbell') || c === 'kettlebell') ||
-      calculateAchievableLoads(equipmentItems, ex).loads_kg.length > 0))
+    calculateAchievableLoads(equipmentItems, ex).loads_kg.length > 0)
   const warnings = []
   const weeklyExposure = new Map()
   const templates = SPLIT_TEMPLATES[selectSplit(days_per_week)].map((definition, ti) => {
@@ -158,13 +157,13 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
       const exercise = candidates[0]
       if (!exercise) { warnings.push({ code: 'muscle_unavailable', muscle }); continue }
       const cfg = SETS_REPS[goal]?.[exercise.mechanic === 'compound' ? 'compound' : 'isolation'] || SETS_REPS.general_fitness.compound
-      let sets = level === 'beginner' ? Math.max(2, cfg.sets - 1) : cfg.sets
+      let sets = level === 'beginner' ? Math.min(3, Math.max(2, cfg.sets - 1)) : cfg.sets
       if (priority_muscles.includes(muscle) && level !== 'beginner') sets = Math.min(5, sets + 1)
-      const item = { exercise_id: exercise.id, target_sets: sets, target_reps_min: cfg.rmin,
-        target_reps_max: cfg.rmax, rest_seconds: cfg.rest, progression_model: 'inherit', rir_target: 2 }
+      const item = { exercise_id: exercise.id, is_unilateral:exercise.is_unilateral, target_sets: sets, target_reps_min: level === 'beginner' && goal === 'strength' ? 8 : cfg.rmin,
+        target_reps_max: level === 'beginner' && goal === 'strength' ? 12 : cfg.rmax, rest_seconds: cfg.rest, progression_model: 'inherit', rir_target: 2 }
       while (item.target_sets > 2 && estimateSessionMinutes([...selected, item]) > budget) item.target_sets--
       if (estimateSessionMinutes([...selected, item]) > budget) continue
-      selected.push({ ...item, pattern: exercise.movement_pattern })
+      selected.push({ ...item, pattern: exercise.movement_pattern, is_unilateral:exercise.is_unilateral })
       used.add(exercise.id)
       exercise.primary_muscles.forEach(m => covered.add(m))
       weeklyExposure.set(exercise.id, (weeklyExposure.get(exercise.id) || 0) + 1)
@@ -193,7 +192,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
       let added = false
       for (const ex of candidates) {
         const cfg=SETS_REPS[goal][ex.mechanic === 'compound' ? 'compound' : 'isolation']
-        const item={exercise_id:ex.id,target_sets:2,target_reps_min:cfg.rmin,target_reps_max:cfg.rmax,
+        const item={exercise_id:ex.id,is_unilateral:ex.is_unilateral,target_sets:2,target_reps_min:level === 'beginner' && goal === 'strength' ? 8 : cfg.rmin,target_reps_max:level === 'beginner' && goal === 'strength' ? 12 : cfg.rmax,
           rest_seconds:cfg.rest,progression_model:'inherit',rir_target:2,pattern:ex.movement_pattern}
         if (estimateSessionMinutes([...selected,item]) > budget) continue
         selected.push(item);used.add(ex.id);ex.primary_muscles.forEach(m=>covered.add(m))
@@ -208,7 +207,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
     let name = definition.name
     for (const [key,value] of Object.entries(labels)) name = name.replace(key,value)
     return { name, day_of_week: params.training_days ? [...params.training_days].sort((a,b)=>a-b)[ti] : null, estimated_duration_min: estimateSessionMinutes(selected),
-      exercises: selected.map(({ pattern, ...item }) => item) }
+      exercises: selected.map(({ pattern, is_unilateral, ...item }) => item) }
   })
   if (templates.some(t => !t.exercises.length)) throw new Error('NO_AVAILABLE_EXERCISES')
   const goalNames = params.language === 'en'
@@ -218,7 +217,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
   for (const muscle of priority_muscles) if (!actualMuscles.has(muscle)) warnings.push({ code:'priority_not_covered', muscle })
   return { name: params.name?.trim() || `${goalNames[goal]} · ${days_per_week} ${params.language === 'en' ? 'days/week' : 'j/sem'}`,
     goal, level, days_per_week, duration_weeks: params.duration_weeks === null ? null : params.duration_weeks || 8,
-    progression_model: DEFAULT_MODEL[goal] || 'double_progression', use_exercise_rotation: 0,
+    progression_model: level === 'beginner' ? 'double_progression' : DEFAULT_MODEL[goal] || 'double_progression', use_exercise_rotation: 0,
     deload_auto_enabled: 1, templates,
     warnings: [...new Map(warnings.map(w => [w.code + w.muscle,w])).values()] }
 }

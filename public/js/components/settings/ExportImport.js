@@ -73,7 +73,9 @@ export default {
         // Recharger la page pour que les nouveaux settings s'appliquent
         setTimeout(() => window.location.reload(), 1000)
       } catch (err) {
-        const msg = err.message || 'Format invalide'
+        const msg = err.message === 'UNSUPPORTED_CUSTOM_EXERCISE'
+          ? t('settings.import_custom_unsupported')
+          : err.message || 'Format invalide'
         store.showToast(t('settings.import_error', { error: msg }), 'error')
       } finally {
         state.importing   = false

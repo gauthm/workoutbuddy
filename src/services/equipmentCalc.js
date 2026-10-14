@@ -16,6 +16,7 @@ import { isEquipmentAvailable } from './rotationEngine.js'
  * @returns {{ loads_kg: number[], min_increment_kg: number, max_load_kg: number }}
  */
 export function calculateAchievableLoads(equipmentItems, exercise) {
+  equipmentItems=equipmentItems.filter(item=>item.count === undefined || item.count>0)
   const eqTypes      = exercise.equipment_required || []
   const isUnilateral = exercise.is_unilateral === 1 || exercise.is_unilateral === true
   const requiredDumbbells = isUnilateral ? 1 : 2

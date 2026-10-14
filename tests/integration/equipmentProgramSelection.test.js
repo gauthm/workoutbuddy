@@ -23,8 +23,8 @@ test('home equipment supplies flat press A, incline press B and weighted leg wor
  const draft=await preview(),[a,b]=draft.templates
  assert.equal(a.exercises[0].exercise_id,'dumbbell_bench_press')
  assert.equal(b.exercises[0].exercise_id,'incline_dumbbell_press')
- assert.ok(a.exercises.some(ex=>['goblet_squat','dumbbell_lunges','dumbbell_rear_lunge'].includes(ex.exercise_id)))
- assert.ok(b.exercises.some(ex=>['goblet_squat','dumbbell_lunges','dumbbell_rear_lunge'].includes(ex.exercise_id)))
+ assert.ok(a.exercises.some(ex=>['dumbbell_squat','dumbbell_lunges','dumbbell_rear_lunge'].includes(ex.exercise_id)))
+ assert.ok(b.exercises.some(ex=>['dumbbell_squat','dumbbell_lunges','dumbbell_rear_lunge'].includes(ex.exercise_id)))
  assert.ok(draft.templates.flatMap(t=>t.exercises).some(ex=>['crunches','bent_knee_hip_raise','butt_lift_bridge'].includes(ex.exercise_id)))
  for(const template of draft.templates)assert.ok(template.estimated_duration_min<=60)
  const raw=db.prepare('SELECT * FROM exercise').all().map(ex=>({...ex,primary_muscles:JSON.parse(ex.primary_muscles),secondary_muscles:JSON.parse(ex.secondary_muscles),equipment_required:JSON.parse(ex.equipment_required)}))

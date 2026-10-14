@@ -8,9 +8,9 @@ export default {
     const store  = inject('store')
 
     const tabs = [
-      { hash: '#/',        icon: '🏠', labelKey: 'nav.home',      routes: ['DashboardView','ProgramListView','ProgramDetailView','ProgramForm','ProgramGenerator','SessionHistoryView','SessionDetailView','CalendarView'] },
+      { hash: '#/',        icon: '🏠', labelKey: 'nav.home',      routes: ['DashboardView','ProgramListView','ProgramDetailView','ProgramGenerator','SessionHistoryView','SessionDetailView','CalendarView'] },
       { hash: '#/session', icon: '🏋️', labelKey: 'nav.session',   routes: ['SessionActiveView'] },
-      { hash: '#/exercises', icon: '📖', labelKey: 'nav.exercises', secondLineKey: 'nav.equipment_line', routes: ['ExerciseListView','ExerciseDetailView','ExerciseFormView','ExerciseEditView'] },
+      { hash: '#/exercises', icon: '📖', labelKey: 'nav.exercises', secondLineKey: 'nav.equipment_line', routes: ['ExerciseListView','ExerciseDetailView'] },
       { hash: '#/stats',   icon: '📊', labelKey: 'nav.stats',     routes: ['StatsDashboardView','ExerciseProgressView','BodyWeightView'] },
       { hash: '#/coach',   icon: '🤖', labelKey: 'nav.coach',     routes: ['CoachView'] },
       { hash: '#/settings',icon: '⚙️', labelKey: 'nav.settings',  routes: ['SettingsView'] },

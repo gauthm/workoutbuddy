@@ -397,6 +397,16 @@ function computeSessionAdjustments(db, session) {
       }
     }
 
+    const compatibleLoads=loadsResult.loads_kg.filter(load=>load>0 && load<=targetWeight+.001)
+    if (!loadsResult.resistance_is_approximate && compatibleLoads.length) {
+      const compatible=compatibleLoads.at(-1)
+      if (compatible < targetWeight-.001) {
+        targetWeight=compatible
+        explanation += ' Charge adaptée au matériel actuellement disponible.'
+        changeType='decrease'
+      }
+    }
+
     if (session.is_deload && program) {
       const target = computeDeloadTargets(te,{ current_weight_kg:targetWeight },program,{},loadsResult.loads_kg)
       targetWeight = loadsResult.resistance_is_approximate ? targetWeight : target.weight_kg
@@ -431,7 +441,7 @@ router.post('/:id/complete', (req, res) => {
 
     if (session.status !== 'in_progress') return res.status(409).json({ error: 'SESSION_NOT_IN_PROGRESS' })
 
-    db.transaction(() => {
+    const completion = db.transaction(() => {
       // Calculer les métriques
       const volumeRow = db.prepare(`
         SELECT COALESCE(SUM(sl.weight_kg * sl.reps), 0) as vol
@@ -473,124 +483,127 @@ router.post('/:id/complete', (req, res) => {
       // Calendar weeks, not a counter incremented for every workout.
       if (session.program_id) {
         db.prepare(`UPDATE program SET current_week = MAX(1,
-          CAST((julianday(date('now')) - julianday(date(created_at))) / 7 AS INTEGER) + 1)
+          CAST((julianday(date('now','localtime')) - julianday(date(COALESCE(started_on,created_at)))) / 7 AS INTEGER) + 1)
           WHERE id=?`).run(session.program_id)
       }
-    }).immediate()
 
-    // ── Mise à jour de la progression après complétion ────────────────────
-    // Récupérer le programme et ses settings
-    const program = session.program_id
-      ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
-      : null
+      // ── Mise à jour de la progression après complétion ────────────────────
+      // Récupérer le programme et ses settings
+      const program = session.program_id
+        ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
+        : null
 
-    const settingsRows = db.prepare('SELECT key, value FROM settings').all()
-    const settings = {}
-    for (const r of settingsRows) {
-      settings[r.key] = JSON.parse(r.value)
-    }
-    const progressionSettings = {
-      progression_failure_threshold:   settings.progression_failure_threshold  || 2,
-      progression_weight_reduction_pct: settings.progression_weight_reduction_pct || 10,
-    }
-
-    const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
-
-    // Pour chaque session_exercise rattaché à un template_exercise
-    const sessionExercises = db.prepare(
-      'SELECT * FROM session_exercise WHERE session_id = ? AND template_exercise_id IS NOT NULL'
-    ).all(req.params.id)
-
-    for (const se of sessionExercises) {
-      const te = db.prepare('SELECT * FROM template_exercise WHERE id = ?').get(se.template_exercise_id)
-      if (!te) continue
-
-      const state = db.prepare(
-        'SELECT * FROM progression_state WHERE template_exercise_id = ?'
-      ).get(te.id)
-      if (!state) continue
-
-      const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(se.exercise_id)
-      if (!exercise) continue
-
-      // Séries de travail complétées
-      const workSets = db.prepare(`
-        SELECT * FROM set_log
-        WHERE session_exercise_id = ?
-          AND is_warmup = 0
-          AND is_completed = 1
-        ORDER BY set_number
-      `).all(se.id)
-
-      if (workSets.length === 0) continue
-
-      // Calculer les charges atteignables
-      const exerciseForCalc = {
-        equipment_required: JSON.parse(exercise.equipment_required || '[]'),
-        is_unilateral: exercise.is_unilateral,
+      const settingsRows = db.prepare('SELECT key, value FROM settings').all()
+      const settings = {}
+      for (const r of settingsRows) {
+        settings[r.key] = JSON.parse(r.value)
       }
-      const loadsResult = calculateAchievableLoads(equipmentItems, exerciseForCalc)
-      const achievable  = loadsResult.loads_kg.length > 0
-        ? loadsResult.loads_kg
-        : [state.current_weight_kg || 0]
-
-      if (session.is_deload) continue
-      const performedWeight = Math.min(...workSets.map(set=>set.weight_kg))
-      const performanceState = { ...state,current_weight_kg:performedWeight,
-        current_target_reps:Math.max(te.target_reps_min,Math.min(te.target_reps_max,Math.min(...workSets.map(set=>set.reps)))) }
-      const actualLoads = loadsResult.max_load_kg > 0 ? achievable : [performedWeight]
-      const nextState = computeNextState(
-        performanceState,workSets,te,program,actualLoads,{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}
-      )
-
-      db.prepare(`
-        UPDATE progression_state
-        SET current_weight_kg    = ?,
-            current_target_reps  = ?,
-            consecutive_failures = ?,
-            last_session_id      = ?,
-            last_updated         = datetime('now')
-        WHERE template_exercise_id = ?
-      `).run(
-        nextState.current_weight_kg,
-        nextState.current_target_reps ?? state.current_target_reps,
-        nextState.consecutive_failures,
-        parseInt(req.params.id),
-        te.id
-      )
-      saveExerciseProgression(db,se.exercise_id,nextState,te,Number(session.id))
-      saveProgressionEvent(db,se.id,{template:te,program,loads:actualLoads,settings:{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}})
-    }
-    // ── fin mise à jour progression ───────────────────────────────────────
-
-    // ── Vérification deload ───────────────────────────────────────────────
-    let deloadTriggered = false
-    let deloadReason    = null
-
-    if (program) {
-      const settingsForDeload = {
-        plateau_detection_sessions: settings.plateau_detection_sessions || 4,
-        deload_min_sets: settings.deload_min_sets || 2,
+      const progressionSettings = {
+        progression_failure_threshold:   settings.progression_failure_threshold  || 2,
+        progression_weight_reduction_pct: settings.progression_weight_reduction_pct || 10,
       }
-      const enginePlan = db.prepare('SELECT program_id FROM program_plan WHERE program_id=?').get(program.id)
-      const review = enginePlan ? reviewProgramWeek(db,program.id) : null
-      const deloadCheck = enginePlan
-        ? {should:review?.decision === 'deload' && !program.is_in_deload,reason:review?.evidence.reason}
-        : shouldDeload(program,settingsForDeload,db)
 
-      if (deloadCheck.should) {
+      const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
+
+      // Pour chaque session_exercise rattaché à un template_exercise
+      const sessionExercises = db.prepare(
+        'SELECT * FROM session_exercise WHERE session_id = ? AND template_exercise_id IS NOT NULL'
+      ).all(req.params.id)
+
+      for (const se of sessionExercises) {
+        const te = db.prepare('SELECT * FROM template_exercise WHERE id = ?').get(se.template_exercise_id)
+        if (!te) continue
+
+        const state = db.prepare(
+          'SELECT * FROM progression_state WHERE template_exercise_id = ?'
+        ).get(te.id)
+        if (!state) continue
+
+        const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(se.exercise_id)
+        if (!exercise) continue
+
+        // Séries de travail complétées
+        const workSets = db.prepare(`
+          SELECT * FROM set_log
+          WHERE session_exercise_id = ?
+            AND is_warmup = 0
+            AND is_completed = 1
+          ORDER BY set_number
+        `).all(se.id)
+
+        if (workSets.length === 0) continue
+
+        // Calculer les charges atteignables
+        const exerciseForCalc = {
+          equipment_required: JSON.parse(exercise.equipment_required || '[]'),
+          is_unilateral: exercise.is_unilateral,
+        }
+        const loadsResult = calculateAchievableLoads(equipmentItems, exerciseForCalc)
+        const achievable  = loadsResult.loads_kg.length > 0
+          ? loadsResult.loads_kg
+          : [state.current_weight_kg || 0]
+
+        if (session.is_deload) continue
+        const performedWeight = Math.min(...workSets.map(set=>set.weight_kg))
+        const performanceState = { ...state,current_weight_kg:performedWeight,
+          current_target_reps:Math.max(te.target_reps_min,Math.min(te.target_reps_max,Math.min(...workSets.map(set=>set.reps)))) }
+        const actualLoads = loadsResult.max_load_kg > 0 ? achievable : [performedWeight]
+        const nextState = computeNextState(
+          performanceState,workSets,te,program,actualLoads,{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}
+        )
+
         db.prepare(`
-          UPDATE program
-          SET is_in_deload = 1,
-              last_deload_date = date('now'),
-              updated_at = datetime('now')
-          WHERE id = ?
-        `).run(program.id)
-        deloadTriggered = true
-        deloadReason    = deloadCheck.reason
+          UPDATE progression_state
+          SET current_weight_kg    = ?,
+              current_target_reps  = ?,
+              consecutive_failures = ?,
+              last_session_id      = ?,
+              last_updated         = datetime('now')
+          WHERE template_exercise_id = ?
+        `).run(
+          nextState.current_weight_kg,
+          nextState.current_target_reps ?? state.current_target_reps,
+          nextState.consecutive_failures,
+          parseInt(req.params.id),
+          te.id
+        )
+        saveExerciseProgression(db,se.exercise_id,nextState,te,Number(session.id))
+        saveProgressionEvent(db,se.id,{template:te,program,loads:actualLoads,settings:{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}})
       }
-    }
-    // ── fin vérification deload ───────────────────────────────────────────
+      // ── fin mise à jour progression ───────────────────────────────────────
+
+      // ── Vérification deload ───────────────────────────────────────────────
+      let deloadTriggered = false
+      let deloadReason    = null
+
+      if (program) {
+        const settingsForDeload = {
+          plateau_detection_sessions: settings.plateau_detection_sessions || 4,
+          deload_min_sets: settings.deload_min_sets || 2,
+        }
+        const enginePlan = db.prepare('SELECT program_id FROM program_plan WHERE program_id=?').get(program.id)
+        const review = enginePlan ? reviewProgramWeek(db,program.id) : null
+        const deloadCheck = enginePlan
+          ? {should:review?.decision === 'deload' && !program.is_in_deload,reason:review?.evidence.reason}
+          : shouldDeload(program,settingsForDeload,db)
+
+        if (deloadCheck.should) {
+          db.prepare(`
+            UPDATE program
+            SET is_in_deload = 1,
+                last_deload_date = date('now'),
+                updated_at = datetime('now')
+            WHERE id = ?
+          `).run(program.id)
+          deloadTriggered = true
+          deloadReason    = deloadCheck.reason
+        }
+      }
+      // ── fin vérification deload ───────────────────────────────────────────
+
+      return {program,settings,deloadTriggered,deloadReason}
+    }).immediate()
+    const {program,settings,deloadTriggered,deloadReason}=completion
 
     // ── Signaux coaching (non bloquant) ───────────────────────────
     try {
@@ -826,6 +839,12 @@ router.get('/:id/target/:teId', (req, res) => {
       } else {
         explanation = `Charge initiale : ${weight} kg × ${targetReps} reps [${modelLabels[model] || model}].`
       }
+    }
+
+    const compatibleLoads=loadsResult.loads_kg.filter(load=>load>0 && load<=weight+.001)
+    if (!loadsResult.resistance_is_approximate && compatibleLoads.length && compatibleLoads.at(-1)<weight-.001) {
+      weight=compatibleLoads.at(-1)
+      explanation += ' Charge adaptée au matériel actuellement disponible.'
     }
 
     if (session.is_deload && program) {

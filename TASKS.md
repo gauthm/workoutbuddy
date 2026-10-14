@@ -238,3 +238,10 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Messages sans programme : « Aucun programme actif. » sur accueil/programmes/séance, suppression des anciennes références à la création par le coach dans les libellés de création.
 
 - [x] États vides : même alignement du bouton Nouveau programme dans Programmes et Séance (marge spécifique retirée, accueil harmonisé) ; corriger aussi la destination du bouton de Séance vers le questionnaire. 409 tests et position identique vérifiée à 320/390/768/1280 px.
+
+- [x] Audit Coach IA : retirer les anciens composants/actions de configuration et les formulaires inutilisés ; conserver uniquement le conseil, supprimer les blocs d’action du flux et des réponses sauvegardées, refuser les appels historiques de configuration.
+- [x] Catalogue : fusionner les huit curls personnalisés dans Hammer Curls ; migration 016 et import d’anciennes sauvegardes préservant séries, historique, exclusions, contexte et progression la plus récente. Catalogue seul dans la liste, le générateur et les remplacements ; création et édition custom bloquées.
+- [x] Réseau : élargir le champ du port ; 65535 entièrement visible et aucun débordement à 320/390/768/1280 px.
+- [x] Moteur : corriger les références et exigences de matériel, intégrer squat/charnière de hanches avec haltères et mouvements simples avec une kettlebell ; compter les deux côtés dans la durée, limiter le débutant à trois séries et démarrer la force en double progression à 8–12 reps.
+- [x] Séances : charges de départ par haltère, hausses automatiques bornées, maintien après effort à l’échec, aucune hausse lors d’une réduction/allègement, adaptation des cibles à l’inventaire actuel et semaines comptées depuis l’activation. Complétion et progression atomiques avec test d’échec et de reprise.
+- [x] Validation : 424 tests réussis, dont 15 nouveaux cas ; navigation et champ réseau vérifiés avec Playwright. Base sauvegardée avant migration, serveur relancé, catalogue revenu à 876 entrées et historique inchangé après fusion.

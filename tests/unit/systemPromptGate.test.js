@@ -29,10 +29,10 @@ describe('T8.3 — Gating du prompt coach', () => {
     assert.ok(!prompt.includes('MODE ONBOARDING'))
   })
 
-  it('inventaire vide → avertissement + réf. Paramètres > Matériel', () => {
+  it('inventaire vide → avertissement + réf. Exercices et Matériel > Matériel', () => {
     const prompt = buildSystemPrompt(db)
     assert.ok(prompt.includes('Aucun matériel enregistré'))
-    assert.ok(prompt.includes('Paramètres > Matériel'))
+    assert.ok(prompt.includes('Exercices et Matériel > Matériel'))
     assert.ok(prompt.includes('INTERDIT de proposer des charges'))
   })
 
