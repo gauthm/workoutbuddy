@@ -42,7 +42,7 @@ L’inventaire regroupe le matériel par familles, sans distinction domicile/sal
 - Élastiques : quantité et fourchette de résistance.
 - Autres équipements : cases à cocher, avec une catégorie pour le matériel personnalisé.
 
-Les lignes de poids et résistances sont ajoutables. Les charges proposées tiennent compte du matériel et des quantités nécessaires au mouvement. La résistance des élastiques reste une approximation.
+Les lignes de poids et résistances sont ajoutables. Les changements de matériel restent en brouillon : une barre flottante « Modifications non enregistrées » permet de tout enregistrer ou d’annuler. Les croix retirent les lignes du brouillon ; les cases et les ajouts personnalisés suivent la même sauvegarde groupée. Les charges proposées tiennent compte du matériel et des quantités nécessaires au mouvement. La résistance des élastiques reste une approximation.
 
 Les zones douloureuses sont sauvegardées et filtrent les muscles principaux et secondaires lors de la création des programmes et du choix des alternatives. Les séances déjà prévues restent inchangées.
 

@@ -8,6 +8,7 @@ async page => {
     const method=route.request().method()
     if(method==='GET')return route.fulfill({json:{items}})
     const data=route.request().postDataJSON(); writes.push({method,data})
+    if(new URL(route.request().url()).pathname.endsWith('/inventory')){const saved=data.items.map((item,index)=>({...item,id:item.id||index+1}));items.splice(0,items.length,...saved);return route.fulfill({json:{items}})}
     if(method==='POST'){const item={id:items.length+1,...data};items.push(item);return route.fulfill({status:201,json:item})}
     const id=Number(new URL(route.request().url()).pathname.split('/').at(-1))
     if(method==='DELETE'){items.splice(items.findIndex(i=>i.id===id),1);return route.fulfill({status:204,body:''})}
@@ -26,11 +27,11 @@ async page => {
     await open('free_weights')
     const kb=page.locator('[data-category="kettlebell"]')
     await kb.getByRole('button',{name:/Ajouter une ligne/}).click()
-    const row=kb.locator('form')
+    const row=kb.locator('.dumbbell-row')
     await row.locator('input').nth(0).fill('2');await row.locator('input').nth(1).fill('16')
     // Save a draft in a collapsed family, then restore it using search.
     await page.locator('[data-family="free_weights"] > summary').evaluate(e=>e.click())
-    await page.getByRole('button',{name:/Enregistrer l.inventaire/}).click()
+    await page.locator('.equipment-editor .settings-save-dock').getByRole('button',{name:'Enregistrer',exact:true}).click()
     await page.waitForTimeout(150)
     assert(items.some(i=>i.category==='kettlebell'&&i.count===2&&i.weight_kg===16),'Brouillon fermé non sauvegardé')
     assert((await page.locator('[data-family="free_weights"] > summary').innerText()).includes('1 équipement renseigné'),'Résumé incorrect')
@@ -40,6 +41,8 @@ async page => {
     await search.fill('presse');await page.waitForTimeout(80)
     assert((await page.locator('.inventory-checkbox:visible').allTextContents()).every(s=>s.toLowerCase().includes('presse')),'Recherche retourne trop de cases')
     await page.getByRole('checkbox',{name:'Presse à cuisses',exact:true}).check();await page.waitForTimeout(100)
+    assert(!items.some(i=>i.category==='leg_press'),'Case sauvegardée avant validation')
+    await page.locator('.equipment-editor .settings-save-dock').getByRole('button',{name:'Enregistrer',exact:true}).click();await page.locator('.equipment-editor .settings-save-dock').waitFor({state:'hidden'})
     assert(items.some(i=>i.category==='leg_press'),'Case non sauvegardée')
     await search.fill('aucun-resultat');await page.waitForTimeout(80)
     assert(await page.getByText('Aucun matériel ne correspond à cette recherche.',{exact:true}).isVisible(),'État vide absent')
@@ -47,6 +50,7 @@ async page => {
     await page.getByRole('button',{name:'Ajouter un équipement personnalisé',exact:true}).click()
     const dialog=page.getByRole('dialog');await dialog.getByLabel('Nom',{exact:true}).fill('Mon accessoire')
     await dialog.getByRole('button',{name:'Enregistrer',exact:true}).click();await dialog.waitFor({state:'hidden'})
+    await page.locator('.equipment-editor .settings-save-dock').getByRole('button',{name:'Enregistrer',exact:true}).click();await page.locator('.equipment-editor .settings-save-dock').waitFor({state:'hidden'})
     assert(await page.locator('[data-family="custom"]').getByRole('checkbox',{name:'Mon accessoire',exact:true}).count()===1,'Équipement personnalisé mal classé')
     assert(await page.locator('[data-family="specialized"]').getByRole('checkbox',{name:'Mon accessoire',exact:true}).count()===0,'Équipement personnalisé dans Strongman')
     for(const hash of ['#/equipment','#/exercises/material']){

@@ -427,13 +427,12 @@
 .dumbbell-section + .dumbbell-section { border-top: 1px solid var(--color-border); }
 .dumbbell-section__title { font-size: 1rem; margin-bottom: 1rem; }
 .dumbbell-section__subtitle { font-size: 0.9rem; font-weight: 600; margin: 1.25rem 0 0.75rem; }
-.dumbbell-rows__columns, .dumbbell-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) 80px; gap: 0.5rem; align-items: center; }
+.dumbbell-rows__columns, .dumbbell-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) 44px; gap: 0.5rem; align-items: center; }
 .dumbbell-rows__columns { align-items: start; font-size: 0.75rem; line-height: 1.4; color: var(--color-text-muted); margin-bottom: 0.5rem; }
 .dumbbell-row { padding: 0.5rem 0; }
 .dumbbell-row + .dumbbell-row { border-top: 1px solid var(--color-border); }
 .dumbbell-row .form-input { padding-inline: 0.5rem; }
 .dumbbell-row__actions { display: flex; }
-.dumbbell-row__save { color: var(--color-primary); }
 .dumbbell-rows__add { margin-top: 0.5rem; font-size: 0.85rem; }
 .equipment-settings .dumbbell-section { padding-inline: 0; }
 .equipment-view .equip-section { border-bottom: none; border-top: 1px solid var(--color-border); }
@@ -1048,7 +1047,6 @@
 .profile-settings__reset { margin-top: 1rem; }
 
 /* ── Matériel : checklist catalogue (T8.4) ──────────────────── */
-.equipment-settings__save { margin-top: 1rem; }
 .equipment-settings__untagged-title {
   margin: 1.25rem 0 0.5rem; font-size: 0.9rem;
   color: var(--color-text-muted);
@@ -1202,7 +1200,7 @@
 .inventory-checkbox { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .8rem 0; }
 .inventory-checkbox + .inventory-checkbox { border-top: 1px solid var(--color-border); }
 .inventory-hint { color: var(--color-text-muted); font-size: .85rem; margin-bottom: .75rem; }
-.equipment-editor .dumbbell-row:has(.inventory-range) { grid-template-columns: minmax(60px,.6fr) minmax(0,1.6fr) 80px; }
+.equipment-editor .dumbbell-row:has(.inventory-range) { grid-template-columns: minmax(60px,.6fr) minmax(0,1.6fr) 44px; }
 
 .inventory-choices { border-top: 1px solid var(--color-border); margin-top: .6rem; }
 .inventory-choices summary { cursor: pointer; padding: .8rem .2rem; font-weight: 600; }
@@ -1409,3 +1407,6 @@ body:has(.settings-save-dock) .toast { bottom: calc(var(--nav-space) + 8rem); }
 .program-replacement__choice > span { min-width: 0; overflow-wrap: anywhere; }
 
 .weekly-complete { margin: 0.75rem 0; padding: 0.75rem 1rem; color: var(--color-success); border: 1px solid var(--color-success); border-radius: var(--radius-md, 8px); font-weight: 600; }
+
+.equipment-editor:has(.settings-save-dock) { padding-bottom: 8rem; }
+.equipment-editor:has(.settings-save-dock) :is(input, .dumbbell-rows__add, .icon-btn) { scroll-margin-bottom: calc(var(--nav-space) + 8rem); }

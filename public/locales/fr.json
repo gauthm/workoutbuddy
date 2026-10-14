@@ -796,5 +796,7 @@
   "programs.finished_badge": "Terminé",
   "programs.ends_on": "Fin du programme : {{date}}",
   "programs.finished_help": "Ce programme est terminé. Prolonge sa durée ou choisis une durée illimitée pour reprendre ses séances.",
-  "programs.week_complete": "Toutes les séances de la semaine sont faites !"
+  "programs.week_complete": "Toutes les séances de la semaine sont faites !",
+  "equipment.inventory_save_error": "Enregistrement impossible. Vérifie les quantités et les poids, puis réessaie. Tes modifications sont conservées.",
+  "equipment.inventory_changed": "Le matériel a changé dans une autre fenêtre. Tes modifications restent en brouillon ; annule-les et recharge avant de réessayer."
 }

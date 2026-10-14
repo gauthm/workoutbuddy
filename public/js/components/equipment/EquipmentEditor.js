@@ -1,8 +1,8 @@
-import { reactive, ref, onMounted, inject, computed } from '/vendor/vue.esm-browser.prod.js'
+import { reactive, onMounted, inject, computed } from '/vendor/vue.esm-browser.prod.js'
 import { equipment as api } from '../../api.js'
 import { t, i18n } from '../../i18n.js'
 import DumbbellInventory from './DumbbellInventory.js'
-import DumbbellRows from './DumbbellRows.js'
+import DumbbellRows, { createDraftItem } from './DumbbellRows.js'
 import EquipmentForm from './EquipmentForm.js'
 import { SIMPLE_CATEGORIES, EQUIPMENT_FAMILIES } from './inventoryCatalog.js'
 import ModalDialog from '../common/ModalDialog.js'
@@ -22,11 +22,16 @@ export default {
   name: 'EquipmentEditor',
   components: { DumbbellInventory, DumbbellRows, EquipmentForm, ModalDialog, ConfirmModal, LoadingSpinner, ErrorBanner },
   setup() {
-    const store = inject('store'), dumbbells = ref(null), rowEditors = ref([])
-    const state = reactive({items: [], loading: true, error: null, saving: false, pending: {}, search: '', expanded: {}, form: false, editItem: null, deleteTarget: null})
+    const store = inject('store')
+    const clone = value => JSON.parse(JSON.stringify(value))
+    const numeric = ['weight_kg','count','weight_min_kg','weight_max_kg','weight_step_kg','resistance_min_kg','resistance_max_kg']
+    const payload = item => ({...(item.id > 0 ? {id:item.id} : {}),category:item.category,name:item.name,notes:item.notes || null,
+      ...Object.fromEntries(numeric.map(key=>[key,item[key] == null || item[key] === '' ? null : Number(item[key])]))})
+    const normalized = items => JSON.stringify(items.map(payload).sort((a,b)=>(a.id || 0)-(b.id || 0)))
+    const state = reactive({items: [], baseline: [], loading: true, error: null, saving: false, search: '', expanded: {}, form: false, editItem: null, deleteTarget: null})
     async function load() {
       state.loading = true; state.error = null
-      try { state.items = (await api.list()).items }
+      try { state.items = (await api.list()).items; state.baseline = clone(state.items) }
       catch (error) { state.error = error.message }
       finally { state.loading = false }
     }
@@ -37,35 +42,34 @@ export default {
     }
     function deleted(id) { state.items = state.items.filter(i => i.id !== id) }
     const itemsFor = category => state.items.filter(i => i.category === category)
-    async function toggle(category, checked) {
-      if (state.pending[category]) return
-      state.pending[category] = true
-      try {
-        if (checked) saved(await api.create({category, name: t('equipment.category_' + category), count: 1}))
-        else { for (const item of itemsFor(category)) { await api.delete(item.id); deleted(item.id) } }
-      } catch (error) { store.showToast(error.detail || error.message, 'error') }
-      finally { state.pending[category] = false }
+    function setRows(category,items) {
+      state.items = [...state.items.filter(item=>item.category!==category),...items]
     }
-    async function save() {
+    function toggle(category, checked) {
       if (state.saving) return
+      if (checked) saved(createDraftItem({category,name:t('equipment.category_' + category),count:1}))
+      else state.items = state.items.filter(item=>item.category!==category)
+    }
+    const dirty = computed(() => normalized(state.items) !== normalized(state.baseline))
+    function discard() { if (!state.saving) state.items = clone(state.baseline) }
+    async function save() {
+      if (state.saving || !dirty.value) return
       state.saving = true
       try {
-        for (const editor of dumbbells.value || []) if (!await editor.saveAll()) return
-        for (const editor of rowEditors.value) if (!await editor.saveAll()) return
+        const result = await api.saveInventory({items:state.items.map(payload),expected:state.baseline})
+        state.items = result.items; state.baseline = clone(result.items)
         store.showToast(t('equipment.inventory_saved'), 'success')
-      } finally { state.saving = false }
+      } catch (error) { store.showToast(t(error.message === 'INVENTORY_CHANGED' ? 'equipment.inventory_changed' : 'equipment.inventory_save_error'), 'error') }
+      finally { state.saving = false }
     }
     async function formSaved(item) {
       state.form = false; state.editItem = null
-      saved(item)
+      saved(item.id ? item : createDraftItem(item))
       state.search = ''; state.expanded.custom = true
-      store.showToast(t('equipment.inventory_saved'), 'success')
     }
-    async function removeOther() {
-      const target = state.deleteTarget
-      if (!target) return
-      try { await api.delete(target.id); deleted(target.id); state.deleteTarget = null }
-      catch(error) { store.showToast(error.message, 'error') }
+    function removeOther() {
+      if (state.saving || !state.deleteTarget) return
+      deleted(state.deleteTarget.id); state.deleteTarget = null
     }
     const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
     const matches = text => normalize(text).includes(normalize(state.search))
@@ -78,7 +82,7 @@ export default {
     const familyVisible = family => !state.search || matches(t('equipment.family_' + family.id)) || family.categories.some(c => matches(t('equipment.category_' + c))) || (family.id === 'custom' && otherItems().some(i => matches(i.name)))
     const familyCount = family => new Set(state.items.filter(i => family.categories.includes(i.category)).map(i => i.category === 'other' ? 'other:' + i.id : i.category)).size
     onMounted(load)
-    return {state, t, groups, families, categoryVisible, familyVisible, familyCount, matches, dumbbells, rowEditors, itemsFor, saved, deleted, toggle, save, load, formSaved, removeOther,
+    return {state, t, groups, families, categoryVisible, familyVisible, familyCount, matches, dirty, discard, setRows, itemsFor, saved, deleted, toggle, save, load, formSaved, removeOther,
       otherItems}
   },
   template: `
@@ -94,36 +98,38 @@ export default {
           <summary><span>{{ t('equipment.family_' + family.id) }}<small>{{ familyCount(family) === 1 ? t('equipment.family_one') : familyCount(family) ? t('equipment.family_count', { count: familyCount(family) }) : t('equipment.family_empty') }}</small></span></summary>
           <div class="inventory-family__content">
             <DumbbellInventory v-if="family.id === 'free_weights'" v-show="!state.search || ['dumbbell_fixed','dumbbell_loadable','dumbbell_plate'].some(c => categoryVisible(c, family))"
-              ref="dumbbells" :items="state.items" @saved="saved" @deleted="deleted" />
+              :items="state.items" :saving="state.saving" @changed="setRows($event.category, $event.items)" />
             <section v-for="group in family.rows" :key="group.category" v-show="categoryVisible(group.category, family)" class="dumbbell-section inventory-section">
               <h2 class="dumbbell-section__title">{{ t('equipment.category_' + group.category) }}</h2>
               <p v-if="group.mode === 'band'" class="inventory-hint">{{ t('equipment.band_range_hint') }}</p>
-              <DumbbellRows ref="rowEditors" :category="group.category" :items="itemsFor(group.category)" :mode="group.mode || 'weight'"
+              <DumbbellRows :saving="state.saving" :category="group.category" :items="itemsFor(group.category)" :mode="group.mode || 'weight'"
                 quantity-key="equipment.count" :weight-key="group.mode === 'band' ? 'equipment.resistance_range' : group.mode === 'adjustable' ? 'equipment.adjustable_range' : 'equipment.weight_kg'"
-                @saved="saved" @deleted="deleted" />
+                @changed="setRows(group.category,$event)" />
             </section>
             <div class="inventory-choices inventory-choices--flat">
               <label v-for="category in family.simple" :key="category" v-show="categoryVisible(category, family)" class="inventory-checkbox">
                 <span>{{ t('equipment.category_' + category) }}</span>
                 <input type="checkbox" class="setting-row__switch" :checked="itemsFor(category).length > 0"
-                  :disabled="state.pending[category]" @change="toggle(category, $event.target.checked)" />
+                  :disabled="state.saving" @change="toggle(category, $event.target.checked)" />
               </label>
               <template v-if="family.id === 'custom'">
                 <label v-for="item in otherItems()" :key="item.id" v-show="!state.search || matches(item.name) || matches(t('equipment.family_custom'))" class="inventory-checkbox">
                   <span>{{ item.name }}</span>
-                  <input type="checkbox" class="setting-row__switch" checked @change="$event.target.checked = true; state.deleteTarget = item" />
+                  <input type="checkbox" class="setting-row__switch" checked :disabled="state.saving" @change="$event.target.checked = true; state.deleteTarget = item" />
                 </label>
               </template>
             </div>
           </div>
         </details>
-        <button type="button" class="btn btn--secondary dumbbell-rows__add" @click="state.editItem = null; state.form = true">{{ t('equipment.add_other') }}</button>
-        <button type="button" class="btn btn--primary btn--full equipment-settings__save" :disabled="state.saving" @click="save()">
-          {{ state.saving ? t('common.loading') : t('settings.equipment_save') }}
-        </button>
+        <button type="button" class="btn btn--secondary dumbbell-rows__add" :disabled="state.saving" @click="state.editItem = null; state.form = true">{{ t('equipment.add_other') }}</button>
       </template>
+      <div v-if="dirty" class="settings-save-dock" role="region" :aria-label="t('settings.pending_changes')">
+        <span class="settings-save-dock__message">{{ t('settings.pending_changes') }}</span>
+        <button class="btn btn--secondary" :disabled="state.saving" @click="discard()">{{ t('common.cancel') }}</button>
+        <button class="btn btn--primary" :disabled="state.saving" @click="save()">{{ state.saving ? t('common.loading') : t('common.save') }}</button>
+      </div>
       <ModalDialog v-if="state.form" :title="state.editItem ? t('common.edit') : t('equipment.add_other')" @close="state.form = false">
-        <EquipmentForm :custom="true" :item="state.editItem" @saved="formSaved" @cancel="state.form = false" />
+        <EquipmentForm :custom="true" :draft="true" :item="state.editItem" @saved="formSaved" @cancel="state.form = false" />
       </ModalDialog>
       <ConfirmModal v-if="state.deleteTarget" :title="t('equipment.delete_confirm')" :body="state.deleteTarget.name" :danger="true"
         @confirm="removeOther()" @cancel="state.deleteTarget = null" />

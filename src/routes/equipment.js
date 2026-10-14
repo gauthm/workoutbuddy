@@ -23,6 +23,48 @@ export function validEquipment(item) {
   return item.notes === undefined || item.notes === null || typeof item.notes === 'string'
 }
 
+// Save the whole editor atomically: additions, edits and removals stay drafts until here.
+router.put('/inventory', (req,res) => {
+  try {
+    const items=req.body?.items
+    if (!Array.isArray(items)) return res.status(400).json({error:'INVALID_EQUIPMENT_VALUES'})
+    const current=db.prepare('SELECT * FROM equipment_item ORDER BY id').all()
+    if (req.body.expected!==undefined) {
+      if (!Array.isArray(req.body.expected) || req.body.expected.some(item=>!item || typeof item!=='object')) return res.status(400).json({error:'INVALID_EQUIPMENT_VALUES'})
+      const keys=['id','category','name','count','weight_kg','weight_min_kg','weight_max_kg','weight_step_kg','resistance_min_kg','resistance_max_kg','notes']
+      const compare=rows=>JSON.stringify([...rows].sort((a,b)=>a.id-b.id).map(item=>keys.map(key=>item[key]??null)))
+      if (compare(current)!==compare(req.body.expected)) return res.status(409).json({error:'INVENTORY_CHANGED'})
+    }
+    const existing=new Set(current.map(item=>item.id))
+    const ids=new Set(), weighted=['barbell','ez_bar','plate','dumbbell_fixed','dumbbell_loadable','dumbbell_plate','kettlebell']
+    for (const item of items) {
+      if (!item || typeof item!=='object' || !validEquipment(item) ||
+        !Number.isSafeInteger(item.count) || item.count<1 ||
+        (weighted.includes(item.category) && (!Number.isFinite(item.weight_kg) || item.weight_kg<=0))) {
+        return res.status(400).json({error:'INVALID_EQUIPMENT_VALUES'})
+      }
+      if (item.id!==undefined) {
+        if (!Number.isSafeInteger(item.id) || ids.has(item.id) || !existing.has(item.id)) return res.status(409).json({error:'INVENTORY_CHANGED'})
+        ids.add(item.id)
+      }
+    }
+    db.transaction(() => {
+      for (const id of existing) if (!ids.has(id)) db.prepare('DELETE FROM equipment_item WHERE id=?').run(id)
+      const insert=db.prepare(`INSERT INTO equipment_item(category,name,weight_kg,count,weight_min_kg,weight_max_kg,
+        weight_step_kg,resistance_min_kg,resistance_max_kg,notes) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      const update=db.prepare(`UPDATE equipment_item SET category=?,name=?,weight_kg=?,count=?,weight_min_kg=?,weight_max_kg=?,
+        weight_step_kg=?,resistance_min_kg=?,resistance_max_kg=?,notes=? WHERE id=?`)
+      for (const item of items) {
+        const values=[item.category,item.name.trim(),item.weight_kg??null,item.count,item.weight_min_kg??null,
+          item.weight_max_kg??null,item.weight_step_kg??null,item.resistance_min_kg??null,item.resistance_max_kg??null,item.notes??null]
+        if (item.id!==undefined) update.run(...values,item.id)
+        else insert.run(...values)
+      }
+    })()
+    res.json({items:db.prepare('SELECT * FROM equipment_item ORDER BY id').all()})
+  } catch (error) { console.error('[PUT /equipment/inventory]',error.message);res.status(500).json({error:'INTERNAL_ERROR'}) }
+})
+
 // Déclaré AVANT les routes paramétrées : sinon 'achievable-loads' serait pris comme :id
 router.get('/achievable-loads', (req, res) => {
   try {

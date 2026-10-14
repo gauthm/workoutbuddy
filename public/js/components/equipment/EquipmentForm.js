@@ -8,6 +8,7 @@ const CATEGORIES = ALL_EQUIPMENT_CATEGORIES
 export default {
   name: 'EquipmentForm',
   props: {
+    draft: { type: Boolean, default: false },
     custom: { type: Boolean, default: false },
     item: { type: Object, default: null }  // null = création, objet = édition
   },
@@ -72,7 +73,7 @@ export default {
         for (const [k, v] of Object.entries(form)) {
           body[k] = (v === '' ? null : v)
         }
-        const item = props.item ? await api.update(props.item.id, body) : await api.create(body)
+        const item = props.draft ? { ...body, ...(props.item ? {id:props.item.id} : {}) } : props.item ? await api.update(props.item.id, body) : await api.create(body)
         emit('saved', item)
       } catch (err) {
         store.showToast(err.message, 'error')

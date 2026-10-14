@@ -37,6 +37,7 @@ export const exercises = {
 
 // ── Équipement ────────────────────────────────────────────────
 export const equipment = {
+  saveInventory: body => request('PUT', '/equipment/inventory', body),
   list:            ()          => request('GET', '/equipment'),
   create:          (body)      => request('POST', '/equipment', body),
   update:          (id, body)  => request('PUT', `/equipment/${id}`, body),
