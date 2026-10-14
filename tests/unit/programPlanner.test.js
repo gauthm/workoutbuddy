@@ -75,7 +75,7 @@ test('excluded exercises, single dumbbell quantities and unavailable priorities 
 
 test('invalid questionnaire inputs and empty candidates cannot leave a partial program', () => {
   const db=database()
-  for (const input of [{days_per_week:7},{duration_weeks:0},{session_duration_min:0},{goal:'unknown'},{priority_muscles:['chest','back','quads']}])
+  for (const input of [{days_per_week:7},{duration_weeks:0},{session_duration_min:0},{goal:'unknown'},{priority_muscles:['unknown']}])
     assert.throws(()=>createPlannedProgram(db,{...params,...input}),/INVALID_PROGRAM_PARAMETERS/)
   db.prepare('UPDATE exercise SET is_excluded=1').run()
   assert.throws(()=>createPlannedProgram(db,params),/NO_AVAILABLE_EXERCISES/)

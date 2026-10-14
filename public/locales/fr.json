@@ -615,7 +615,7 @@
   "planner.question_duration": "Combien de temps par séance ?",
   "planner.help_duration": "Le moteur estime le temps des séries, du repos, des transitions et de l’échauffement.",
   "planner.question_priorities": "Quels muscles veux-tu privilégier ?",
-  "planner.help_priorities": "Jusqu’à deux priorités, tout en gardant un programme équilibré.",
+  "planner.help_priorities": "Coche les muscles à privilégier, sans limite de nombre. Tu peux sélectionner tout le haut ou tout le bas du corps. Le programme conserve une base équilibrée.",
   "planner.balanced": "Tout le corps, sans priorité particulière",
   "planner.question_equipment": "Ton matériel est-il à jour ?",
   "planner.help_equipment": "Seuls le matériel enregistré et les exercices autorisés seront utilisés.",
@@ -798,5 +798,13 @@
   "programs.finished_help": "Ce programme est terminé. Prolonge sa durée ou choisis une durée illimitée pour reprendre ses séances.",
   "programs.week_complete": "Toutes les séances de la semaine sont faites !",
   "equipment.inventory_save_error": "Enregistrement impossible. Vérifie les quantités et les poids, puis réessaie. Tes modifications sont conservées.",
-  "equipment.inventory_changed": "Le matériel a changé dans une autre fenêtre. Tes modifications restent en brouillon ; annule-les et recharge avant de réessayer."
+  "equipment.inventory_changed": "Le matériel a changé dans une autre fenêtre. Tes modifications restent en brouillon ; annule-les et recharge avant de réessayer.",
+  "planner.muscle_group_upper": "Tout le haut du corps",
+  "planner.muscle_group_lower": "Tout le bas du corps",
+  "planner.warning_duration_limited": "La durée estimée reste inférieure au temps choisi pour respecter le volume adapté à ton niveau et les exercices disponibles.",
+  "exercises.remaining_count": "{{count}} exercices disponibles",
+  "exercises.image_previous": "Photo précédente",
+  "exercises.image_next": "Photo suivante",
+  "common.previous": "Précédent",
+  "common.next": "Suivant"
 }

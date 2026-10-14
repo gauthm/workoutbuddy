@@ -26,6 +26,7 @@ router.get('/export', (req, res) => {
 
     // Toutes les autres tables
     const equipment_items    = db.prepare('SELECT * FROM equipment_item').all()
+    const session_schedule_exclusions=db.prepare('SELECT * FROM session_schedule_exclusion ORDER BY program_id,scheduled_date').all()
     const programs           = db.prepare('SELECT * FROM program').all()
     const program_plans = db.prepare('SELECT * FROM program_plan').all().map(p => ({...p,parameters:JSON.parse(p.parameters),warnings:JSON.parse(p.warnings)}))
     const program_weekly_reviews = db.prepare('SELECT * FROM program_weekly_review').all().map(r => ({...r,evidence:JSON.parse(r.evidence)}))
@@ -61,6 +62,7 @@ router.get('/export', (req, res) => {
         exercises,
         equipment_items,
         programs,
+        session_schedule_exclusions,
         program_plans,
         program_weekly_reviews,
         workout_templates,
@@ -124,7 +126,7 @@ router.post('/import', (req, res) => {
     if (required.some(key => !Array.isArray(d[key])) || !d.settings || typeof d.settings !== 'object' || Array.isArray(d.settings)) {
       return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Export incomplet : tables ou paramètres manquants.' })
     }
-    for (const key of ['coach_conversations','coach_messages','exercise_exclusions']) {
+    for (const key of ['coach_conversations','coach_messages','exercise_exclusions','session_schedule_exclusions']) {
       if (d[key] !== undefined && !Array.isArray(d[key])) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
     }
     if ((d.coach_conversations === undefined) !== (d.coach_messages === undefined)) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
@@ -160,6 +162,7 @@ router.post('/import', (req, res) => {
       db.prepare('DELETE FROM program').run()
       db.prepare('DELETE FROM equipment_item').run()
       db.prepare('DELETE FROM program_weekly_review').run()
+      db.prepare('DELETE FROM session_schedule_exclusion').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
       // Supprimer uniquement les exercices custom (garder les built-in)
@@ -279,6 +282,8 @@ router.post('/import', (req, res) => {
         }
         counts.template_exercises = d.template_exercises.length
       }
+
+      for (const slot of d.session_schedule_exclusions || []) db.prepare('INSERT INTO session_schedule_exclusion(program_id,scheduled_date) VALUES (?,?)').run(slot.program_id,slot.scheduled_date)
 
       for (const plan of (d.program_plans || [])) {
         db.prepare('INSERT INTO program_plan (program_id,engine_version,parameters,warnings) VALUES (?,?,?,?)')
@@ -537,6 +542,7 @@ router.post('/reset-stats', (req, res) => {
       db.prepare('DELETE FROM session_exercise').run()
       db.prepare('DELETE FROM session').run()
       db.prepare('DELETE FROM program_weekly_review').run()
+      db.prepare('DELETE FROM session_schedule_exclusion').run()
       db.prepare('DELETE FROM exercise_progression').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()

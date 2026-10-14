@@ -9,8 +9,7 @@ import EmptyState     from '../common/EmptyState.js'
 import ExerciseFilter from './ExerciseFilter.js'
 import EquipmentEditor from '../equipment/EquipmentEditor.js'
 
-const scrollMemory = new Map()
-const SCROLL_KEY = '#/exercises'
+const catalogMemory = {filters:{muscle:'',equipment:'',equipment_family:'',available:false,movement:'',q:''},scrollY:0,filtersOpen:false}
 
 export default {
   name: 'ExerciseListView',
@@ -24,7 +23,7 @@ export default {
       loading:      false,
       error:        null,
       exercises:    [],
-      filters:      { muscle: '', equipment: '', equipment_family: '', available: false, movement: '', q: '' },
+      filters: {...catalogMemory.filters}, filtersOpen:catalogMemory.filtersOpen,
       showExcluded: true,
       activeTab:    router.currentRoute.params.tab || 'list',
       materialVisited: router.currentRoute.params.tab === 'material',
@@ -56,6 +55,7 @@ export default {
       ++requestVersion
       clearTimeout(filterTimer)
       Object.assign(state.filters, f)
+      catalogMemory.filters = {...f}
       if (searchChanged && f.q) filterTimer = setTimeout(load, 150)
       else load()
     }
@@ -135,16 +135,18 @@ export default {
     onMounted(async () => {
       await load()
       await nextTick()
-      const saved = scrollMemory.get(SCROLL_KEY)
-      if (saved) window.scrollTo(0, saved)
+      if (router.previousRoute?.name === 'ExerciseDetailView' || router.previousRoute?.name === 'ExerciseEditView') {
+        await new Promise(requestAnimationFrame)
+        window.scrollTo(0,catalogMemory.scrollY)
+      }
     })
 
     onBeforeUnmount(() => {
       ++requestVersion
       clearTimeout(filterTimer)
-      const h = window.location.hash
-      const keep = h.startsWith('#/exercises/') && h !== '#/exercises'
-      scrollMemory.set(SCROLL_KEY, keep ? window.scrollY : 0)
+      catalogMemory.filters = {...state.filters}
+      catalogMemory.filtersOpen = state.filtersOpen
+      catalogMemory.scrollY = router.previousScrollY
     })
 
     return {
@@ -171,7 +173,8 @@ export default {
           :class="{ 'exercise-tabs__btn--active': state.activeTab === 'list' }"
           @click="selectTab('list')">
           {{ t('exercises.tab_list') }}
-          <span v-if="painFilteredCount > 0" class="exercise-tabs__badge">{{ painFilteredCount }}</span>
+          <span v-if="excludedCount" class="exercise-tabs__exclusions" :aria-label="t('exercises.excluded_count', {count:excludedCount})">🚫 {{ excludedCount }}</span>
+          <span class="exercise-tabs__badge" :aria-label="t('exercises.remaining_count', {count:displayedExercises.length})">{{ displayedExercises.length }}</span>
         </button>
         <button class="exercise-tabs__btn"
           :class="{ 'exercise-tabs__btn--active': state.activeTab === 'pain' }"
@@ -190,7 +193,7 @@ export default {
         </div>
         <!-- ═══ Onglet Exercices ═══ -->
         <template v-if="state.activeTab === 'list'">
-          <ExerciseFilter :filters="state.filters" @change="onFilterChange" />
+          <ExerciseFilter :filters="state.filters" :expanded="state.filtersOpen" @toggle="state.filtersOpen=$event" @change="onFilterChange" />
 
           <div v-if="painFilteredCount > 0" class="exercise-pain-bar">
             <span>🤕 {{ t('exercises.pain_filtered', { count: painFilteredCount }) }}</span>

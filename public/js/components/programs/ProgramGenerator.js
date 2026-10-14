@@ -1,3 +1,4 @@
+import { PROGRAM_MUSCLE_GROUPS } from '../../utils/programMuscles.js'
 import { reactive, ref, onMounted, inject, nextTick, watch } from '/vendor/vue.esm-browser.prod.js'
 import { programs as api, equipment, userProfile } from '../../api.js'
 import { t, i18n } from '../../i18n.js'
@@ -8,7 +9,6 @@ import EquipmentEditor from '../equipment/EquipmentEditor.js'
 
 const GOALS = ['strength','hypertrophy','endurance','weight_loss','general_fitness']
 const LEVELS = ['beginner','intermediate','advanced']
-const MUSCLES = ['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes','calves','core']
 const QUESTIONS = ['goal','level','days','duration','measurements','priorities','equipment','block','review']
 
 export default {
@@ -37,7 +37,13 @@ export default {
     function toggleMuscle(muscle) {
       const index = state.form.priority_muscles.indexOf(muscle)
       if (index >= 0) state.form.priority_muscles.splice(index,1)
-      else if (state.form.priority_muscles.length < 2) state.form.priority_muscles.push(muscle)
+      else state.form.priority_muscles.push(muscle)
+    }
+    const groupChecked = group => group.muscles.every(m=>state.form.priority_muscles.includes(m))
+    const groupPartial = group => !groupChecked(group) && group.muscles.some(m=>state.form.priority_muscles.includes(m))
+    function toggleGroup(group,checked) {
+      state.form.priority_muscles = checked ? [...new Set([...state.form.priority_muscles,...group.muscles])]
+        : state.form.priority_muscles.filter(m=>!group.muscles.includes(m))
     }
     async function focusQuestion() { await nextTick(); heading.value?.focus(); window.scrollTo(0,0) }
     async function next() {
@@ -72,7 +78,7 @@ export default {
       finally { state.busy = false }
     }
     onMounted(load)
-    return { state, heading, load, next, back, create, toggleMuscle, closeEquipment, labelGoal, t, i18n, GOALS, LEVELS, MUSCLES, QUESTIONS, WEEKDAYS, durationOptions: () => [...new Set([4,6,8,12,state.form.duration_weeks,null])] }
+    return { state, heading, load, next, back, create, toggleMuscle, groupChecked, groupPartial, toggleGroup, closeEquipment, labelGoal, t, i18n, GOALS, LEVELS, PROGRAM_MUSCLE_GROUPS, QUESTIONS, WEEKDAYS, durationOptions: () => [...new Set([4,6,8,12,state.form.duration_weeks,null])] }
   },
   template: `
     <div class="view">
@@ -127,9 +133,17 @@ export default {
           </div>
           <div v-if="state.step === 5" class="program-wizard__choices">
             <button type="button" class="program-choice" :class="{ 'program-choice--selected':!state.form.priority_muscles.length }" :aria-pressed="!state.form.priority_muscles.length" @click="state.form.priority_muscles = []">{{ t('planner.balanced') }}</button>
-            <label v-for="muscle in MUSCLES" :key="muscle" class="program-choice" :class="{ 'program-choice--selected':state.form.priority_muscles.includes(muscle) }">
-              <input type="checkbox" :checked="state.form.priority_muscles.includes(muscle)" :disabled="state.form.priority_muscles.length >= 2 && !state.form.priority_muscles.includes(muscle)" @change="toggleMuscle(muscle)" /><span>{{ t('muscles.' + muscle) }}</span>
-            </label>
+            <section v-for="group in PROGRAM_MUSCLE_GROUPS" :key="group.id" class="program-muscle-group">
+              <label class="program-choice program-muscle-group__all">
+                <input type="checkbox" :checked="groupChecked(group)" :indeterminate.prop="groupPartial(group)" @change="toggleGroup(group,$event.target.checked)" />
+                <span>{{ t('planner.muscle_group_' + group.id) }}</span>
+              </label>
+              <div class="program-wizard__choices">
+                <label v-for="muscle in group.muscles" :key="muscle" class="program-choice" :class="{ 'program-choice--selected':state.form.priority_muscles.includes(muscle) }">
+                  <input type="checkbox" :checked="state.form.priority_muscles.includes(muscle)" @change="toggleMuscle(muscle)" /><span>{{ t('muscles.' + muscle) }}</span>
+                </label>
+              </div>
+            </section>
           </div>
           <div v-if="state.step === 6" class="program-wizard__equipment">
             <p v-if="!state.items.length">{{ t('planner.bodyweight') }}</p>
@@ -141,7 +155,7 @@ export default {
             <p>{{ labelGoal(state.form.goal) }} · {{ t('programs.level_' + state.form.level) }} · {{ t('planner.days', { count:state.form.days_per_week }) }} · {{ t('planner.minutes', { count:state.form.session_duration_min }) }} · {{ state.form.duration_weeks === null ? t('planner.unlimited') : t('planner.weeks', { count:state.form.duration_weeks }) }}</p>
             <p>{{ state.form.training_days.slice().sort((a,b)=>a-b).map(day => t('planner.weekday_' + day)).join(', ') }}</p>
             <p class="settings-notice">{{ t('planner.stability') }}</p>
-            <p v-for="warning in state.preview.warnings" :key="warning.code + warning.muscle" class="settings-notice settings-notice--warning">{{ t('planner.warning_' + warning.code, { muscle:t('muscles.' + warning.muscle) }) }}</p>
+            <p v-for="warning in state.preview.warnings" :key="warning.code + warning.muscle" class="settings-notice settings-notice--warning">{{ t('planner.warning_' + warning.code, { muscle:warning.muscle ? t('muscles.' + warning.muscle) : '' }) }}</p>
             <article v-for="template in state.preview.templates" :key="template.name" class="program-wizard__session">
               <h3>{{ template.name }} <small>{{ t('planner.estimated', { count:template.estimated_duration_min }) }}</small></h3>
               <ul><li v-for="ex in template.exercises" :key="ex.exercise_id">{{ i18n.locale === 'en' ? ex.name_en : ex.name_fr }} <strong>{{ ex.target_sets }} × {{ ex.target_reps_min }}–{{ ex.target_reps_max }}</strong></li></ul>

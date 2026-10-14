@@ -1,3 +1,4 @@
+import { PROGRAM_MUSCLES } from '../../public/js/utils/programMuscles.js'
 import { isExerciseRestricted } from './exerciseConstraints.js'
 import { generationCandidate } from './programExerciseCatalog.js'
 import { isEquipmentAvailable } from './rotationEngine.js'
@@ -80,7 +81,7 @@ function selectSplit(daysPerWeek) {
 
 export const PROGRAM_GOALS = Object.keys(SETS_REPS)
 export const PROGRAM_LEVELS = ['beginner', 'intermediate', 'advanced']
-export const PRIORITY_MUSCLES = ['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes','calves','core']
+export const PRIORITY_MUSCLES = PROGRAM_MUSCLES
 
 export function validateProgramParams(params) {
   if (!params || typeof params !== 'object' || Array.isArray(params)) return ['parameters']
@@ -97,7 +98,7 @@ export function validateProgramParams(params) {
     if (params[key] !== undefined && params[key] !== null && (typeof params[key] !== 'number' || !Number.isFinite(params[key]) || params[key] < min || params[key] > max)) errors.push(key)
   }
   const muscles = params.priority_muscles || []
-  if (!Array.isArray(muscles) || muscles.length > 2 || new Set(muscles).size !== muscles.length || muscles.some(m => !PRIORITY_MUSCLES.includes(m))) errors.push('priority_muscles')
+  if (!Array.isArray(muscles) || muscles.length > PRIORITY_MUSCLES.length || new Set(muscles).size !== muscles.length || muscles.some(m => !PRIORITY_MUSCLES.includes(m))) errors.push('priority_muscles')
   return errors
 }
 
@@ -121,6 +122,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
   const warnings = []
   const weeklyExposure = new Map()
   const templates = SPLIT_TEMPLATES[selectSplit(days_per_week)].map((definition, ti) => {
+    const maxExercises = level === 'beginner' ? 8 : 10
     const selected = []
     const used = new Set()
     const covered = new Set()
@@ -132,6 +134,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
       muscles = [...main,...priority_muscles.filter(m=>!main.includes(m)),'shoulders','core']
     } else muscles.sort((a,b) => Number(priority_muscles.includes(b)) - Number(priority_muscles.includes(a)))
     for (const muscle of [...new Set(muscles)]) {
+      if (selected.length >= maxExercises) break
       if (covered.has(muscle) && !priority_muscles.includes(muscle)) continue
       const candidates = available.filter(ex => ex.primary_muscles.includes(muscle) && !used.has(ex.id))
       const score = ex => {
@@ -156,6 +159,37 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
       exercise.primary_muscles.forEach(m => covered.add(m))
       weeklyExposure.set(exercise.id, (weeklyExposure.get(exercise.id) || 0) + 1)
     }
+    // Use the requested time without adding unlimited volume. Keep beginner sessions
+    // bounded and add relevant accessories only after the core movement coverage.
+    const desired = budget * .9
+    const maxSets = level === 'beginner' ? 3 : level === 'intermediate' ? 4 : 5
+    const allowedMuscles = days_per_week <= 3 ? PRIORITY_MUSCLES : definition.muscles
+    while (selected.length && estimateSessionMinutes(selected) < desired) {
+      const order = [...selected].sort((a,b) => {
+        const priority = item => available.find(ex=>ex.id===item.exercise_id).primary_muscles.some(m=>priority_muscles.includes(m))
+        return Number(priority(b))-Number(priority(a)) || a.target_sets-b.target_sets
+      })
+      const grow = order.find(item=>item.target_sets < maxSets && estimateSessionMinutes(
+        selected.map(ex=>ex===item ? {...ex,target_sets:ex.target_sets+1} : ex)) <= budget)
+      if (grow) { grow.target_sets++; continue }
+      if (selected.length >= maxExercises) break
+      const candidates = available.filter(ex=>!used.has(ex.id) && ex.primary_muscles.some(m=>allowedMuscles.includes(m)))
+      const score = ex => ex.primary_muscles.filter(m=>priority_muscles.includes(m)).length*8 +
+        ex.primary_muscles.filter(m=>!covered.has(m)).length*5 -
+        selected.filter(item=>item.pattern===ex.movement_pattern).length*10 - (weeklyExposure.get(ex.id)||0)*2
+      candidates.sort((a,b)=>score(b)-score(a) || a.id.localeCompare(b.id,'en'))
+      let added = false
+      for (const ex of candidates) {
+        const cfg=SETS_REPS[goal][ex.mechanic === 'compound' ? 'compound' : 'isolation']
+        const item={exercise_id:ex.id,target_sets:2,target_reps_min:cfg.rmin,target_reps_max:cfg.rmax,
+          rest_seconds:cfg.rest,progression_model:'inherit',rir_target:2,pattern:ex.movement_pattern}
+        if (estimateSessionMinutes([...selected,item]) > budget) continue
+        selected.push(item);used.add(ex.id);ex.primary_muscles.forEach(m=>covered.add(m))
+        weeklyExposure.set(ex.id,(weeklyExposure.get(ex.id)||0)+1);added=true;break
+      }
+      if (!added) break
+    }
+    if (selected.length && estimateSessionMinutes(selected) < desired) warnings.push({code:'duration_limited',muscle:''})
     const namesEn = { 'Full Body':'Full body', Upper:'Upper body', Lower:'Lower body', Push:'Push', Pull:'Pull', Legs:'Legs' }
     const namesFr = { 'Full Body':'Corps entier', Upper:'Haut du corps', Lower:'Bas du corps', Push:'Poussée', Pull:'Tirage', Legs:'Jambes' }
     const labels = params.language === 'en' ? namesEn : namesFr

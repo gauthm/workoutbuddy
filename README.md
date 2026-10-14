@@ -22,7 +22,7 @@ Ouvrir [http://localhost:3000](http://localhost:3000). `npm start` lance le serv
 
 ### Programme
 
-La création suit un questionnaire avec des choix prédéfinis : objectif, niveau, jours d’entraînement, durée de séance, durée totale, priorités musculaires et mesures personnelles. Des explications accompagnent les objectifs et un aperçu permet de consulter les séances avant de créer le programme.
+La création suit un questionnaire avec des choix prédéfinis : objectif, niveau, jours d’entraînement, durée de séance, durée totale, priorités musculaires et mesures personnelles. Les priorités musculaires sont regroupées en haut et bas du corps, avec sélection de tout un groupe ou de plusieurs muscles sans limite de deux. Le moteur cherche à utiliser le temps de séance choisi avec des séries et exercices supplémentaires adaptés, sans dépasser ce temps ni ses limites de volume ; un avertissement explique les séances plus courtes. Des explications accompagnent les objectifs et un aperçu permet de consulter les séances avant de créer le programme.
 
 Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances complétées, en cours, planifiées ou sautées de ce programme. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
 
@@ -32,7 +32,7 @@ Depuis la fiche du programme, deux paramètres sont modifiables : la durée tota
 
 ### Exercices et matériel
 
-La page **Exercices et Matériel** regroupe trois onglets : Exercices, Douleurs et Matériel. La recherche et les filtres permettent de choisir un muscle, un mouvement, une famille de matériel ou les exercices réalisables avec l’inventaire.
+La page **Exercices et Matériel** regroupe trois onglets : Exercices, Douleurs et Matériel. La recherche et les filtres permettent de choisir un muscle, un mouvement, une famille de matériel ou les exercices réalisables avec l’inventaire. Le compteur de l’onglet Exercices indique le nombre de mouvements restants après les filtres, douleurs et exclusions ; les exclusions sont signalées séparément. Consulter une fiche puis revenir conserve les filtres et la position de défilement. Les photos disposent de boutons précédent et suivant.
 
 L’inventaire regroupe le matériel par familles, sans distinction domicile/salle. Il permet de renseigner :
 
@@ -58,7 +58,7 @@ La dernière séance du même exercice est présentée dans un tableau séparé.
 
 La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements.
 
-Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Supprimer une séance recalcule les acquis à partir de l’historique restant. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
+Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Supprimer une séance recalcule les acquis à partir de l’historique restant. Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
 
 L’accueil donne accès à l’historique. Les statistiques présentent le volume, la progression, les records et le suivi du poids corporel.
 
@@ -96,7 +96,7 @@ Ces fonctions se trouvent dans **Réglages → Réglages avancés → Données**
 
 | Action | Contenu ou effet |
 | --- | --- |
-| Export JSON | Programmes, séances types, séances, séries, poids corporel, records, progressions, contexte de calcul, bilans, inventaire, exercices personnalisés, profil, conversations et réglages ; clé API exclue |
+| Export JSON | Programmes, séances types, séances, créneaux supprimés, séries, poids corporel, records, progressions, contexte de calcul, bilans, inventaire, exercices personnalisés, profil, conversations et réglages ; clé API exclue |
 | CSV résumé des séances | Une ligne par séance, avec ses informations et totaux |
 | CSV détail des séries | Une ligne par série, avec exercice, charge, répétitions et autres mesures |
 | Import JSON | Restaure les données d’un export en remplaçant les données couvertes ; sauvegarde préalable et restauration transactionnelle |

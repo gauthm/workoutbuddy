@@ -684,6 +684,10 @@ router.delete('/:id', (req, res) => {
       db.prepare(`DELETE FROM personal_record WHERE set_log_id IN (
         SELECT sl.id FROM set_log sl JOIN session_exercise se ON se.id = sl.session_exercise_id WHERE se.session_id = ?
       )`).run(req.params.id)
+      if (session.program_id) {
+        const exclude=db.prepare('INSERT OR IGNORE INTO session_schedule_exclusion(program_id,scheduled_date) VALUES (?,?)')
+        for (const date of new Set([session.scheduled_date,session.original_scheduled_date].filter(Boolean))) exclude.run(session.program_id,date)
+      }
       db.prepare('DELETE FROM session WHERE id = ?').run(req.params.id)
       for (const exercise of exercises) {
         refreshPersonalRecords(db,exercise.exercise_id)

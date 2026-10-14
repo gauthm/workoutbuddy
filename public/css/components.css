@@ -1410,3 +1410,9 @@ body:has(.settings-save-dock) .toast { bottom: calc(var(--nav-space) + 8rem); }
 
 .equipment-editor:has(.settings-save-dock) { padding-bottom: 8rem; }
 .equipment-editor:has(.settings-save-dock) :is(input, .dumbbell-rows__add, .icon-btn) { scroll-margin-bottom: calc(var(--nav-space) + 8rem); }
+
+.program-muscle-group { grid-column: 1 / -1; width: 100%; }
+.program-muscle-group__all { font-weight: 600; margin-bottom: .5rem; }
+.exercise-detail__image-controls { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
+.exercise-detail__image-controls .btn { min-width: 0; font-size: .85rem; }
+.exercise-tabs__exclusions { font-size: .7rem; color: var(--color-text-muted); white-space: nowrap; }

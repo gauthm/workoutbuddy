@@ -615,7 +615,7 @@
   "planner.question_duration": "How much time per workout?",
   "planner.help_duration": "The engine estimates time for sets, rest, transitions and warm-up.",
   "planner.question_priorities": "Which muscles would you like to prioritize?",
-  "planner.help_priorities": "Up to two priorities, while keeping a balanced program.",
+  "planner.help_priorities": "Choose as many priority muscles as you want, or select the whole upper or lower body. The program keeps a balanced foundation.",
   "planner.balanced": "Whole body, without a particular priority",
   "planner.question_equipment": "Is your equipment up to date?",
   "planner.help_equipment": "Only registered equipment and allowed exercises will be used.",
@@ -798,5 +798,13 @@
   "programs.finished_help": "This program has finished. Extend its duration or choose unlimited duration to resume training.",
   "programs.week_complete": "All workouts for this week are done!",
   "equipment.inventory_save_error": "Unable to save. Check quantities and weights, then retry. Your changes have been kept.",
-  "equipment.inventory_changed": "Equipment changed in another window. Your draft is kept; cancel and reload before retrying."
+  "equipment.inventory_changed": "Equipment changed in another window. Your draft is kept; cancel and reload before retrying.",
+  "planner.muscle_group_upper": "Whole upper body",
+  "planner.muscle_group_lower": "Whole lower body",
+  "planner.warning_duration_limited": "Estimated duration is below the requested time to respect appropriate training volume and available exercises.",
+  "exercises.remaining_count": "{{count}} available exercises",
+  "exercises.image_previous": "Previous photo",
+  "exercises.image_next": "Next photo",
+  "common.previous": "Previous",
+  "common.next": "Next"
 }

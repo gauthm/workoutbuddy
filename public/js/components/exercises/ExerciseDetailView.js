@@ -55,7 +55,8 @@ export default {
       return { rm: estimate1RM(bestSet.weight_kg, bestSet.reps, formula), set: bestSet }
     }
 
-    return { state, load, router, t, tm, lastRM }
+    function moveImage(delta) { state.imageIndex=(state.imageIndex+delta+state.exercise.image_paths.length)%state.exercise.image_paths.length }
+    return { state, moveImage, load, router, t, tm, lastRM }
   },
 
   template: `
@@ -81,11 +82,17 @@ export default {
           <!-- Images -->
           <div v-if="state.exercise.image_paths.length" class="exercise-detail__images">
             <img
+              :key="state.imageIndex"
               :src="'/exercises/images/' + state.exercise.image_paths[state.imageIndex]"
               :alt="state.exercise.name_fr"
               class="exercise-detail__img"
               @error="$event.target.style.display='none'"
             />
+            <div v-if="state.exercise.image_paths.length > 1" class="exercise-detail__image-controls">
+              <button class="btn btn--secondary" @click="moveImage(-1)" :aria-label="t('exercises.image_previous')">‹ {{ t('common.previous') }}</button>
+              <span aria-live="polite">{{ state.imageIndex + 1 }} / {{ state.exercise.image_paths.length }}</span>
+              <button class="btn btn--secondary" @click="moveImage(1)" :aria-label="t('exercises.image_next')">{{ t('common.next') }} ›</button>
+            </div>
             <div v-if="state.exercise.image_paths.length > 1" class="exercise-detail__dots">
               <button
                 v-for="(_, i) in state.exercise.image_paths" :key="i"

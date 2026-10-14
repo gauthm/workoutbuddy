@@ -40,6 +40,7 @@ function matchRoute(hash) {
 
 export const router = reactive({
   currentRoute: { name: 'DashboardView', params: {} },
+  previousRoute: null, previousScrollY: 0,
 
   push(hash) {
     window.location.hash = hash
@@ -57,6 +58,8 @@ export const router = reactive({
   },
 
   _update() {
+    this.previousRoute = {name:this.currentRoute.name,params:{...this.currentRoute.params}}
+    this.previousScrollY = window.scrollY
     const route = matchRoute(window.location.hash)
     this.currentRoute.name   = route.name
     this.currentRoute.params = route.params
@@ -64,6 +67,7 @@ export const router = reactive({
   },
 
   init() {
+    window.history.scrollRestoration = 'manual'
     window.addEventListener('hashchange', () => this._update())
     this._update()
   }

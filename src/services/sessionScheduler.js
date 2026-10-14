@@ -48,6 +48,8 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
     // Keep the original slot occupied when a workout was performed on another day.
     const existingDates = new Set(existing.flatMap(s => [s.scheduled_date,s.original_scheduled_date].filter(Boolean)))
 
+    for (const row of db.prepare('SELECT scheduled_date FROM session_schedule_exclusion WHERE program_id=? AND scheduled_date BETWEEN ? AND ?').all(program.id,today,endOfRange)) existingDates.add(row.scheduled_date)
+
     // Déterminer quel template utiliser en premier
     const lastCompleted = db.prepare(`
       SELECT workout_template_id FROM session

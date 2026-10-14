@@ -15,10 +15,11 @@ const MOVEMENTS = [
 export default {
   name: 'ExerciseFilter',
   props: {
+    expanded: { type: Boolean, default: false },
     filters: { type: Object, required: true }
     // { muscle, equipment, movement, q }
   },
-  emits: ['change'],
+  emits: ['change','toggle'],
 
   setup(props, { emit }) {
     const local = reactive({ ...props.filters })
@@ -51,7 +52,7 @@ export default {
           @input="update('q', $event.target.value)"
         />
       </div>
-      <details class="exercise-filter__panel">
+      <details class="exercise-filter__panel" :open="expanded" @toggle="$emit('toggle',$event.target.open)">
         <summary>
           <span>{{ t('exercises.filters') }}</span>
           <button v-if="hasFilters()" type="button" class="btn btn--secondary exercise-filter__clear"
