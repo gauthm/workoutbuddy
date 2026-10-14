@@ -13,7 +13,7 @@ for(const line of updates){
  }catch{needed=new Set(SUITES)}
 }
 if(hasUpdate){
- let result=spawnSync('npm',['test'],{stdio:'inherit'})
+ let result=spawnSync('npm',['run','test:in-process'],{stdio:'inherit'})
  if(result.status!==0)process.exit(result.status??1)
  if(needed.size){
   console.log('Avant push, parcours navigateur : '+[...needed].join(', '))
