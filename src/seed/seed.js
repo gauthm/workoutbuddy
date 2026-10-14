@@ -2,8 +2,22 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createHash } from 'node:crypto'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+function readFrenchTranslations() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'exercises.fr.json'), 'utf8'))
+  } catch (err) {
+    console.warn('[seed] Catalogue français indisponible :', err.message)
+    return {}
+  }
+}
+
+export function translationSource(exercise) {
+  return createHash('sha256').update(JSON.stringify([exercise.name_en, exercise.instructions_en])).digest('hex')
+}
 
 export function readSeedCatalog() {
   const filePath = path.join(__dirname, 'exercises.json')
@@ -13,11 +27,37 @@ export function readSeedCatalog() {
     return []
   }
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    const exercises = JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    const translations = readFrenchTranslations()
+    return exercises.map(ex => {
+      const fr = translations[ex.id]
+      // Une mise à jour de la source ne doit pas réutiliser une traduction périmée.
+      if (!fr || fr.source !== translationSource(ex)) return ex
+      return { ...ex, name_fr: fr.name, instructions_fr: fr.instructions }
+    })
   } catch (err) {
     console.error('[seed] Erreur lecture exercises.json :', err.message)
     return []
   }
+}
+
+// Données de référence uniquement : aucun identifiant, texte EN ou champ utilisateur modifié.
+export function syncExerciseTranslations(db, exercises = readSeedCatalog()) {
+  const translations = readFrenchTranslations()
+  const update = db.prepare(`UPDATE exercise SET name_fr = @name_fr, instructions_fr = @instructions_fr
+    WHERE id = @id AND is_custom = 0 AND name_en = @name_en AND instructions_en = @instructions_en
+    AND (name_fr <> @name_fr OR instructions_fr <> @instructions_fr)`)
+  return db.transaction(() => {
+    let updated = 0
+    for (const ex of exercises) {
+      if (translations[ex.id]?.source !== translationSource(ex)) continue
+      updated += update.run({
+        id: ex.id, name_fr: ex.name_fr, name_en: ex.name_en,
+        instructions_fr: JSON.stringify(ex.instructions_fr), instructions_en: JSON.stringify(ex.instructions_en),
+      }).changes
+    }
+    return updated
+  })()
 }
 
 export function insertExercises(db, exercises) {
@@ -59,11 +99,12 @@ export function insertExercises(db, exercises) {
   return { source: exercises.length, inserted: insert(exercises) }
 }
 
-// Seed au démarrage : seulement si la table exercise est vide
+// Insérer au premier démarrage, puis synchroniser seulement les traductions du catalogue.
 export function seedExercises(db) {
   const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
   if (count > 0) {
-    console.log(`Exercices déjà présents (${count}), seed ignoré.`)
+    const updated = syncExerciseTranslations(db)
+    console.log(`[seed] ${count} exercices présents, ${updated} traductions actualisées.`)
     return
   }
 

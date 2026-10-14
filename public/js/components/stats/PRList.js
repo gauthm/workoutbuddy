@@ -1,5 +1,5 @@
 import { inject } from '/vendor/vue.esm-browser.prod.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 
 export default {
   name: 'PRList',
@@ -10,7 +10,7 @@ export default {
   },
   setup() {
     const router = inject('router')
-    return { t, router }
+    return { t, router, exerciseName }
   },
   template: `
     <div class="pr-list">
@@ -23,7 +23,7 @@ export default {
         class="pr-row"
         @click="router.push('#/stats/exercise/' + r.exercise_id)">
         <div class="pr-row__info">
-          <span class="pr-row__name">{{ r.exercise_name_fr }}</span>
+          <span class="pr-row__name">{{ exerciseName(r) }}</span>
           <span class="pr-row__detail">
             {{ r.weight_kg }} kg × {{ r.reps }} rep{{ r.reps > 1 ? 's' : '' }}
           </span>

@@ -1,7 +1,7 @@
 import { PROGRAM_MUSCLE_GROUPS } from '../../utils/programMuscles.js'
 import { reactive, ref, onMounted, inject, nextTick, watch } from '/vendor/vue.esm-browser.prod.js'
 import { programs as api, equipment, userProfile } from '../../api.js'
-import { t, i18n } from '../../i18n.js'
+import { t, i18n, exerciseName } from '../../i18n.js'
 import PageHeader from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ModalDialog from '../common/ModalDialog.js'
@@ -78,7 +78,7 @@ export default {
       finally { state.busy = false }
     }
     onMounted(load)
-    return { state, heading, load, next, back, create, toggleMuscle, groupChecked, groupPartial, toggleGroup, closeEquipment, labelGoal, t, i18n, GOALS, LEVELS, PROGRAM_MUSCLE_GROUPS, QUESTIONS, WEEKDAYS, durationOptions: () => [...new Set([4,6,8,12,state.form.duration_weeks,null])] }
+    return { state, heading, load, next, back, create, toggleMuscle, groupChecked, groupPartial, toggleGroup, closeEquipment, labelGoal, t, i18n, exerciseName, GOALS, LEVELS, PROGRAM_MUSCLE_GROUPS, QUESTIONS, WEEKDAYS, durationOptions: () => [...new Set([4,6,8,12,state.form.duration_weeks,null])] }
   },
   template: `
     <div class="view">
@@ -158,7 +158,7 @@ export default {
             <p v-for="warning in state.preview.warnings" :key="warning.code + warning.muscle" class="settings-notice settings-notice--warning">{{ t('planner.warning_' + warning.code, { muscle:warning.muscle ? t('muscles.' + warning.muscle) : '' }) }}</p>
             <article v-for="template in state.preview.templates" :key="template.name" class="program-wizard__session">
               <h3>{{ template.name }} <small>{{ t('planner.estimated', { count:template.estimated_duration_min }) }}</small></h3>
-              <ul><li v-for="ex in template.exercises" :key="ex.exercise_id">{{ i18n.locale === 'en' ? ex.name_en : ex.name_fr }} <strong>{{ ex.target_sets }} × {{ ex.target_reps_min }}–{{ ex.target_reps_max }}</strong></li></ul>
+              <ul><li v-for="ex in template.exercises" :key="ex.exercise_id">{{ exerciseName(ex) }} <strong>{{ ex.target_sets }} × {{ ex.target_reps_min }}–{{ ex.target_reps_max }}</strong></li></ul>
             </article>
           </div>
           <div class="program-wizard__actions">

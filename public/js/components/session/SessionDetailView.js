@@ -1,7 +1,7 @@
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { sessions as api } from '../../api.js'
 import { formatDuration, formatDate } from '../../utils/date.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -71,7 +71,7 @@ export default {
     }
 
     onMounted(load)
-    return { state, load, deleteState, doDelete, resetState, doReset, startAgain, formatDuration, formatDate, t }
+    return { state, load, deleteState, doDelete, resetState, doReset, startAgain, formatDuration, formatDate, t, exerciseName }
   },
 
   template: `
@@ -104,7 +104,7 @@ export default {
           <div class="detail-section">
             <div v-for="se in state.session.exercises" :key="se.id"
               style="margin-bottom:1rem">
-              <div style="font-weight:600;margin-bottom:0.4rem">{{ se.name_fr }}</div>
+              <div style="font-weight:600;margin-bottom:0.4rem">{{ exerciseName(se) }}</div>
               <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
                 <span v-for="set in se.sets.filter(s=>s.is_completed&&!s.is_warmup)"
                   :key="set.id"

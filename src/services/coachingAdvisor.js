@@ -30,7 +30,7 @@ export function runAllSignalChecks(db, settings) {
   const detSessions     = settings.plateau_detection_sessions          || 4
 
   const templateExercises = db.prepare(`
-    SELECT te.*, e.primary_muscles, e.equipment_required, e.is_unilateral, e.name_fr,
+    SELECT te.*, e.primary_muscles, e.equipment_required, e.is_unilateral, e.name_fr, e.name_en,
            e.movement_pattern
     FROM template_exercise te
     JOIN workout_template wt ON te.workout_template_id = wt.id
@@ -71,7 +71,7 @@ export function runAllSignalChecks(db, settings) {
     if (allAtMax && allExceeded) {
       const avgReps = recentSets.reduce((s, r) => s + r.reps, 0) / recentSets.length
       insertAdvice(db, 'max_load_reached', te.exercise_id, null, null, {
-        type: 'max_load_reached', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
+        type: 'max_load_reached', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr, exercise_name_en: te.name_en,
         max_load_kg: loads.max_load_kg, resistance_is_approximate: !!loads.resistance_is_approximate, equipment_required: te.equipment_required, sessions_checked: maxLoadSessions,
         target_reps_max: te.target_reps_max, actual_reps_avg: Math.round(avgReps * 10) / 10,
       })
@@ -95,7 +95,7 @@ export function runAllSignalChecks(db, settings) {
     const forecast = forecastEquipmentLimit(loads, history)
     if (!forecast) continue
     if (insertAdvice(db, 'equipment_limit_approaching', te.exercise_id, null, null, {
-      type: 'equipment_limit_approaching', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
+      type: 'equipment_limit_approaching', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr, exercise_name_en: te.name_en,
       equipment_required: te.equipment_required, max_load_kg: loads.max_load_kg, ...forecast,
     })) created++
   }
@@ -112,7 +112,7 @@ export function runAllSignalChecks(db, settings) {
       const plateau = detectPlateau(te.exercise_id, activeProgram.id, detSessions, db)
       if (!plateau.is_plateau) continue
       insertAdvice(db, 'min_increment_too_large', te.exercise_id, null, null, {
-        type: 'min_increment_too_large', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
+        type: 'min_increment_too_large', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr, exercise_name_en: te.name_en,
         equipment_required: te.equipment_required, min_increment_kg: loads.min_increment_kg, current_weight_kg: state.current_weight_kg, pct: Math.round(pct * 10) / 10,
       })
       created++
@@ -150,7 +150,7 @@ export function runAllSignalChecks(db, settings) {
       })
       if (candidates.length === 0) {
         insertAdvice(db, 'no_rotation_possible', te.exercise_id, null, null, {
-          type: 'no_rotation_possible', exercise_id: te.exercise_id, rotation_group: te.rotation_group, exercise_name_fr: te.name_fr,
+          type: 'no_rotation_possible', exercise_id: te.exercise_id, rotation_group: te.rotation_group, exercise_name_fr: te.name_fr, exercise_name_en: te.name_en,
         })
         created++
       }
@@ -168,7 +168,7 @@ export function runAllSignalChecks(db, settings) {
     const pct   = loads.min_increment_kg > 0 ? (loads.min_increment_kg / state.current_weight_kg) * 100 : 0
     if (pct <= minIncrPct) continue
     insertAdvice(db, 'persistent_plateau', te.exercise_id, null, null, {
-      type: 'persistent_plateau', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr,
+      type: 'persistent_plateau', exercise_id: te.exercise_id, exercise_name_fr: te.name_fr, exercise_name_en: te.name_en,
       sessions_checked: plateauSessions, min_increment_kg: loads.min_increment_kg,
       current_weight_kg: state.current_weight_kg, delta_pct: plateau.delta_pct,
     })

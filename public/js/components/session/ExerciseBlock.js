@@ -1,5 +1,5 @@
 import { reactive, inject, onMounted, computed } from '/vendor/vue.esm-browser.prod.js'
-import { i18n, t } from '../../i18n.js'
+import { i18n, t, exerciseName } from '../../i18n.js'
 import { estimate10RM } from '../../utils/rm.js'
 import SetRow from './SetRow.js'
 import ExerciseHelp from './ExerciseHelp.js'
@@ -56,7 +56,7 @@ export default {
     }
     const explanation=()=>props.target?.is_first_time ? props.target.first_time_suggestion?.reasoning : props.target?.explanation
     onMounted(publish)
-    return {state,t,workRows,completed,currentKey,previousSession,previousSets,previousRM,previousDate,rmApplicable,nextWeight,nextReps,lastCompleted,onValidated,onReverted,preparationLoads,warmupMovement,explanation,
+    return {state,t,exerciseName,workRows,completed,currentKey,previousSession,previousSets,previousRM,previousDate,rmApplicable,nextWeight,nextReps,lastCompleted,onValidated,onReverted,preparationLoads,warmupMovement,explanation,
       rowNumber:row=>row.set.is_warmup ? null : workRows.value.findIndex(r=>r.key===row.key)+1,
       showRpe:()=>store.getSetting('show_rpe_field',false),formula:()=>store.getSetting('rm_formula','epley')}
   },
@@ -65,7 +65,7 @@ export default {
       <div class="exercise-block__header">
         <button class="exercise-block__toggle" :aria-expanded="expanded" :aria-controls="'exercise-content-'+sessionExercise.id" @click="$emit('toggle')">
           <span class="exercise-block__index">{{ completed >= workRows.length ? '✓' : index }}</span>
-          <span class="exercise-block__heading"><span class="exercise-block__name">{{sessionExercise.name_fr}}</span>
+          <span class="exercise-block__heading"><span class="exercise-block__name">{{exerciseName(sessionExercise)}}</span>
             <span class="exercise-block__subtitle">{{ t('session.exercise_progress',{done:completed,total:workRows.length}) }}</span>
           </span><span class="exercise-block__chevron" aria-hidden="true">{{expanded?'⌃':'⌄'}}</span>
         </button>
@@ -101,7 +101,7 @@ export default {
           {{ index < total ? t('session.next_exercise') : t('session.complete') }}
         </button>
       </div>
-      <ModalDialog v-if="state.showWarmup" :title="t('session.warmup_title',{exercise:sessionExercise.name_fr})" @close="state.showWarmup=false">
+      <ModalDialog v-if="state.showWarmup" :title="t('session.warmup_title',{exercise:exerciseName(sessionExercise)})" @close="state.showWarmup=false">
         <ol class="warmup-instructions">
           <li>{{t('session.warmup_general')}}</li>
           <li>{{t(warmupMovement())}}</li>

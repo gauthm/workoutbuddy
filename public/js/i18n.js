@@ -45,5 +45,21 @@ export function tm(muscle) {
   return str.replace(/\{\{(\w+)\}\}/g, (_, k) => '')
 }
 
+// Catalogue, séances et statistiques emploient deux jeux de noms de colonnes.
+// Lire la locale ici rend aussi les listes et titres réactifs au changement de langue.
+export function exerciseName(exercise) {
+  if (!exercise) return ''
+  const fr = exercise.name_fr || exercise.exercise_name_fr
+  const en = exercise.name_en || exercise.exercise_name_en
+  return (i18n.locale === 'en' ? en || fr : fr || en) || ''
+}
+
+export function exerciseInstructions(exercise) {
+  if (!exercise) return []
+  const preferred = exercise['instructions_' + i18n.locale]
+  if (Array.isArray(preferred) && preferred.length) return preferred
+  return exercise.instructions_en?.length ? exercise.instructions_en : exercise.instructions_fr || []
+}
+
 // Initialisation : charger fr dès le démarrage
 loadLocale('fr')

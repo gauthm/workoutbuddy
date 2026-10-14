@@ -2,7 +2,7 @@ import ExerciseMotion from './ExerciseMotion.js'
 import { reactive, onMounted, inject } from '/vendor/vue.esm-browser.prod.js'
 import { exercises as api } from '../../api.js'
 import { estimate1RM } from '../../utils/rm.js'
-import { t, tm } from '../../i18n.js'
+import { t, tm, exerciseName, exerciseInstructions } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -55,19 +55,19 @@ export default {
       return { rm: estimate1RM(bestSet.weight_kg, bestSet.reps, formula), set: bestSet }
     }
 
-    return { state, load, router, t, tm, lastRM }
+    return { state, load, router, t, tm, exerciseName, exerciseInstructions, lastRM }
   },
 
   template: `
     <div class="view">
-      <PageHeader :title="state.exercise?.name_fr || '…'" :show-back="true" />
+      <PageHeader :title="exerciseName(state.exercise) || '…'" :show-back="true" />
 
       <div class="view__content" style="padding:0 1rem">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else-if="state.exercise">
-          <ExerciseMotion v-if="state.exercise.image_paths.length" :paths="state.exercise.image_paths" :name="state.exercise.name_fr" />
+          <ExerciseMotion v-if="state.exercise.image_paths.length" :paths="state.exercise.image_paths" :name="exerciseName(state.exercise)" />
 
           <!-- Muscles -->
           <section class="detail-section">
@@ -86,10 +86,10 @@ export default {
           </section>
 
           <!-- Instructions -->
-          <section v-if="state.exercise.instructions_fr.length" class="detail-section">
+          <section v-if="exerciseInstructions(state.exercise).length" class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.instructions') }}</h3>
             <ol class="instruction-list">
-              <li v-for="(step, i) in state.exercise.instructions_fr" :key="i">{{ step }}</li>
+              <li v-for="(step, i) in exerciseInstructions(state.exercise)" :key="i">{{ step }}</li>
             </ol>
           </section>
 

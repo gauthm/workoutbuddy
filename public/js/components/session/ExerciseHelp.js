@@ -1,6 +1,6 @@
 import ExerciseMotion from '../exercises/ExerciseMotion.js'
 import { estimate1RM, rmTable } from '../../utils/rm.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName, exerciseInstructions } from '../../i18n.js'
 import { useDialog } from '../../utils/dialog.js'
 
 export default {
@@ -19,25 +19,25 @@ export default {
       ? estimate1RM(props.lastWeight, props.lastReps, props.formula)
       : 0
     const table = rm > 0 ? rmTable(rm, props.formula).filter(r => r.reps <= 12) : []
-    return { rm, table, t, dialogRef: useDialog(() => emit('close')) }
+    return { rm, table, t, exerciseName, exerciseInstructions, dialogRef: useDialog(() => emit('close')) }
   },
 
   template: `
     <div class="modal-overlay" @click.self="$emit('close')">
-      <div ref="dialogRef" class="modal" role="dialog" aria-modal="true" :aria-label="exercise.name_fr" tabindex="-1" style="border-radius:var(--radius-lg);max-height:85dvh;overflow-y:auto">
+      <div ref="dialogRef" class="modal" role="dialog" aria-modal="true" :aria-label="exerciseName(exercise)" tabindex="-1" style="border-radius:var(--radius-lg);max-height:85dvh;overflow-y:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <h2 class="modal__title" style="margin:0">{{ exercise.name_fr }}</h2>
+          <h2 class="modal__title" style="margin:0">{{ exerciseName(exercise) }}</h2>
           <button style="background:none;border:none;color:var(--color-text-muted);font-size:1.5rem;cursor:pointer"
             :aria-label="t('common.close')" @click="$emit('close')">✕</button>
         </div>
 
-        <ExerciseMotion v-if="exercise.image_paths?.length" :paths="exercise.image_paths" :name="exercise.name_fr" :max-height="180" />
+        <ExerciseMotion v-if="exercise.image_paths?.length" :paths="exercise.image_paths" :name="exerciseName(exercise)" :max-height="180" />
 
         <!-- Instructions -->
-        <div v-if="exercise.instructions_fr?.length" class="detail-section">
+        <div v-if="exerciseInstructions(exercise)?.length" class="detail-section">
           <h3 class="detail-section__title">{{ t('exercises.instructions') }}</h3>
           <ol style="padding-left:1.25rem">
-            <li v-for="(step,i) in exercise.instructions_fr" :key="i"
+            <li v-for="(step,i) in exerciseInstructions(exercise)" :key="i"
               style="margin-bottom:0.4rem;font-size:0.9rem;line-height:1.5">
               {{ step }}
             </li>

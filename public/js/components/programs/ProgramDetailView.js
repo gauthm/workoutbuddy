@@ -1,6 +1,6 @@
 import { reactive, onMounted, onBeforeUnmount, inject, computed } from '/vendor/vue.esm-browser.prod.js'
 import { programs as api, sessions as sessionsApi, programExercises } from '../../api.js'
-import { t, tm, i18n } from '../../i18n.js'
+import { t, tm, exerciseName } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -54,7 +54,7 @@ export default {
     }
 
     let replacementVersion=0
-    const nameFor = ex => (i18n.locale==='en' ? ex.name_en : ex.name_fr) || ex.name_fr || ex.name_en || ex.exercise_id || ex.id
+    const nameFor = ex => exerciseName(ex) || ex.exercise_id || ex.id
     const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()
     const visibleAlternatives = computed(() => state.alternatives.filter(ex => ex.id===state.selectedReplacement || normalize(nameFor(ex)).includes(normalize(state.replacementSearch))))
     function replacementMessage(error) {

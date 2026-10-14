@@ -5,7 +5,7 @@ import {
   exercises as exercisesApi,
   programs as programsApi
 } from '../../api.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 import PageHeader    from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import EmptyState    from '../common/EmptyState.js'
@@ -94,7 +94,7 @@ export default {
       const {seconds,setId}=data
       state.restSequence++
       store.activeRestExerciseId=item.sessionExercise.id
-      store.activeRest={setId,sessionId:state.session.id,exerciseName:item.sessionExercise.name_fr,duration:seconds,deadline:Date.now()+seconds*1000}
+      store.activeRest={setId,sessionId:state.session.id,name_fr:item.sessionExercise.name_fr,name_en:item.sessionExercise.name_en,duration:seconds,deadline:Date.now()+seconds*1000}
     }
     function setReverted(item,set) {
       if(store.activeRestExerciseId === item.sessionExercise.id && (!store.activeRest?.setId || store.activeRest.setId === set.id)) {
@@ -148,7 +148,7 @@ export default {
       load()
     })
 
-    return { store, state, load, completeSession, discardSession, router, t, progress, remainingSets, activeRest, setsChanged, startRest, setReverted, adjustRest, clearRest, nextExercise }
+    return { store, state, load, completeSession, discardSession, router, t, exerciseName, progress, remainingSets, activeRest, setsChanged, startRest, setReverted, adjustRest, clearRest, nextExercise }
   },
 
   template: `
@@ -223,7 +223,7 @@ export default {
       </div>
 
       <div v-if="activeRest && state.session" class="session-rest-dock">
-        <div class="session-rest-dock__heading"><strong>{{ t('session.rest_title') }}</strong><span>{{activeRest.exerciseName}}</span></div>
+        <div class="session-rest-dock__heading"><strong>{{ t('session.rest_title') }}</strong><span>{{exerciseName(activeRest)}}</span></div>
         <RestTimer :key="state.restSequence" :duration="activeRest.duration" :deadline="activeRest.deadline" :active="true"
           :sound-enabled="store.getSetting('timer_sound_enabled',true)" :vibr-enabled="store.getSetting('timer_vibration_enabled',true)"
           @adjust="adjustRest" @complete="clearRest" @skip="clearRest" />

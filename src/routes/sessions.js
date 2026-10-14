@@ -115,7 +115,7 @@ router.post('/from-template/:templateId', (req, res) => {
     // Retourner session complète
     const session = db.prepare('SELECT * FROM session WHERE id = ?').get(sessionId)
     const exercises = db.prepare(
-      'SELECT se.*, e.name_fr FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
+      'SELECT se.*, e.name_fr, e.name_en FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
     ).all(sessionId)
     for (const se of exercises) {
       se.sets = []
@@ -267,7 +267,7 @@ function computeSessionAdjustments(db, session) {
   if (!session.workout_template_id) return []
 
   const sessionExercises = db.prepare(`
-    SELECT se.*, e.name_fr, e.mechanic, e.equipment_required, e.is_unilateral
+    SELECT se.*, e.name_fr, e.name_en, e.mechanic, e.equipment_required, e.is_unilateral
     FROM session_exercise se
     JOIN exercise e ON se.exercise_id = e.id
     WHERE se.session_id = ?
@@ -418,6 +418,7 @@ function computeSessionAdjustments(db, session) {
     adjustments.push({
       exercise_id:          se.exercise_id,
       exercise_name_fr:     se.name_fr,
+      exercise_name_en:     se.name_en,
       template_exercise_id: se.template_exercise_id,
       is_first_time:        isFirstTime,
       target_weight_kg:     targetWeight,
@@ -636,7 +637,7 @@ router.post('/:id/complete', (req, res) => {
     // Retourner session complète
     const updated = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
     const exercises = db.prepare(
-      'SELECT se.*, e.name_fr FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
+      'SELECT se.*, e.name_fr, e.name_en FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
     ).all(req.params.id)
     for (const se of exercises) {
       se.sets = db.prepare(

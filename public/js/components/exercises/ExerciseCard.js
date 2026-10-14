@@ -1,5 +1,5 @@
 import { inject } from '/vendor/vue.esm-browser.prod.js'
-import { t, tm } from '../../i18n.js'
+import { t, tm, exerciseName } from '../../i18n.js'
 
 export default {
   name: 'ExerciseCard',
@@ -7,11 +7,11 @@ export default {
     exercise: { type: Object, required: true }
   },
   emits: ['click'],
-  setup() { return { t, tm } },
+  setup() { return { t, tm, exerciseName } },
   template: `
     <div class="exercise-card" @click="$emit('click')">
       <div class="exercise-card__main">
-        <span class="exercise-card__name">{{ exercise.name_fr }}</span>
+        <span class="exercise-card__name">{{ exerciseName(exercise) }}</span>
         <span v-if="exercise.is_custom" class="badge badge--custom">
           {{ t('exercises.custom_badge') }}
         </span>

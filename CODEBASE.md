@@ -10,7 +10,7 @@ Installation, fonctionnement et tests : [README.md](README.md). Règles de déve
 | `src/db/database.js` | Connexion SQLite |
 | `src/db/migrate.js`, `src/db/migrations/` | Migrations |
 | `src/db/backup.js` | Sauvegardes |
-| `src/seed/` | Catalogue intégré et chargement |
+| `src/seed/` | Catalogue source, traductions `exercises.fr.json`, chargement et synchronisation |
 | `scripts/` | Téléchargement des bibliothèques et import d’exercices |
 
 ## API — `/api/v1`

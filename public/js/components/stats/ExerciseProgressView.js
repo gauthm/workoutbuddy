@@ -1,7 +1,7 @@
 import { reactive, onMounted, onUnmounted, inject, nextTick }
   from '/vendor/vue.esm-browser.prod.js'
 import { stats as statsApi, exercises as exercisesApi } from '../../api.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 import { estimate1RM } from '../../utils/rm.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
@@ -136,13 +136,13 @@ export default {
       if (chartInstance) { chartInstance.destroy(); chartInstance = null }
     })
 
-    return { state, load, changePeriod, changeFormula, PERIODS, FORMULAS, t }
+    return { state, load, changePeriod, changeFormula, PERIODS, FORMULAS, t, exerciseName }
   },
 
   template: `
     <div class="view">
       <PageHeader
-        :title="state.exercise?.name_fr || t('stats.exercise_progress')"
+        :title="exerciseName(state.exercise) || t('stats.exercise_progress')"
         :show-back="true"
       />
       <div class="view__content" style="padding:0 1rem">

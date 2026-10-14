@@ -1,6 +1,6 @@
 import { reactive, onMounted } from '/vendor/vue.esm-browser.prod.js'
 import { exercises as api } from '../../api.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 
 export default {
@@ -29,7 +29,7 @@ export default {
     }
 
     onMounted(load)
-    return { state, onSearch, t, emit }
+    return { state, onSearch, t, exerciseName, emit }
   },
 
   template: `
@@ -47,7 +47,7 @@ export default {
           class="exercise-selector__item"
           type="button"
           @click="emit('select', ex)">
-          <span>{{ ex.name_fr }}</span>
+          <span>{{ exerciseName(ex) }}</span>
           <span style="font-size:0.8rem;color:var(--color-text-muted)">
             {{ ex.primary_muscles.map(m => t('muscles.' + m)).join(', ') }}
           </span>

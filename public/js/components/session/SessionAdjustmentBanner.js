@@ -1,5 +1,5 @@
 import { ref } from '/vendor/vue.esm-browser.prod.js'
-import { t }   from '../../i18n.js'
+import { t, exerciseName }   from '../../i18n.js'
 
 const ICONS = {
   increase:   '📈',
@@ -16,7 +16,7 @@ export default {
 
   setup() {
     const expanded = ref(false)
-    return { expanded, t, ICONS }
+    return { expanded, t, exerciseName, ICONS }
   },
 
   template: `
@@ -41,7 +41,7 @@ export default {
           <span class="adjustment-row__icon">{{ ICONS[adj.change_type] || '•' }}</span>
 
           <div class="adjustment-row__info">
-            <span class="adjustment-row__name">{{ adj.exercise_name_fr }}</span>
+            <span class="adjustment-row__name">{{ exerciseName(adj) }}</span>
             <span class="adjustment-row__target">
               {{ adj.target_weight_kg > 0 ? adj.target_weight_kg + ' kg' : t('session.adjustment_bodyweight') }}
               × {{ adj.target_reps }} {{ t('session.adjustment_reps') }}

@@ -1,7 +1,7 @@
 import { reactive, onMounted, onBeforeUnmount, nextTick, inject, computed, watch } from '/vendor/vue.esm-browser.prod.js'
 import { ALL_MUSCLES } from '../../utils/muscles.js'
 import { exercises as api, settings as settingsApi } from '../../api.js'
-import { t, tm } from '../../i18n.js'
+import { t, tm, exerciseName, i18n } from '../../i18n.js'
 import PageHeader     from '../layout/PageHeader.js'
 import LoadingSpinner from '../common/LoadingSpinner.js'
 import ErrorBanner    from '../common/ErrorBanner.js'
@@ -70,7 +70,7 @@ export default {
     })
 
     const byName = (a, b) =>
-      (a.name_fr || a.name_en || '').localeCompare(b.name_fr || b.name_en || '', 'fr')
+      exerciseName(a).localeCompare(exerciseName(b), i18n.locale)
 
     function usesPainfulMuscle(ex) {
       if (!state.painfulMuscles.length) return false
@@ -153,7 +153,7 @@ export default {
       state, displayedExercises, excludedExercises, excludedCount,
       painFilteredCount, ALL_MUSCLES,
       load, selectTab, onFilterChange, toggleExclusion, togglePain, usesPainfulMuscle,
-      router, t, tm,
+      router, t, tm, exerciseName,
     }
   },
 
@@ -214,7 +214,7 @@ export default {
               @click="router.push('#/exercises/' + ex.id)">
 
               <div class="exercise-card__main">
-                <span class="exercise-card__name">{{ ex.name_fr || ex.name_en }}</span>
+                <span class="exercise-card__name">{{ exerciseName(ex) }}</span>
                 <div style="display:flex;gap:0.3rem;align-items:center;flex-shrink:0">
                   <span v-if="ex.is_custom" class="badge badge--custom">{{ t('exercises.custom_badge') }}</span>
                   <span class="badge badge--excluded">{{ t('exercises.excluded_badge') }}</span>
@@ -250,7 +250,7 @@ export default {
               @click="router.push('#/exercises/' + ex.id)">
 
               <div class="exercise-card__main">
-                <span class="exercise-card__name">{{ ex.name_fr || ex.name_en }}</span>
+                <span class="exercise-card__name">{{ exerciseName(ex) }}</span>
                 <div style="display:flex;gap:0.3rem;align-items:center;flex-shrink:0">
                   <span v-if="ex.is_custom" class="badge badge--custom">{{ t('exercises.custom_badge') }}</span>
                 </div>

@@ -1,6 +1,6 @@
 import { ref, inject } from '/vendor/vue.esm-browser.prod.js'
 import { coach as api } from '../../api.js'
-import { t } from '../../i18n.js'
+import { t, exerciseName } from '../../i18n.js'
 import ConfirmModal from '../common/ConfirmModal.js'
 
 const SIGNAL_ICONS = {
@@ -46,7 +46,7 @@ export default {
       t,
       fallback: () => { const d = props.advice.signal_data || {}; const data = typeof d === 'string' ? JSON.parse(d) : d;
         const key = props.advice.signal_type === 'equipment_limit_approaching' ? (data.resistance_is_approximate ? 'coach.band_forecast' : 'coach.limit_forecast') : props.advice.signal_type === 'max_load_reached' ? (data.resistance_is_approximate ? 'coach.band_forecast' : 'coach.limit_reached') : null;
-        return key ? t(key, {exercise: data.exercise_name_fr, max: data.max_load_kg, sessions: data.estimated_sessions}) : t('coach.advice_generating') },
+        return key ? t(key, {exercise: exerciseName(data), max: data.max_load_kg, sessions: data.estimated_sessions}) : t('coach.advice_generating') },
     }
   },
   template: `

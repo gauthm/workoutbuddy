@@ -6,6 +6,8 @@ import { calculateAchievableLoads } from '../services/equipmentCalc.js'
 const router = express.Router()
 const db = getDb()
 
+const searchText = value => String(value || '').normalize('NFD').replace(/\p{M}/gu, '').replace(/[’‘]/g, "'").toLowerCase()
+
 function parseExercise(row) {
   if (!row) return null
   return {
@@ -58,15 +60,11 @@ router.get('/', (req, res) => {
       sql += ' AND equipment_required LIKE ?'
       params.push(`%"${req.query.equipment}"%`)
     }
-    if (req.query.q) {
-      sql += ' AND (name_fr LIKE ? OR name_en LIKE ?)'
-      const term = `%${req.query.q}%`
-      params.push(term, term)
-    }
-
     sql += ' ORDER BY name_fr ASC'
 
-    const rows = db.prepare(sql).all(...params)
+    // SQLite LIKE ne traite pas la casse des lettres accentuées.
+    const term = searchText(req.query.q).trim()
+    const rows = db.prepare(sql).all(...params).filter(ex => !term || searchText(ex.name_fr).includes(term) || searchText(ex.name_en).includes(term))
     let exercises = rows.map(parseExercise)
     if (family) exercises = exercises.filter(ex => ex.equipment_required.some(c => family.categories.includes(c)))
     else if (req.query.equipment_family === 'bodyweight') exercises = exercises.filter(ex => !ex.equipment_required.length)

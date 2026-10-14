@@ -30,6 +30,19 @@ describe('T1.4 — API Exercices', () => {
     assert.ok(res.body.exercises.every(e => e.primary_muscles.includes('chest')))
   })
 
+  it('cherche les deux langues, avec ou sans accents et quelle que soit la casse', async () => {
+    for (const q of ['développé couché avec haltères', 'DEVELOPPE COUCHE AVEC HALTERES', 'Dumbbell Bench Press']) {
+      const res = await request(app).get('/api/v1/exercises?' + new URLSearchParams({ q, muscle: 'chest' }))
+      assert.equal(res.status, 200)
+      assert.ok(res.body.exercises.some(ex => ex.id === 'dumbbell_bench_press'), q)
+      assert.ok(res.body.exercises.every(ex => ex.primary_muscles.includes('chest')))
+    }
+    const res = await request(app).get('/api/v1/exercises?' + new URLSearchParams({ q: 'élévation frontale' }))
+    assert.ok(res.body.exercises.some(ex => ex.id === 'front_dumbbell_raise'))
+    const wildcard = await request(app).get('/api/v1/exercises?' + new URLSearchParams({ q: '%' }))
+    assert.equal(wildcard.body.exercises.length, 0)
+  })
+
   it('GET /exercises/:id retourne un exercice', async () => {
     const res = await request(app).get('/api/v1/exercises/barbell_bench_press_medium_grip')
     assert.equal(res.status, 200)
