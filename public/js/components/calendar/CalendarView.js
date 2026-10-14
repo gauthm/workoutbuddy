@@ -72,7 +72,7 @@ const DAY_HEADERS_EN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 // Couleur des points par statut
 const STATUS_COLORS = {
   completed:   'var(--color-success)',
-  in_progress: 'var(--color-primary)',
+  in_progress: 'var(--color-info)',
   planned:     'var(--color-warning)',
   skipped:     'var(--color-border)',
 }

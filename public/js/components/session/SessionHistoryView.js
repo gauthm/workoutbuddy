@@ -95,7 +95,7 @@ export default {
         completed:   'var(--color-success)',
         planned:     'var(--color-warning)',
         skipped:     'var(--color-text-muted)',
-        in_progress: 'var(--color-primary)',
+        in_progress: 'var(--color-info)',
       }[status] || 'var(--color-border)'
     }
 
@@ -157,6 +157,13 @@ export default {
             </div>
           </div>
 
+          <div class="calendar-legend history-legend">
+            <span v-for="status in ['completed','in_progress','planned', ...(state.sessions.some(s => s.status === 'skipped') ? ['skipped'] : [])]" :key="status" class="calendar-legend__item">
+              <span class="history-row__status-dot" aria-hidden="true" :style="{ background: statusColor(status) }"></span>
+              {{ t('calendar.' + status) }}
+            </span>
+          </div>
+
           <!-- Liste vide -->
           <EmptyState
             v-if="!filteredSessions.length"
@@ -175,7 +182,8 @@ export default {
                 <div class="history-row__top">
                   <span class="history-row__name">{{ s.name }}</span>
                   <span class="history-row__status-dot"
-                    :style="{ background: statusColor(s.status) }" />
+                    :style="{ background: statusColor(s.status) }" role="img"
+                    :aria-label="t('calendar.' + s.status)" :title="t('calendar.' + s.status)" />
                 </div>
                 <div class="history-row__meta">
                   <span>{{ formatDate(s.scheduled_date) }}</span>

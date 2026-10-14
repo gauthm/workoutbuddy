@@ -225,3 +225,5 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Exercices : conserver filtres/recherche/panneau et scroll au retour d’une fiche ; boutons photos précédente/suivante ; compteur permanent des exercices restants, exclusions signalées séparément.
 - [x] Historique : suppression durable d’une séance complétée dans le futur ; migration 015 des créneaux supprimés, respect par le planificateur et export/import, effacement à la réinitialisation des statistiques. Tests de suppression répétée, reprise du planificateur, autres séances préservées et mémoire de progression.
 - [x] Validation : 405 tests réussis et parcours Playwright complet sur choix musculaires, 45/60 min, compteurs, photos et retour à la liste, contrôles à 320/390/768/1280 px. Règles de progression sur charge réellement abaissée et échecs répétés, et compatibilité banc réglable/plat vérifiées.
+
+- [x] Historique : légende des points de statut, avec Complétée/En cours/Planifiée et Sautée si présente ; En cours en bleu, Planifiée en orange, même repère dans le calendrier. Libellés accessibles sur les points. Validation : 405 tests et contrôle navigateur à 320/390/768/1280 px.
