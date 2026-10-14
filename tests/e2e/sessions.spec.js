@@ -33,6 +33,7 @@ test('terminer toutes les séries → progression conservée → prochaines cibl
  const next=(await get(request,'/sessions?active_program=1')).sessions.find(s=>s.status==='planned' && s.workout_template_id===session.workout_template_id)
  expect(next).toBeTruthy()
  await page.goto('/#/calendar')
+ await expect(page.locator('.calendar-grid')).toBeVisible()
  const day=page.getByRole('button',{name:next.scheduled_date,exact:true})
  if(!await day.count())await page.getByRole('button',{name:L('calendar.next_month'),exact:true}).click()
  await day.click()
