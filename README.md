@@ -121,12 +121,18 @@ L’export JSON et la sauvegarde locale contiennent des données personnelles ; 
 ```sh
 npm test                  # Tests unitaires, API et parcours complets
 npm run test:journeys     # Sept parcours de fiabilité
+npm run test:e2e          # Vrais parcours navigateur, ordinateur et mobile
+npm run test:e2e -- sessions  # Domaine séance uniquement
+npm run test:e2e:affected # Domaines concernés par les fichiers modifiés
+npm run hooks:install    # Contrôles avant push pour ce dépôt
 npm run test:in-process   # Suite avec requêtes Express sans port TCP
 ```
 
 Les tests utilisent des bases isolées en mémoire ou temporaires. Les parcours complets exécutent l’API et le moteur réels sans service IA : programme/calendrier, séance/progression, suppressions/historique, export/import, réglages, remplacement et rollback d’un import invalide. Voir [leur guide](tests/journeys/README.md).
 
-Les scénarios de `tests/ui/` complètent la couverture avec Playwright ; ils ne sont pas lancés par `npm test`. Certains utilisent un aperçu et des réponses API simulées. Les vérifications visuelles couvrent notamment les réglages, les dialogues, les séances et les tailles d’écran mobiles.
+Les tests de `tests/e2e/` pilotent le navigateur contre le vrai serveur et une base temporaire indépendante pour chaque cas, sans réponses API simulées. Ils sont séparés par domaine : programmes, séances, historique/calendrier, matériel, réglages, données, exercices et statistiques. Les parcours vérifient aussi rechargements, redémarrages et erreurs réseau ; ils tournent sous Chrome en formats ordinateur et mobile. Le hook avant push lance `npm test` puis les domaines concernés par les commits. Voir [installation, sélection et rapports](tests/e2e/README.md).
+
+Les anciens scénarios de `tests/ui/` servent aux contrôles visuels complémentaires ; certains utilisent des réponses API simulées. Les tests navigateur restent séparés de `npm test`.
 
 Le frontend utilise des modules JavaScript et des composants Vue avec templates, sans fichiers `.vue` ni compilation. Le backend utilise Express et SQLite synchrone. Les migrations existantes restent immuables ; les nouveaux changements de schéma prennent la forme d’une migration numérotée. Toute modification de `public/` doit mettre à jour le cache du service worker.
 

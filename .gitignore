@@ -82,3 +82,5 @@ coverage/
 # ── Exports générés ──────────────────────────────────────────
 workoutbuddy-export-*.json
 *.export.csv
+# Playwright browser reports and traces
+test-results/

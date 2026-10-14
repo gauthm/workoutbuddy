@@ -67,6 +67,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/unit/`, `tests/integration/` | Logique métier et API |
 | `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
 | `tests/helpers/` | Exécution isolée des requêtes |
-| `tests/ui/` | Scénarios Playwright |
+| `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
+| `tests/ui/` | Scénarios visuels Playwright complémentaires |
 | `docs/` | Audits et suivis détaillés |
 | `docs/plan/` | Plan initial et fiches de tâches |

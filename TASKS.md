@@ -247,3 +247,7 @@ Détails et validation : `docs/PROGRAM_ENGINE_TODO.md`.
 - [x] Validation : 424 tests réussis, dont 15 nouveaux cas ; navigation et champ réseau vérifiés avec Playwright. Base sauvegardée avant migration, serveur relancé, catalogue revenu à 876 entrées et historique inchangé après fusion.
 
 - [x] Calendrier : « Remettre en planifiée » pour annuler le statut Sautée, puis démarrer ou déplacer la séance. Route dédiée ne modifiant que le statut, sans doublon ni perte de date/séries/progression ; refus des autres statuts, protection contre double clic. 426 tests réussis et parcours Playwright à 320/390/768/1280 px.
+
+- [x] Bout en bout : environnement Playwright avec vrai serveur, port libre et base SQLite temporaire par cas, nettoyage automatique et tests de persistance après redémarrage ; aucun ajout de dépendance projet ni utilisation du serveur personnel.
+- [x] Parcours séparés programmes, séances, historique/calendrier, matériel, réglages, données, exercices et statistiques ; cas normaux, annulation, échecs réseau, imports invalides, validations et suppression durable. 18 scénarios × ordinateur/mobile : 36 réussites, plus 429 tests métier/API réussis.
+- [x] Commandes par domaine et sélection par fichiers/dépendances ; hook local avant push activé, tests métier puis domaines concernés ; rapport HTML, captures, traces et journaux en échec. Guide E2E, README, index et consignes de développement actualisés.
