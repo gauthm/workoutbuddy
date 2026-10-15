@@ -153,8 +153,6 @@ export default {
           <div v-if="state.program.plan" class="program-summary-tags">
             <span v-if="state.program.plan.parameters.session_duration_min" class="program-tag">{{ t('planner.minutes', { count:state.program.plan.parameters.session_duration_min }) }}</span>
             <span class="program-tag">{{ state.program.duration_weeks === null ? t('planner.unlimited') : t('planner.weeks', { count:state.program.duration_weeks }) }}</span>
-            <span v-if="state.program.plan.parameters.weight_kg" class="program-tag">{{ t('planner.weight', { count:state.program.plan.parameters.weight_kg }) }}</span>
-            <span v-if="state.program.plan.parameters.height_cm" class="program-tag">{{ t('planner.height', { count:state.program.plan.parameters.height_cm }) }}</span>
           </div>
           <div v-if="!state.program.plan" class="program-summary-tags">
             <span class="program-tag">{{ state.program.duration_weeks === null ? t('planner.unlimited') : t('planner.weeks', { count:state.program.duration_weeks }) }}</span>

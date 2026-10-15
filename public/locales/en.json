@@ -800,5 +800,13 @@
   "session.reset_workout": "Reset workout",
   "session.reset_title": "Reset this workout?",
   "session.reset_help": "Its sets and results will be cleared. The workout will become planned again and can be restarted. Your other workouts will be kept.",
-  "session.reset_done": "Workout reset. Progress and records have been recalculated."
+  "session.reset_done": "Workout reset. Progress and records have been recalculated.",
+  "planner.priorities_direct": "Regular direct work planned: {{muscles}}.",
+  "planner.warning_priority_partial": "{{muscle}}: {{direct}} direct sets per week. This remains limited for a specific focus; indirect work is complementary.",
+  "planner.warning_priority_indirect": "{{muscle}}: involved in a supporting role in {{indirect}} sets per week, with no direct exercise. This does not replace a specific focus.",
+  "planner.warning_priority_time_limited": "{{muscle}}: no direct work fits the available time after retaining the basic movements.",
+  "planner.warning_priority_unavailable": "{{muscle}}: no direct exercise is allowed with your current equipment, exclusions and pain settings.",
+  "planner.warning_priority_tradeoff": "Allowed basic movements for the upper and lower body come first. Remaining time is shared between your priorities: to strengthen a limited focus, choose fewer priorities or longer workouts if possible. Your selected frequency is respected.",
+  "planner.warning_balance_limited": "{{muscle}}: basic work for this group is missing. Check equipment, pain settings and exclusions; a focus should never deliberately exclude the other part of the body.",
+  "planner.warning_bodyweight_today_exists": "A weight entry already exists today: it is kept in the tracker. The weight entered here remains saved as this program’s reference."
 }

@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
-import request from 'supertest'
+import request from '../helpers/in-process-request.js'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -63,7 +63,9 @@ describe('T8.2 — Persistance du chat coach', () => {
   it('Deuxième message dans le même fil → 4 messages', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const id = list.body.conversations.find(c => c.is_active === 1).id
-    await request(app).post('/api/v1/ai/chat').send({ message: 'Comment aller ?', conversation_id: id })
+    const sent = await request(app).post('/api/v1/ai/chat').send({ message: 'Comment aller ?', conversation_id: id })
+    assert.equal(sent.status, 200)
+    assert.ok(sent.text.includes('"type":"done"'))
     const detail = await request(app).get(`/api/v1/ai/conversations/${id}/messages`)
     assert.equal(detail.body.messages.length, 4)
     // Le contexte DB est utilisé : le mock voit le dernier message user

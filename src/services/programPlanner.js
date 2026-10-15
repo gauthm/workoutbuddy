@@ -1,6 +1,7 @@
 import { getPainfulMuscles } from './exerciseConstraints.js'
 import { initializeTemplateProgression } from './exerciseProgression.js'
 import { generateProgram, validateProgramParams } from './programGenerator.js'
+import { localIsoDate } from './date.js'
 
 export function previewProgram(db, params) {
   const errors = validateProgramParams(params)
@@ -14,6 +15,10 @@ export function previewProgram(db, params) {
     ex.name_fr = names.get(ex.exercise_id).name_fr
     ex.name_en = names.get(ex.exercise_id).name_en
   }))
+  if (params.weight_kg != null) {
+    const existing = db.prepare('SELECT weight_kg FROM body_weight WHERE date=?').get(localIsoDate())
+    if (existing && existing.weight_kg !== params.weight_kg) draft.warnings.push({code:'bodyweight_today_exists',muscle:''})
+  }
   return draft
 }
 
@@ -34,6 +39,10 @@ export function createPlannedProgram(db, params) {
       })
     })
     db.prepare('INSERT INTO program_plan (program_id,parameters,warnings) VALUES (?,?,?)').run(id,JSON.stringify(params),JSON.stringify(draft.warnings))
+    // Le poids de référence reste dans les paramètres du programme, indépendamment
+    // de la mesure supprimable dans le suivi. Ne pas écraser une mesure du jour.
+    if (params.weight_kg != null) db.prepare(`INSERT INTO body_weight (date,weight_kg) VALUES (?,?)
+      ON CONFLICT(date) DO NOTHING`).run(localIsoDate(),params.weight_kg)
     return { id, ...draft }
   })()
 }

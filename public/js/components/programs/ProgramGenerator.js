@@ -155,7 +155,8 @@ export default {
             <p>{{ labelGoal(state.form.goal) }} · {{ t('programs.level_' + state.form.level) }} · {{ t('planner.days', { count:state.form.days_per_week }) }} · {{ t('planner.minutes', { count:state.form.session_duration_min }) }} · {{ state.form.duration_weeks === null ? t('planner.unlimited') : t('planner.weeks', { count:state.form.duration_weeks }) }}</p>
             <p>{{ state.form.training_days.slice().sort((a,b)=>a-b).map(day => t('planner.weekday_' + day)).join(', ') }}</p>
             <p class="settings-notice">{{ t('planner.stability') }}</p>
-            <p v-for="warning in state.preview.warnings" :key="warning.code + warning.muscle" class="settings-notice settings-notice--warning">{{ t('planner.warning_' + warning.code, { muscle:warning.muscle ? t('muscles.' + warning.muscle) : '' }) }}</p>
+            <p v-if="state.preview.priority_coverage?.some(p => p.status === 'direct')" class="settings-notice">{{ t('planner.priorities_direct', {muscles:state.preview.priority_coverage.filter(p => p.status === 'direct').map(p => t('muscles.' + p.muscle)).join(', ')}) }}</p>
+            <p v-for="warning in state.preview.warnings" :key="warning.code + warning.muscle" class="settings-notice settings-notice--warning">{{ t('planner.warning_' + warning.code, { muscle:warning.muscle ? t('muscles.' + warning.muscle) : '', direct:warning.direct_sets ?? 0, indirect:warning.indirect_sets ?? 0 }) }}</p>
             <article v-for="template in state.preview.templates" :key="template.name" class="program-wizard__session">
               <h3>{{ template.name }} <small>{{ t('planner.estimated', { count:template.estimated_duration_min }) }}</small></h3>
               <ul><li v-for="ex in template.exercises" :key="ex.exercise_id">{{ exerciseName(ex) }} <strong>{{ ex.target_sets }} × {{ ex.target_reps_min }}–{{ ex.target_reps_max }}</strong></li></ul>

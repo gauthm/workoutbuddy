@@ -800,5 +800,13 @@
   "session.reset_workout": "Réinitialiser la séance",
   "session.reset_title": "Réinitialiser cette séance ?",
   "session.reset_help": "Ses séries et ses résultats seront effacés. La séance redeviendra planifiée et pourra être recommencée. Tes autres séances seront conservées.",
-  "session.reset_done": "Séance réinitialisée. Les progrès et les records ont été recalculés."
+  "session.reset_done": "Séance réinitialisée. Les progrès et les records ont été recalculés.",
+  "planner.priorities_direct": "Travail direct régulier prévu : {{muscles}}.",
+  "planner.warning_priority_partial": "{{muscle}} : {{direct}} séries directes par semaine. Ce volume reste limité pour un focus spécifique ; le travail indirect est complémentaire.",
+  "planner.warning_priority_indirect": "{{muscle}} : sollicité en soutien sur {{indirect}} séries par semaine, mais sans exercice direct. Cela ne remplace pas un focus spécifique.",
+  "planner.warning_priority_time_limited": "{{muscle}} : pas de travail direct dans le temps disponible, une fois les mouvements de base conservés.",
+  "planner.warning_priority_unavailable": "{{muscle}} : aucun exercice direct autorisé avec ton matériel, tes exclusions et tes douleurs actuelles.",
+  "planner.warning_priority_tradeoff": "Les mouvements de base autorisés pour le haut et le bas du corps passent d’abord. Le temps restant est partagé entre tes priorités : pour renforcer un focus limité, choisis moins de priorités ou allonge les séances si tu le peux. La fréquence choisie reste respectée.",
+  "planner.warning_balance_limited": "{{muscle}} : le travail de base de ce groupe manque. Vérifie le matériel, les douleurs et les exclusions ; aucune priorité ne doit écarter volontairement l’autre partie du corps.",
+  "planner.warning_bodyweight_today_exists": "Une mesure de poids existe déjà aujourd’hui : elle est conservée dans le suivi. Le poids saisi ici reste enregistré comme référence de ce programme."
 }

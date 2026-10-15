@@ -177,7 +177,8 @@ test('données : exporter → réinitialiser → importer → retrouver les mêm
   const program = await createProgram()
   await activate(program)
   const run = await train(program)
-  await post('/bodyweight', { date: localIsoDate(), weight_kg: 75 }, 201)
+  const weights = (await get('/bodyweight')).entries
+  assert.ok(weights.some(entry => entry.date === localIsoDate() && entry.weight_kg === 75), 'Program creation records the initial weight')
   await post('/settings/save', { settings: { rm_formula: 'brzycki', painful_muscles: ['neck'] }, profile: { display_name: 'Test', sex: 'male', date_of_birth: '1990-02-15' } })
   const backup = await get('/export')
   const before = backup.data

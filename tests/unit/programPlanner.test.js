@@ -134,3 +134,45 @@ test('unlimited program duration stays null in preview, persisted program and st
     assert.deepEqual(preview.templates,previewProgram(db,params).templates)
   } finally { db.close() }
 })
+
+test('poids de création : aperçu sans écriture, mesure du jour et référence indépendante du suivi',()=>{
+ const db=database()
+ try {
+  const input={...params,weight_kg:75,height_cm:175}
+  previewProgram(db,input)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM body_weight').get().n,0)
+  const made=createPlannedProgram(db,input)
+  const entry=db.prepare('SELECT * FROM body_weight').get()
+  assert.equal(entry.weight_kg,75)
+  const expected=new Date(),date=`${expected.getFullYear()}-${String(expected.getMonth()+1).padStart(2,'0')}-${String(expected.getDate()).padStart(2,'0')}`
+  assert.equal(entry.date,date)
+  db.prepare('DELETE FROM body_weight WHERE id=?').run(entry.id)
+  const saved=JSON.parse(db.prepare('SELECT parameters FROM program_plan WHERE program_id=?').get(made.id).parameters)
+  assert.equal(saved.weight_kg,75);assert.equal(saved.height_cm,175)
+  seedExercises(db)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM body_weight').get().n,0)
+ } finally {db.close()}
+})
+
+test('une mesure existante du jour est conservée, sans doublon ni remplacement silencieux',()=>{
+ const db=database()
+ try {
+  createPlannedProgram(db,{...params,weight_kg:76})
+  const existing=db.prepare('SELECT * FROM body_weight').get()
+  const made=createPlannedProgram(db,{...params,weight_kg:82})
+  assert.deepEqual(db.prepare('SELECT * FROM body_weight').all(),[existing])
+  assert.ok(made.warnings.some(w=>w.code==='bodyweight_today_exists'))
+  assert.equal(JSON.parse(db.prepare('SELECT parameters FROM program_plan WHERE program_id=?').get(made.id).parameters).weight_kg,82)
+  createPlannedProgram(db,{...params,weight_kg:null})
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM body_weight').get().n,1)
+ } finally {db.close()}
+})
+
+test('la création et sa mesure sont atomiques en cas d’échec de l’enregistrement du poids',()=>{
+ const db=database()
+ try {
+  db.exec("CREATE TRIGGER fail_creation_weight BEFORE INSERT ON body_weight BEGIN SELECT RAISE(ABORT,'TEST_WEIGHT_FAILURE'); END")
+  assert.throws(()=>createPlannedProgram(db,{...params,weight_kg:75}),/TEST_WEIGHT_FAILURE/)
+  for(const table of ['program','program_plan','workout_template','template_exercise','progression_state','body_weight'])assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n,0,table)
+ } finally {db.close()}
+})
