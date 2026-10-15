@@ -20,10 +20,10 @@ export async function isolatedApp() {
     await rm(directory,{recursive:true,force:true});throw new Error('Unsafe E2E environment')
   }
   let child,logs=''
-  async function stop() {
-    if (!child || child.exitCode!==null) return
+  async function stop(signal='SIGTERM') {
+    if (!child || child.exitCode!==null || child.signalCode!==null) return
     const exited=once(child,'exit')
-    child.kill('SIGTERM')
+    child.kill(signal)
     const timer=setTimeout(()=>child.kill('SIGKILL'),3000)
     try { await exited } finally {clearTimeout(timer)}
   }
@@ -45,7 +45,7 @@ export async function isolatedApp() {
   }
   try {await start()} catch(error){await rm(directory,{recursive:true,force:true});throw error}
   return {url:`http://127.0.0.1:${port}`,dbPath,directory,
-    async restart(){await stop();await start()},
+    async restart({abrupt=false}={}){await stop(abrupt?'SIGKILL':'SIGTERM');await start()},
     async dispose(logPath){try{await stop();if(logPath)await writeFile(logPath,logs)}finally{await rm(directory,{recursive:true,force:true})}},
   }
 }

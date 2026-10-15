@@ -1,4 +1,5 @@
 import { markRecord, refreshPersonalRecords, refreshSessionMetrics } from '../services/personalRecords.js'
+import { refreshHistoricalProgression } from '../services/trainingHistory.js'
 import { isFiniteNumber, isBoolean } from '../services/validation.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
@@ -25,14 +26,24 @@ router.get('/session-exercises/:seId/sets', (req, res) => {
 router.post('/session-exercises/:seId/sets', (req, res) => {
   try {
     const se = db.prepare(
-      'SELECT se.*, s.program_id FROM session_exercise se JOIN session s ON se.session_id = s.id WHERE se.id = ?'
+      'SELECT se.*, s.program_id, s.status FROM session_exercise se JOIN session s ON se.session_id = s.id WHERE se.id = ?'
     ).get(req.params.seId)
     if (!se) return res.status(404).json({ error: 'SESSION_EXERCISE_NOT_FOUND' })
+    if (se.status === 'completed' || se.status === 'skipped') return res.status(409).json({error:'SESSION_NOT_EDITABLE'})
 
     const { set_number, weight_kg, reps, rpe, rir, is_warmup, notes, is_completed } = req.body
     if (set_number === undefined) return res.status(400).json({ error: 'MISSING_SET_NUMBER' })
     if (!isFiniteNumber(set_number, { min: 1, integer: true }) || !validFields(req.body)) return res.status(400).json({ error: 'INVALID_SET_VALUES' })
     const set = db.transaction(() => {
+      const existing=db.prepare('SELECT * FROM set_log WHERE session_exercise_id=? AND set_number=? ORDER BY id LIMIT 1').get(se.id,set_number)
+      if (existing) {
+        const expected={weight_kg:weight_kg??0,reps:reps??0,rpe:rpe??null,rir:rir??null,
+          is_warmup:Number(!!is_warmup),is_completed:Number(!!is_completed),notes:notes??null}
+        if (Object.entries(expected).some(([key,value])=>existing[key]!==value)) {
+          const error=new Error('SET_NUMBER_EXISTS');error.status=409;throw error
+        }
+        return existing
+      }
       const previous = db.prepare('SELECT MAX(weight_kg) AS weight FROM personal_record WHERE exercise_id = ? AND reps = ?').get(se.exercise_id, reps ?? 0)
 
 
@@ -54,10 +65,11 @@ router.post('/session-exercises/:seId/sets', (req, res) => {
 
       const created = db.prepare('SELECT * FROM set_log WHERE id = ?').get(result.lastInsertRowid)
       return markRecord(db, created, previous?.weight || 0)
-    })()
+    }).immediate()
 
     res.status(201).json(set)
   } catch (err) {
+    if (err.status === 409) return res.status(409).json({error:err.message})
     console.error('[POST /session-exercises/:id/sets]', err.message)
     res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
@@ -103,6 +115,7 @@ router.delete('/sets/:id', (req, res) => {
       db.prepare('DELETE FROM set_log WHERE id = ?').run(req.params.id)
       refreshPersonalRecords(db, se.exercise_id)
       refreshSessionMetrics(db, se.session_id)
+      refreshHistoricalProgression(db,se.session_id,[se.exercise_id])
     })()
     res.status(204).end()
   } catch (err) {
@@ -149,6 +162,7 @@ router.delete('/session-exercises/:id', (req, res) => {
       db.prepare('DELETE FROM session_exercise WHERE id = ?').run(req.params.id)
       refreshPersonalRecords(db, se.exercise_id)
       refreshSessionMetrics(db, se.session_id)
+      refreshHistoricalProgression(db,se.session_id,[se.exercise_id])
     })()
     res.status(204).end()
   } catch (err) {

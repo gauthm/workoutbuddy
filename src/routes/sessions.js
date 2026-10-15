@@ -1,4 +1,6 @@
 import { resetSession } from '../services/sessionReset.js'
+import { invalidateSessionReview } from '../services/trainingHistory.js'
+import { isIsoDate } from '../services/validation.js'
 import { saveProgressionEvent, rebuildExerciseProgression, saveExerciseProgression, synchronizeTemplateProgression } from '../services/exerciseProgression.js'
 import { cannotStartProgram } from '../services/programLifecycle.js'
 import { localIsoDate, parseUtcTimestamp } from '../services/date.js'
@@ -58,6 +60,7 @@ router.post('/from-template/:templateId', (req, res) => {
 
     const { scheduled_date, apply_rotation } = req.body
     if (!scheduled_date) return res.status(400).json({ error: 'MISSING_DATE' })
+    if (!isIsoDate(scheduled_date)) return res.status(400).json({error:'INVALID_DATE_FORMAT'})
 
     const templateExercises = db.prepare(
       'SELECT * FROM template_exercise WHERE workout_template_id = ? ORDER BY order_index'
@@ -133,6 +136,7 @@ router.post('/', (req, res) => {
     const { name, scheduled_date, workout_template_id, program_id, is_deload } = req.body
     if (typeof name !== 'string' || !name.trim())       return res.status(400).json({ error: 'MISSING_NAME' })
     if (!scheduled_date)     return res.status(400).json({ error: 'MISSING_DATE' })
+    if (!isIsoDate(scheduled_date)) return res.status(400).json({error:'INVALID_DATE_FORMAT'})
 
     const result = db.prepare(`
       INSERT INTO session (name, scheduled_date, original_scheduled_date, workout_template_id, program_id, is_deload)
@@ -665,15 +669,18 @@ router.put('/:id', (req, res) => {
 
     const updates = []; const values = []
     if (req.body.name !== undefined) {
+      if (typeof req.body.name !== 'string' || !req.body.name.trim()) return res.status(400).json({error:'INVALID_SESSION_NAME'})
       updates.push('name = ?'); values.push(req.body.name.trim())
     }
     if (req.body.scheduled_date !== undefined) {
+      if (!isIsoDate(req.body.scheduled_date)) return res.status(400).json({error:'INVALID_DATE_FORMAT'})
       if (session.status !== 'planned') {
         return res.status(400).json({ error: 'CANNOT_CHANGE_DATE_OF_STARTED_SESSION' })
       }
       updates.push('scheduled_date = ?'); values.push(req.body.scheduled_date)
     }
     if (req.body.notes !== undefined) {
+      if (req.body.notes !== null && typeof req.body.notes !== 'string') return res.status(400).json({error:'INVALID_SESSION_NOTES'})
       updates.push('notes = ?'); values.push(req.body.notes)
     }
     if (updates.length === 0) return res.status(400).json({ error: 'NO_FIELDS_TO_UPDATE' })
@@ -705,6 +712,7 @@ router.delete('/:id', (req, res) => {
         for (const date of new Set([session.scheduled_date,session.original_scheduled_date].filter(Boolean))) exclude.run(session.program_id,date)
       }
       db.prepare('DELETE FROM session WHERE id = ?').run(req.params.id)
+      invalidateSessionReview(db,session)
       for (const exercise of exercises) {
         refreshPersonalRecords(db,exercise.exercise_id)
         if (session.status==='completed' && !session.is_deload) rebuildExerciseProgression(db,exercise.exercise_id)

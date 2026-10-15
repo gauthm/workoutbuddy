@@ -76,7 +76,9 @@ Ces règles sont des choix de programmation, avec des repères issus des recomma
 
 À la création, le moteur privilégie les exercices utilisant le matériel disponible et répartit les variantes entre les séances, par exemple développé à plat en A et incliné en B avec un banc réglable. La sélection inclut notamment le squat et le soulevé de terre avec haltères, le développé au sol et le rowing avec une kettlebell. Les exigences matérielles restent propres à chaque mouvement du catalogue : un haltère ne remplace pas automatiquement une kettlebell. Des exercices au poids du corps restent possibles quand ils sont pertinents ou que le matériel manque. L’estimation du temps compte les deux côtés des exercices unilatéraux. Une charge ajoutée manuellement à un exercice au poids du corps est enregistrée ; le moteur ne propose pas encore automatiquement de lest optionnel.
 
-Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Supprimer une séance recalcule les acquis à partir de l’historique restant. Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
+Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Corriger, annuler ou supprimer une série historique, retirer son exercice ou supprimer sa séance recalcule les acquis à partir de l’historique restant et invalide le bilan hebdomadaire concerné. Les semaines suivent le calendrier local. Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances réelles.
+
+Une série déjà enregistrée peut être renvoyée à l’identique sans doublon ; un renvoi avec des valeurs différentes est refusé pour éviter un écrasement silencieux. La fin de séance attend les sauvegardes en cours. Si la réponse réseau de fin ou d’annulation est perdue, l’interface vérifie l’état réellement enregistré avant de poursuivre.
 
 L’accueil donne accès à l’historique. Les statistiques présentent le volume, la progression, les records et le suivi du poids corporel.
 
@@ -129,16 +131,16 @@ L’export JSON et la sauvegarde locale contiennent des données personnelles ; 
 ## Tests et développement
 
 ```sh
-npm test                  # Tests unitaires, API et parcours complets
+npm test                  # Tests unitaires, API et parcours complets sans port TCP
 npm run test:journeys     # Sept parcours de fiabilité
 npm run test:e2e          # Vrais parcours navigateur, ordinateur et mobile
 npm run test:e2e -- sessions  # Domaine séance uniquement
 npm run test:e2e:affected # Domaines concernés par les fichiers modifiés
 npm run hooks:install    # Contrôles avant push pour ce dépôt
-npm run test:in-process   # Suite avec requêtes Express sans port TCP
+npm run test:in-process   # Même suite que npm test, alias du hook
 ```
 
-Les tests utilisent des bases isolées en mémoire ou temporaires. Les parcours complets exécutent l’API et le moteur réels sans service IA : programme/calendrier, séance/progression, suppressions/historique, export/import, réglages, remplacement et rollback d’un import invalide. Voir [leur guide](tests/journeys/README.md).
+Les tests utilisent des bases isolées en mémoire ou temporaires. Par défaut, `npm test` exécute les requêtes Express directement, sans ports TCP éphémères ; les vrais échanges HTTP sont couverts par Playwright. Les parcours complets exécutent l’API et le moteur réels sans service IA : programme/calendrier, séance/progression, suppressions/historique, export/import, réglages, remplacement et rollback d’un import invalide. Voir [leur guide](tests/journeys/README.md). `tests/integration/reliabilityStress.test.js` ajoute une simulation de 24 séances sur douze semaines, doubles requêtes, corrections historiques, imports incohérents, rollback et allègement après fatigue. Le temps historique y est préparé dans les fixtures ; le serveur et les calculs restent réels. Résultats et limites : [audit de fiabilité](docs/RELIABILITY_AUDIT.md).
 
 Les tests de `tests/e2e/` pilotent le navigateur contre le vrai serveur et une base temporaire indépendante pour chaque cas, sans réponses API simulées. Ils sont séparés par domaine : programmes, séances, historique/calendrier, matériel, réglages, données, exercices et statistiques. Les parcours vérifient aussi rechargements, redémarrages et erreurs réseau ; ils tournent sous Chrome en formats ordinateur et mobile. Le hook avant push lance les tests métier/API avec `test:in-process` (sans ouvrir de ports TCP), puis les domaines navigateur concernés par les commits, contre de vrais serveurs HTTP. Voir [installation, sélection et rapports](tests/e2e/README.md).
 

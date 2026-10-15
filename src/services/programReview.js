@@ -1,24 +1,24 @@
 import { shouldDeload } from './deloadEngine.js'
+import { localIsoDate } from './date.js'
 
 // Review the last closed calendar week, once. Never replace exercises or progression state.
 export function reviewProgramWeek(db, programId, now = new Date()) {
   const plan = db.prepare('SELECT program_id FROM program_plan WHERE program_id=?').get(programId)
   if (!plan) return null
   const program = db.prepare('SELECT * FROM program WHERE id=?').get(programId)
-  const date = new Date(now)
-  date.setUTCHours(0,0,0,0)
+  const date = new Date(localIsoDate(now)+'T12:00:00Z')
   date.setUTCDate(date.getUTCDate() - (date.getUTCDay() + 6) % 7)
   const end = date.toISOString().slice(0,10)
   date.setUTCDate(date.getUTCDate() - 7)
   const start = date.toISOString().slice(0,10)
   const existing = db.prepare('SELECT * FROM program_weekly_review WHERE program_id=? AND week_start=?').get(programId,start)
   if (existing) return { ...existing, evidence:JSON.parse(existing.evidence) }
-  const first = db.prepare("SELECT MIN(date(completed_at)) AS date FROM session WHERE program_id=? AND status='completed'").get(programId)
+  const first = db.prepare("SELECT MIN(date(completed_at,'localtime')) AS date FROM session WHERE program_id=? AND status='completed'").get(programId)
   if (!first?.date || first.date >= end) return null
   const sessions = db.prepare(`SELECT s.id, AVG(sl.rpe) AS effort, COUNT(sl.id) AS work_sets
     FROM session s JOIN session_exercise se ON se.session_id=s.id
     JOIN set_log sl ON sl.session_exercise_id=se.id
-    WHERE s.program_id=? AND s.status='completed' AND date(s.completed_at)>=? AND date(s.completed_at)<?
+    WHERE s.program_id=? AND s.status='completed' AND date(s.completed_at,'localtime')>=? AND date(s.completed_at,'localtime')<?
       AND sl.is_completed=1 AND sl.is_warmup=0 AND sl.reps>0
     GROUP BY s.id`).all(programId,start,end)
   const settings = Object.fromEntries(db.prepare('SELECT key,value FROM settings').all().map(r => [r.key,JSON.parse(r.value)]))
@@ -34,7 +34,7 @@ export function reviewProgramWeek(db, programId, now = new Date()) {
     }
   }
   return db.transaction(() => {
-    if (decision === 'deload') db.prepare("UPDATE program SET is_in_deload=1,last_deload_date=?,updated_at=datetime('now') WHERE id=?").run(now.toISOString().slice(0,10),programId)
+    if (decision === 'deload') db.prepare("UPDATE program SET is_in_deload=1,last_deload_date=?,updated_at=datetime('now') WHERE id=?").run(localIsoDate(now),programId)
     db.prepare('INSERT INTO program_weekly_review (program_id,week_start,decision,evidence) VALUES (?,?,?,?)').run(programId,start,decision,JSON.stringify(evidence))
     return { program_id:programId,week_start:start,decision,evidence }
   })()
@@ -43,7 +43,9 @@ export function reviewProgramWeek(db, programId, now = new Date()) {
 // A lighter week lasts seven days; it never permanently lowers normal targets.
 export function expireProgramDeload(db, programId, now = new Date()) {
   const program = db.prepare('SELECT p.* FROM program p JOIN program_plan pp ON pp.program_id=p.id WHERE p.id=?').get(programId)
-  if (program?.is_in_deload && program.last_deload_date && now.getTime() - Date.parse(program.last_deload_date + 'T00:00:00Z') >= 7 * 86400000) {
+  const end=program?.last_deload_date ? new Date(program.last_deload_date+'T12:00:00Z') : null
+  if (end) end.setUTCDate(end.getUTCDate()+7)
+  if (program?.is_in_deload && end && localIsoDate(now)>=end.toISOString().slice(0,10)) {
     db.prepare("UPDATE program SET is_in_deload=0,updated_at=datetime('now') WHERE id=?").run(programId)
   }
 }

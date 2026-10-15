@@ -34,7 +34,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | Fichier | Parcours et cas limites |
 | --- | --- |
 | `programs.spec.js` | Questionnaire, aperçu, activation, durée illimitée, jours valides/invalides, remplacement compatible |
-| `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue sans doublon, continuer/quitter sans enregistrer |
+| `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue avant/après écriture sans doublon, conflit de réessai, fin bloquée pendant sauvegarde, réponses de fin/annulation perdues, arrêt brutal, continuer/quitter sans enregistrer |
 | `history.spec.js` | Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement, réinitialisation d’une séance terminée |
 | `equipment.spec.js` | Ajout quantité/poids, sauvegarde persistante, saisie invalide et annulation du brouillon |
 | `settings.spec.js` | Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise |
@@ -51,7 +51,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 npm run hooks:install
 ```
 
-Cette commande active `.githooks` **pour ce dépôt seulement**. Elle refuse de remplacer un autre chemin de hooks ou un hook pre-push existant. Ensuite chaque push lance `npm run test:in-process`, puis les domaines Playwright concernés par les commits effectivement poussés. Le mode in-process, déjà présent dans le projet, exécute Express et ses routes sans ouvrir de ports TCP éphémères pour les tests métier/API ; le réseau HTTP réel reste testé par Playwright. Une nouvelle branche ou une référence distante indisponible déclenche toute la suite. Un échec empêche le push. Une suppression de branche ne lance pas les tests.
+Cette commande active `.githooks` **pour ce dépôt seulement**. Elle refuse de remplacer un autre chemin de hooks ou un hook pre-push existant. Ensuite chaque push lance `npm run test:in-process`, puis les domaines Playwright concernés par les commits effectivement poussés. Le mode in-process, également utilisé par défaut par `npm test`, exécute Express et ses routes sans ouvrir de ports TCP éphémères pour les tests métier/API ; le réseau HTTP réel reste testé par Playwright. Une nouvelle branche ou une référence distante indisponible déclenche toute la suite. Un échec empêche le push. Une suppression de branche ne lance pas les tests.
 
 Pour le développement courant, lancer le domaine touché ou `test:e2e:affected`, en plus des tests métier. Les changements de tests se vérifient aussi en exécutant le fichier concerné.
 

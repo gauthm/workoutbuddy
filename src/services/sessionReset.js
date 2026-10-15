@@ -1,5 +1,6 @@
 import { refreshPersonalRecords } from './personalRecords.js'
 import { rebuildExerciseProgression } from './exerciseProgression.js'
+import { invalidateSessionReview } from './trainingHistory.js'
 
 export function resetSession(db,id,expectedStatus) {
   if (!['in_progress','completed'].includes(expectedStatus)) {
@@ -24,9 +25,7 @@ export function resetSession(db,id,expectedStatus) {
       refreshPersonalRecords(db,exerciseId)
       if(session.status==='completed' && !session.is_deload)rebuildExerciseProgression(db,exerciseId)
     }
-    if(session.program_id && session.completed_at)db.prepare(`DELETE FROM program_weekly_review
-      WHERE program_id=? AND week_start<=date(?) AND date(week_start,'+7 days')>date(?)`)
-      .run(session.program_id,session.completed_at,session.completed_at)
+    invalidateSessionReview(db,session)
     return db.prepare('SELECT * FROM session WHERE id=?').get(id)
   }).immediate()
 }

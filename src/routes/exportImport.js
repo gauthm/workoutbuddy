@@ -1,6 +1,7 @@
 import { isKnownCatalogueAlias, mergeCatalogueAliases } from '../services/catalogueCleanup.js'
 import { resetProfile } from './userProfile.js'
 import { createBackup } from '../db/backup.js'
+import { isIsoDate, isFiniteNumber, isBoolean } from '../services/validation.js'
 import express   from 'express'
 import fs        from 'fs'
 import path      from 'path'
@@ -133,6 +134,18 @@ router.post('/import', (req, res) => {
     if ((d.coach_conversations === undefined) !== (d.coach_messages === undefined)) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
     if (d.user_profile !== undefined && (!d.user_profile || typeof d.user_profile !== 'object' || Array.isArray(d.user_profile))) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
     const customIds = new Set()
+    if (d.programs.some(p=>!p || p.is_active !== undefined && !isBoolean(p.is_active)) ||
+        d.programs.filter(p=>p.is_active===1 || p.is_active===true).length>1 ||
+        d.sessions.some(s=>!s || !isIsoDate(s.scheduled_date)) ||
+        d.sessions.filter(s=>s.status==='in_progress').length>1 ||
+        d.body_weights.some(w=>!w || !isIsoDate(w.date) || !isFiniteNumber(w.weight_kg,{min:Number.MIN_VALUE})) ||
+        d.set_logs.some(s=>!s || !isFiniteNumber(s.set_number,{min:1,integer:true}) ||
+          !isFiniteNumber(s.weight_kg,{min:0}) || !isFiniteNumber(s.reps,{min:0,integer:true}) ||
+          s.rpe != null && !isFiniteNumber(s.rpe,{min:0,max:10}) ||
+          s.rir != null && !isFiniteNumber(s.rir,{min:0}) ||
+          s.is_completed !== undefined && !isBoolean(s.is_completed) || s.is_warmup !== undefined && !isBoolean(s.is_warmup))) {
+      return res.status(400).json({error:'INVALID_IMPORT_FORMAT',detail:'Dates, mesures, séries ou états actifs incohérents.'})
+    }
     for (const exercise of d.exercises) {
       if (!exercise || typeof exercise.id !== 'string' || !exercise.id || customIds.has(exercise.id)
         || db.prepare('SELECT id FROM exercise WHERE id = ? AND is_custom = 0').get(exercise.id)) {

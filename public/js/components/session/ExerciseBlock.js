@@ -15,7 +15,7 @@ export default {
     exerciseDetail:{type:Object,default:null}, history:{type:Array,default:()=>[]}, target:{type:Object,default:null},
     expanded:{type:Boolean,default:true}, index:{type:Number,default:1}, total:{type:Number,default:1},
   },
-  emits:['set-validated','sets-changed','rest-start','set-reverted','toggle','next'],
+  emits:['set-validated','sets-changed','rest-start','set-reverted','toggle','next','saving-change'],
   setup(props,{emit}) {
     const store=inject('store')
     let sequence=0
@@ -85,7 +85,7 @@ export default {
           :target-weight="row.set.is_warmup ? 0 : nextWeight()" :target-reps="row.set.is_warmup ? 8 : nextReps()"
           :set-number="row.set.set_number" :display-number="rowNumber(row)" :is-new="!row.set.id" :is-warmup="!!row.set.is_warmup"
           :rm-applicable="rmApplicable" :is-current="row.key === currentKey" :rest-seconds="restSeconds"
-          @validated="onValidated(row,$event)" @reverted="onReverted(row,$event)" @rest-start="$emit('rest-start',$event)" />
+          @validated="onValidated(row,$event)" @reverted="onReverted(row,$event)" @rest-start="$emit('rest-start',$event)" @saving-change="$emit('saving-change',$event)" />
         <div class="exercise-block__tools">
           <button type="button" class="btn btn--secondary btn--sm" @click="state.showWarmup=true">{{t('session.warmup')}}</button>
         </div>

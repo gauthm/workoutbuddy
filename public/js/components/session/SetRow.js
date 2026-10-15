@@ -13,7 +13,7 @@ export default {
     restSeconds: { type: Number, default: 90 }, rmApplicable: { type: Boolean, default: true },
     isWarmup: { type: Boolean, default: false }, isCurrent: { type: Boolean, default: false },
   },
-  emits: ['validated', 'reverted', 'rest-start'],
+  emits: ['validated', 'reverted', 'rest-start', 'saving-change'],
   setup(props, { emit }) {
     const store = inject('store')
     const local = reactive({weight_kg: props.set.weight_kg ?? props.targetWeight,
@@ -34,6 +34,7 @@ export default {
       }
       const wasDone = done.value
       local.saving = true
+      emit('saving-change',true)
       try {
         const body = {weight_kg: weight, reps, rpe, is_completed: true}
         const result = props.isNew
@@ -42,17 +43,18 @@ export default {
         if (result._new_pr) store.showToast(t('session.pr_toast', {weight: result.weight_kg, reps: result.reps, rm: result._estimated_1rm}), 'success', 5000)
         emit('validated', result)
         if (!wasDone) emit('rest-start', {seconds: props.isWarmup ? Math.min(props.restSeconds,60) : props.restSeconds, setId: result.id})
-      } catch (error) { store.showToast(error.detail || error.message, 'error') }
-      finally {local.saving = false}
+      } catch (error) { store.showToast(error.message === 'SET_NUMBER_EXISTS' ? t('session.set_conflict') : error.detail || error.message, 'error') }
+      finally {local.saving = false;emit('saving-change',false)}
     }
     async function revert() {
       if (local.saving || !done.value) return
       local.saving=true
+      emit('saving-change',true)
       try {
         const result=await api.update(props.set.id,{is_completed:false})
         emit('reverted',result)
       } catch(error) {store.showToast(error.detail || error.message,'error')}
-      finally {local.saving=false}
+      finally {local.saving=false;emit('saving-change',false)}
     }
     const tenRM = computed(() => {
       if (!props.rmApplicable) return null

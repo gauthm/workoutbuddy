@@ -32,7 +32,8 @@ function session(status = 'in_progress') {
   return {id,se}
 }
 async function set(se,weight,reps=8) {
-  const res = await request(app).post(`/api/v1/session-exercises/${se}/sets`).send({set_number:1,weight_kg:weight,reps,is_completed:true})
+  const number=db.prepare('SELECT COALESCE(MAX(set_number),0)+1 n FROM set_log WHERE session_exercise_id=?').get(se).n
+  const res = await request(app).post(`/api/v1/session-exercises/${se}/sets`).send({set_number:number,weight_kg:weight,reps,is_completed:true})
   assert.equal(res.status,201)
   return res.body
 }
@@ -92,8 +93,9 @@ test('modifier ou supprimer un record restaure la meilleure série restante',asy
 })
 
 test('supprimer une séance avec un record respecte les clés étrangères',async()=>{
-  const {id,se}=session('completed')
+  const {id,se}=session()
   await set(se,80)
+  assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
   assert.equal((await request(app).delete(`/api/v1/sessions/${id}`)).status,204)
   assert.equal(db.prepare('SELECT COUNT(*) n FROM session WHERE id=?').get(id).n,0)
   assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0)
@@ -110,9 +112,10 @@ test('un second démarrage conserve le début ; une séance planifiée ne peut p
 
 test('la progression journalière n’invente pas une série en combinant les MAX',async()=>{
   db.prepare("UPDATE settings SET value='\"epley\"' WHERE key='rm_formula'").run()
-  const {se}=session('completed')
+  const {id,se}=session()
   await set(se,100,3)
   await set(se,40,20)
+  assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
   const res=await request(app).get('/api/v1/stats/exercises/audit_ex/progress')
   assert.equal(res.status,200)
   const row=res.body.data.find(x=>x.date===today)
@@ -122,8 +125,9 @@ test('la progression journalière n’invente pas une série en combinant les MA
 })
 
 test('modifier une série historique recalcule aussi le volume de sa séance',async()=>{
-  const {id,se}=session('completed')
+  const {id,se}=session()
   const created=await set(se,50,8)
+  assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
   assert.equal(db.prepare('SELECT total_volume_kg FROM session WHERE id=?').get(id).total_volume_kg,400)
   assert.equal((await request(app).put(`/api/v1/sets/${created.id}`).send({weight_kg:40})).status,200)
   assert.equal(db.prepare('SELECT total_volume_kg FROM session WHERE id=?').get(id).total_volume_kg,320)
@@ -182,8 +186,9 @@ test('un export supérieur à 100 ko peut être réimporté',async()=>{
 })
 
 test('annuler puis revalider une série conserve ses valeurs et recalcule records et volume',async()=>{
-  const {id,se}=session('completed')
+  const {id,se}=session()
   const created=await set(se,50,8)
+  assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
   const undone=await request(app).put(`/api/v1/sets/${created.id}`).send({is_completed:false})
   assert.equal(undone.status,200)
   assert.equal(undone.body.is_completed,0)

@@ -32,7 +32,7 @@ export default {
       session: null,
       exercises: [],    // [{ sessionExercise, exerciseDetail, history, target }]
       showCompleteConfirm: false,
-      completing: false,
+      completing: false, pendingSaves:0,
       adjustments: [],      // ajustements retournés par POST /start
       showAdjustments: true,
       activeProgram: null, selectedExerciseId: null, restSequence: 0,
@@ -114,10 +114,15 @@ export default {
     }
 
     async function completeSession() {
-      if (!state.session || state.completing) return
+      if (!state.session || state.completing || state.pendingSaves) return
       state.completing = true
       try {
-        await sessionsApi.complete(state.session.id)
+        try { await sessionsApi.complete(state.session.id) }
+        catch(error) {
+          // A lost HTTP response does not imply the transaction failed.
+          const saved=await sessionsApi.get(state.session.id).catch(()=>null)
+          if(saved?.status!=='completed')throw error
+        }
         store.clearActiveSession()
         store.showToast(t('session.completed_toast'), 'success')
         router.push('#/session/history')
@@ -130,10 +135,14 @@ export default {
     }
 
     async function discardSession() {
-      if(!state.session || state.completing)return
+      if(!state.session || state.completing || state.pendingSaves)return
       state.completing=true
       try {
-        await sessionsApi.reset(state.session.id,'in_progress')
+        try {await sessionsApi.reset(state.session.id,'in_progress')}
+        catch(error) {
+          const saved=await sessionsApi.get(state.session.id).catch(()=>null)
+          if(saved?.status!=='planned' || saved.started_at || saved.exercises.some(ex=>ex.sets.length))throw error
+        }
         store.clearActiveSession()
         store.showToast(t('session.discarded'),'info')
         router.replace('#/')
@@ -166,6 +175,7 @@ export default {
           v-if="state.session"
           class="btn btn--primary"
           style="padding:0.35rem 0.75rem;font-size:0.8rem"
+          :disabled="state.completing || state.pendingSaves > 0"
           @click="state.showCompleteConfirm = true">
           {{ t('session.complete') }}
         </button>
@@ -216,7 +226,7 @@ export default {
             :target="item.target"
             :index="index+1" :total="state.exercises.length" :expanded="state.selectedExerciseId === item.sessionExercise.id"
             @toggle="state.selectedExerciseId = state.selectedExerciseId === item.sessionExercise.id ? null : item.sessionExercise.id"
-            @sets-changed="setsChanged(item,$event)" @rest-start="startRest(item,$event)" @set-reverted="setReverted(item,$event)" @next="nextExercise(item)"
+            @sets-changed="setsChanged(item,$event)" @rest-start="startRest(item,$event)" @set-reverted="setReverted(item,$event)" @next="nextExercise(item)" @saving-change="state.pendingSaves = Math.max(0,state.pendingSaves + ($event ? 1 : -1))"
           />
         </template>
 
@@ -234,8 +244,8 @@ export default {
         <p v-if="remainingSets>0" class="modal__body">{{t('session.finish_remaining',{n:remainingSets})}}</p>
         <div class="session-exit-actions">
           <button class="btn btn--secondary" :disabled="state.completing" @click="state.showCompleteConfirm=false">{{t('session.continue_workout')}}</button>
-          <button class="btn btn--danger" :disabled="state.completing" @click="discardSession()">{{t('session.discard_exit')}}</button>
-          <button class="btn btn--primary" :disabled="state.completing" @click="completeSession()">{{t('session.save_exit')}}</button>
+          <button class="btn btn--danger" :disabled="state.completing || state.pendingSaves > 0" @click="discardSession()">{{t('session.discard_exit')}}</button>
+          <button class="btn btn--primary" :disabled="state.completing || state.pendingSaves > 0" @click="completeSession()">{{t('session.save_exit')}}</button>
         </div>
       </ModalDialog>
     </div>

@@ -1,4 +1,5 @@
 import { estimate1RM } from './rmCalculator.js'
+import { refreshHistoricalProgression } from './trainingHistory.js'
 
 export function refreshPersonalRecords(db, exerciseId) {
   const setting = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
@@ -25,6 +26,7 @@ export function markRecord(db, set, previousWeight = 0) {
   const se = db.prepare('SELECT exercise_id, session_id FROM session_exercise WHERE id = ?').get(set.session_exercise_id)
   refreshPersonalRecords(db, se.exercise_id)
   refreshSessionMetrics(db, se.session_id)
+  refreshHistoricalProgression(db,se.session_id,[se.exercise_id])
   if (set.is_completed && !set.is_warmup && set.weight_kg > previousWeight && set.reps > 0) {
     const record = db.prepare('SELECT * FROM personal_record WHERE set_log_id = ?').get(set.id)
     if (record) { set._new_pr = true; set._estimated_1rm = record.estimated_1rm_kg }

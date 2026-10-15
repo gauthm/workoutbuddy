@@ -38,7 +38,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | --- | --- |
 | Création des programmes | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
 | Planification et durée | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
-| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js` |
+| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
 | Remplacement et contraintes | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
 | Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
 | Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
@@ -64,7 +64,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 
 | Emplacement | Contenu |
 | --- | --- |
-| `tests/unit/`, `tests/integration/` | Logique métier et API |
+| `tests/unit/`, `tests/integration/` | Logique métier et API ; `reliabilityStress.test.js` pour les simulations de durée et incidents |
 | `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
 | `tests/helpers/` | Exécution isolée des requêtes |
 | `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
