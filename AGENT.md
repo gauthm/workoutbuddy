@@ -40,7 +40,6 @@ Express + SQLite + Vue 3, **aucun build frontend**, `npm start` = tout.
 | Modifier une migration existante | Nouveau fichier `NNN_description.sql` |
 | `data/workoutbuddy.db` dans un test | DB `:memory:` |
 | Deuxième instance better-sqlite3 | Singleton `getDb()` |
-| Charger `PLAN_FULL.md` en entier | Voir §5 |
 
 ---
 
@@ -56,7 +55,7 @@ Codes : 200 OK · 201 Créé · 204 Supprimé · 400 Bad request · 404 Not foun
 
 **Composants** — `{ name, props, template, setup() }`. Props déclarées avec types.
 
-**i18n** — chaque nouveau texte visible : clé dans `fr.json` + `fr.json` + `t('clé')` dans le template.
+**i18n** — chaque nouveau texte visible : clé dans `fr.json` + `en.json` + `t('clé')` dans le template.
 
 **Cache SW** — toute modification de `public/` : bumper `CACHE_NAME` dans `public/sw.js`
 (`workoutbuddy-vN` → `vN+1`) et ajouter les nouveaux fichiers `.js` dans `PRECACHE_URLS`.
@@ -65,27 +64,16 @@ Codes : 200 OK · 201 Créé · 204 Supprimé · 400 Bad request · 404 Not foun
 
 ## 5. Comment trouver l'information
 
-```
-AGENT.md       → règles globales (ce fichier)
-CODEBASE.md    → index du code : où est chaque fichier, chaque fonction, chaque route
-TASKS.md       → liste des tâches et leur statut
-docs/plan/tasks/T{X}.{Y}_*.md → détail auto-suffisant d'une tâche
-```
+- [README.md](README.md) : installation, fonctionnement actuel et commandes.
+- [CODEBASE.md](CODEBASE.md) : index pour trouver les fichiers concernés.
+- [TASKS.md](TASKS.md) : travail en cours ou restant à faire.
+- [tests/e2e/README.md](tests/e2e/README.md) et [tests/journeys/README.md](tests/journeys/README.md) : guides des tests.
 
-**Pour chaque session :**
-1. Lire `TASKS.md` → trouver la prochaine tâche non cochée `[ ]`
-2. Vérifier que ses dépendances sont `[x]`
-3. Charger `docs/plan/tasks/T{X}.{Y}_*.md`
-4. Charger **uniquement** les fichiers source listés dans « Fichiers concernés »
-5. Implémenter → `npm test` → cocher `[x]` dans `TASKS.md`
+Pour chaque demande : lire les tâches en cours, identifier les fichiers concernés dans l’index, puis charger seulement les sources utiles. Implémenter, exécuter les contrôles adaptés et retirer les tâches terminées après validation. Ne pas recréer les anciens plans ni dupliquer le fonctionnement dans des comptes rendus.
 
-**Si `TASKS.md` n'a plus de case à cocher** → pas d'initiative. Faire uniquement
-ce que l'utilisateur demande explicitement.
+Si aucune tâche n’est en attente, travailler uniquement sur la demande explicite de l’utilisateur. L’historique des changements et anciennes tâches se trouve dans Git. Chercher les informations manquantes dans les guides puis les sources avant de poser une question.
 
-**Si une info semble manquer** : chercher dans `AGENT.md`, puis `CODEBASE.md`,
-puis les fichiers source. Poser la question en dernier recours.
-
-**Taille cible par session :** `AGENT.md` + fichier tâche + fichiers source concernés
+**Taille cible par session :** `AGENT.md` + tâche en cours + fichiers source concernés
 = **< 30 k tokens**.
 Si un fichier source dépasse 500 lignes, copier seulement les sections pertinentes.
 

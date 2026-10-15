@@ -148,4 +148,4 @@ Les anciens scénarios de `tests/ui/` servent aux contrôles visuels complément
 
 Le frontend utilise des modules JavaScript et des composants Vue avec templates, sans fichiers `.vue` ni compilation. Le backend utilise Express et SQLite synchrone. Les migrations existantes restent immuables ; les nouveaux changements de schéma prennent la forme d’une migration numérotée. Toute modification de `public/` doit mettre à jour le cache du service worker.
 
-Pour naviguer dans le dépôt : [CODEBASE.md](CODEBASE.md) est l’index du code, [AGENT.md](AGENT.md) contient les règles de développement et [TASKS.md](TASKS.md) suit les tâches. Les audits et suivis détaillés sont dans [docs/](docs/).
+Pour naviguer dans le dépôt : [CODEBASE.md](CODEBASE.md) est l’index du code, [AGENT.md](AGENT.md) contient les règles de développement et [TASKS.md](TASKS.md) suit les tâches. Le [dernier audit de fiabilité](docs/RELIABILITY_AUDIT.md) précise la couverture et ses limites. Les tâches terminées et anciens plans restent consultables dans l’historique Git.

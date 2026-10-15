@@ -30,6 +30,4 @@ Chaque processus utilise une base `:memory:`, configurée avant les imports et v
 
 Lancer `npm test` après les changements de logique ou de données. Ajouter un cas ciblé pour chaque bug corrigé et étendre ces parcours lorsqu’un changement affecte plusieurs fonctionnalités. Ne pas affaiblir une assertion pour masquer une régression ; adapter une attente uniquement lorsque le comportement attendu ou le contrat API a volontairement changé.
 
-Ces parcours couvrent l’API, pas le rendu ni les clics dans le navigateur. Les scripts `tests/ui/pending-settings-save-checks.js`, `tests/ui/program-exercise-replacement-checks.js` et `tests/ui/audit-corrections-checks.js` complètent cette couverture via Playwright sur un aperçu isolé avec réponses API simulées. Ils ne font pas partie de `npm test`. Vérifier ces interactions lorsqu’un changement touche l’interface, en particulier l’annulation d’un brouillon qui n’envoie aucune requête de sauvegarde.
-
-Validation du 14 octobre 2026 : 386 tests passent dans `npm test`, dont les sept parcours ; vérification Playwright des réglages à 320, 390, 768 et 1280 px, sans erreur JavaScript.
+Ces parcours couvrent l’API. Pour les clics, le rendu, les interruptions réseau et les redémarrages du vrai serveur, utiliser les parcours Playwright isolés de `tests/e2e/` : [guide](../e2e/README.md). Ils tournent en formats ordinateur et mobile et sont sélectionnés par domaine avec `npm run test:e2e:affected`.
