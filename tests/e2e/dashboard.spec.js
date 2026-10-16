@@ -17,26 +17,37 @@ async function fits(page,info,state){
   for(const [name,width,height,top,bottom] of screens){
    await page.setViewportSize({width,height})
    await cdp.send('Emulation.setSafeAreaInsetsOverride',{insets:{top,bottom,left:0,right:0}})
+   await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}))
    await expect.poll(()=>page.evaluate(top=>{
     const errors=[],nav=document.querySelector('.bottom-nav').getBoundingClientRect()
-    if(document.documentElement.scrollHeight>innerHeight+1)errors.push('vertical scroll')
+    const shortScreen=innerHeight<=700
+    if(!shortScreen && document.documentElement.scrollHeight>innerHeight+1)errors.push('vertical scroll')
     if(document.documentElement.scrollWidth>innerWidth)errors.push('horizontal scroll')
     if(scrollY!==0)errors.push('page already scrolled')
     const grid=document.querySelector('.calendar-grid').getBoundingClientRect(),legend=document.querySelector('.calendar-legend').getBoundingClientRect()
     if(grid.bottom>legend.top+.5)errors.push('calendar overlaps its legend')
     const calendar=document.querySelector('.calendar-embedded').getBoundingClientRect()
-    if(Math.abs(calendar.bottom-nav.top)>2)errors.push('calendar leaves unused space above navigation')
-    if(innerHeight>=800 && grid.height<300)errors.push('calendar too small for available height')
+    if(!shortScreen && Math.abs(calendar.bottom-nav.top)>2)errors.push('calendar leaves unused space above navigation')
+    const header=document.querySelector('.dashboard-view .page-header').getBoundingClientRect()
+    const shortcuts=document.querySelector('.dashboard-shortcuts').getBoundingClientRect()
+    const program=document.querySelector('.dashboard-program,.dashboard-view .empty-state').getBoundingClientRect()
+    if(document.querySelector('.page-header .dashboard-shortcuts'))errors.push('shortcuts still in header')
+    if(shortcuts.top<program.bottom-.5)errors.push('shortcuts not below program')
+    if(shortcuts.bottom>calendar.top+.5)errors.push('shortcuts overlap calendar')
+    if(program.height<56 && document.querySelector('.dashboard-program'))errors.push('program bar too small')
+    if(document.querySelector('.calendar-day-panel').getBoundingClientRect().height<140)errors.push('day panel too small')
     for(const button of document.querySelectorAll('.dashboard-shortcuts .btn')){
      const style=getComputedStyle(button)
      if(parseFloat(style.borderTopWidth)<1 || style.borderTopStyle==='none' || style.backgroundColor==='rgba(0, 0, 0, 0)')errors.push('shortcut lacks a visible button surface')
     }
     for(const element of document.querySelectorAll('.dashboard-view button,.dashboard-view .empty-state__message,.dashboard-view .weekly-complete,.dashboard-view .calendar-legend,.dashboard-view .calendar-day-session__name,.dashboard-view .calendar-day-session__status,.dashboard-view .calendar-day-panel__date')){
      if(!element.getClientRects().length)continue
+     if(shortScreen)element.scrollIntoView({block:'center',behavior:'instant'})
      const r=element.getBoundingClientRect()
-     if(r.bottom>nav.top+.5 || r.top<top-.5 || r.left<-.5 || r.right>innerWidth+.5)errors.push(element.className+': outside usable screen')
+     if(r.bottom>nav.top+.5 || r.top<(shortScreen?header.bottom:top)-.5 || r.left<-.5 || r.right>innerWidth+.5)errors.push(element.className+': outside usable screen')
      if(element.scrollHeight>element.clientHeight+1)errors.push(element.className+': clipped text')
     }
+    window.scrollTo({top:0,behavior:'instant'})
     return errors
    },top),{message:state+' on '+name}).toEqual([])
    await page.screenshot({path:info.outputPath(`${state}-${name}.png`)})
@@ -44,7 +55,7 @@ async function fits(page,info,state){
  }finally{await cdp.detach()}
 }
 
-test('accueil sans programme : mois de six semaines, journée vide et thème clair sans défilement',async({page,request},info)=>{
+test('accueil sans programme : six semaines, raccourcis sous le programme et thème clair',async({page,request},info)=>{
  await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
  for(const theme of ['dark','light']){
   await call(request,'put','/settings',{theme})
@@ -54,6 +65,13 @@ test('accueil sans programme : mois de six semaines, journée vide et thème cla
   await expect(page.getByRole('button',{name:L('programs.new'),exact:true})).toBeVisible()
   await fits(page,info,'empty-'+theme)
  }
+ const shortcuts=page.locator('.dashboard-shortcuts')
+ await shortcuts.getByRole('button',{name:L('programs.title'),exact:true}).click()
+ await page.waitForURL('**/#/programs')
+ await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
+ await shortcuts.getByRole('button',{name:L('session.history_title'),exact:true}).click()
+ await page.waitForURL('**/#/session/history')
+ await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
  await page.getByRole('button',{name:L('programs.new'),exact:true}).click()
  await page.waitForURL('**/#/programs/new')
 })
@@ -115,7 +133,7 @@ test('accueil : libellé exact des cinq objectifs du formulaire, en français et
  }
 })
 
-test('accueil sans programme avec historique : reprise et séance terminée accessibles sans scroll',async({page,request},info)=>{
+test('accueil sans programme avec historique : reprise et séance terminée accessibles',async({page,request},info)=>{
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'})
  for(const [name,complete] of [['Séance terminée avec un nom assez long pour revenir à la ligne',true],['Séance à reprendre avec toutes ses informations visibles',false]]){
   const session=await call(request,'post','/sessions',{name,scheduled_date:today},201)

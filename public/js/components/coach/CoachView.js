@@ -1,5 +1,5 @@
 import ModalDialog from '../common/ModalDialog.js'
-import { reactive, ref, onMounted, onActivated, onDeactivated, onBeforeUnmount, inject, nextTick }
+import { reactive, ref, watch, onMounted, onActivated, onDeactivated, onBeforeUnmount, inject, nextTick }
   from '/vendor/vue.esm-browser.prod.js'
 import { coach as coachApi, userProfile as profileApi } from '../../api.js'
 import { t } from '../../i18n.js'
@@ -42,7 +42,17 @@ export default {
     const messagesEndRef = ref(null)
     let streamController = null
     let isActive = false
-    onBeforeUnmount(() => { streamController?.abort() })
+    const chatResizeObserver = new ResizeObserver(() => { scrollToBottom() })
+    watch(messagesEndRef, end => {
+      chatResizeObserver.disconnect()
+      if (!end) return
+      chatResizeObserver.observe(end.parentElement)
+      chatResizeObserver.observe(end.closest('.coach-view__content'))
+    }, { flush: 'post' })
+    onBeforeUnmount(() => {
+      streamController?.abort()
+      chatResizeObserver.disconnect()
+    })
     onActivated(() => {
       isActive = true
       scrollToBottom('instant')
@@ -53,7 +63,7 @@ export default {
     })
     onDeactivated(() => { isActive = false })
 
-    async function scrollToBottom(behavior = 'smooth') {
+    async function scrollToBottom(behavior = 'instant') {
       await nextTick()
       if (!isActive) return
       const content = messagesEndRef.value?.closest('.coach-view__content')
@@ -105,6 +115,7 @@ export default {
       // Message assistant en cours de streaming
       const assistantMsg = reactive({ role: 'assistant', content: '', isStreaming: true })
       state.messages.push(assistantMsg)
+      await scrollToBottom()
 
       try {
         streamController = new AbortController()

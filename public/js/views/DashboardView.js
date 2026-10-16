@@ -35,10 +35,6 @@ export default {
     <div class="view dashboard-view">
       <header class="page-header">
         <h1 class="page-header__title">WorkoutBuddy</h1>
-        <div class="dashboard-shortcuts">
-          <button class="btn btn--secondary" @click="router.push('#/programs')">{{ t('programs.title') }}</button>
-          <button class="btn btn--secondary" @click="router.push('#/session/history')">{{ t('session.history_title') }}</button>
-        </div>
       </header>
       <main class="view__content">
         <LoadingSpinner v-if="state.loading" />
@@ -62,6 +58,10 @@ export default {
             {{ t('programs.new') }}
           </button>
         </EmptyState>
+        <div class="dashboard-shortcuts">
+          <button class="btn btn--secondary" @click="router.push('#/programs')">{{ t('programs.title') }}</button>
+          <button class="btn btn--secondary" @click="router.push('#/session/history')">{{ t('session.history_title') }}</button>
+        </div>
         <p v-if="state.activeProgram && !state.activeProgram.is_finished && state.activeProgram.weekly_progress?.is_complete"
           class="weekly-complete" role="status">✓ {{ t('programs.week_complete') }}</p>
         <CalendarView :embedded="true" />

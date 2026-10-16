@@ -93,6 +93,26 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   await expect(page.getByText('Début de réponse conservé.',{exact:true})).toBeVisible()
   await expect(thinking).toHaveCount(0)
 
+  // Long answers must stay at the maximum scroll position during streaming,
+  // without waiting for a smooth animation to catch up with incoming tokens.
+  const viewport=page.viewportSize()
+  for(let part=0;part<5;part++) {
+   const marker=`Fin du fragment ${part+1}.`
+   token(Array.from({length:12},()=>`Texte du fragment ${part+1}.\n`).join('')+marker+'\n')
+   await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText(marker)
+   const gap=await page.locator('.coach-view__content').evaluate(async el=>{
+    await new Promise(requestAnimationFrame)
+    return el.scrollHeight-el.clientHeight-el.scrollTop
+   })
+   expect(gap,'latest streamed text must be fully visible').toBeLessThan(2)
+  }
+  await page.setViewportSize({...viewport,height:viewport.height-180})
+  await expect.poll(bottom).toBeLessThan(2)
+  const lastBubble=await page.locator('.chat-msg--assistant .chat-msg__bubble').boundingBox()
+  const composer=await page.locator('.coach-view__input-area').boundingBox()
+  expect(lastBubble.y+lastBubble.height).toBeLessThanOrEqual(composer.y)
+  await page.setViewportSize(viewport)
+
   // Finish while another page is displayed; hidden chat must not scroll that page.
   await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
   const scroll=await page.evaluate(()=>window.scrollY)
