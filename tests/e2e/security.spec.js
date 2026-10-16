@@ -1,5 +1,43 @@
 import {test,expect} from './fixtures.js'
-import {get,planned,trainThroughUI} from './helpers.js'
+import {get,planned,trainThroughUI,startThroughUI} from './helpers.js'
+
+test('mobile : pincement et double tap sans zoom, défilement tactile et champs de séance lisibles',async({browser,app,request})=>{
+ const context=await browser.newContext({baseURL:app.url,viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'fr-FR'})
+ try{
+  const page=await context.newPage(),screen=await context.newCDPSession(page)
+  await request.put('/api/v1/settings',{data:{show_rpe_field:true}})
+  await page.goto('/#/exercises')
+  await expect(page.locator('.exercise-card').first()).toBeVisible()
+  expect(await page.evaluate(()=>matchMedia('(pointer: coarse)').matches)).toBe(true)
+  await expect(page.locator('html')).toHaveCSS('touch-action','pan-x pan-y')
+  const viewport=await page.locator('meta[name="viewport"]').getAttribute('content')
+  expect(viewport).toContain('user-scalable=no')
+  expect(viewport).toContain('viewport-fit=cover')
+  await screen.send('Input.synthesizePinchGesture',{x:190,y:350,scaleFactor:2,gestureSourceType:'touch'})
+  expect(await page.evaluate(()=>visualViewport.scale)).toBe(1)
+  await page.locator('.page-header h1').tap()
+  await page.locator('.page-header h1').tap()
+  expect(await page.evaluate(()=>visualViewport.scale)).toBe(1)
+  await screen.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:190,y:650}]})
+  for(let y=600;y>=250;y-=50){
+   await screen.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:190,y}]})
+   await page.evaluate(()=>new Promise(requestAnimationFrame))
+  }
+  await screen.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
+  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(50)
+  const program=await planned(request)
+  await startThroughUI(page,program)
+  const block=page.locator('.exercise-block').first()
+  if(!await block.locator('.set-row').first().isVisible())await block.locator('.exercise-block__toggle').click()
+  const effort=block.locator('.set-row__input--rpe').first()
+  await expect(effort).toBeVisible()
+  await expect(effort).toHaveCSS('font-size','16px')
+  await effort.tap();await effort.fill('8')
+  expect(await page.evaluate(()=>visualViewport.scale)).toBe(1)
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false)
+  await screen.detach()
+ }finally{await context.close()}
+})
 
 test('icônes navigateur et écran d’accueil : liens, décodage et PNG opaques aux dimensions prévues',async({page,request})=>{
  await page.goto('/')

@@ -1422,3 +1422,10 @@ body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem
 [data-theme="light"] .coach-view__input { background: var(--color-input-bg); border-color: var(--color-control-border); }
 [data-theme="light"] .set-row__input:disabled { opacity: 1; -webkit-text-fill-color: var(--color-text); background: var(--color-surface-2); }
 [data-theme="light"] .session-active .set-row__btn--done { opacity: 1; }
+
+/* Small editable text makes Safari zoom the page when focusing a field. */
+@media (pointer: coarse) {
+  .equipment-settings .equip-row__input,
+  .stats-chart-controls .form-select,
+  .set-row__input--rpe { font-size: 1rem; }
+}

@@ -43,7 +43,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | `data.spec.js` | Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence invalide |
 | `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur |
 | `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
-| `security.spec.js` | CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu, service worker et décodage des icônes navigateur/iPhone |
+| `security.spec.js` | Pincement/double tap sans zoom, vrai balayage tactile conservé, champs compacts à 16 px ; CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu, service worker et décodage des icônes navigateur/iPhone |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
 | `updates.spec.js` | Publication sur une copie des assets : détection au premier plan, reload sans hard refresh, brouillon préservé, vraie panne réseau, refus des assets de connexion ; proxy HTTP avec session expirée sur navigation, API, premier plan et mise à niveau d’un ancien worker |
 | `theme.spec.js` | Thème clair enregistré par l’interface, contraste des textes et champs, focus visible, navigation et calendrier ; valeurs des séries validées lisibles |

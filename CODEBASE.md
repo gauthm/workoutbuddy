@@ -63,6 +63,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
 | RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
 | Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
+| Zoom tactile désactivé, défilement natif et champs mobiles sans zoom au focus | viewport dans `index.html`, `css/main.css`, `css/components.css` ; parcours dans `tests/e2e/security.spec.js` |
 | Logo d’onglet et d’écran d’accueil | `icons/workoutbuddy.svg`, `favicon.ico`, `apple-touch-icon.png`, `icons/icon-*.png`, `manifest.json`, génération via `scripts/generate-icons.js` |
 
 ## Tests et documentation

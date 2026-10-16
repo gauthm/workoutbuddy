@@ -1,6 +1,10 @@
 # Validation du déploiement Rocky
 
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
+- Zoom mobile : gestes tactiles vérifiés avec Chromium (pincement, double tap,
+  balayage natif), échelle conservée à 1 et champ d’effort à 16 px avec saisie
+  sans débordement. Les 51 parcours mobiles concernés passent pour cette
+  modification ; le comportement réel de Safari reste à confirmer sur iPhone.
 - Couverture navigateur : 100 cas, ordinateur et mobile, avec les 1 746 photos
   installées. L’exécution globale a validé 95 cas avant interruption du processus ;
   les cinq derniers cas de mise à jour mobile ont été relancés séparément.
