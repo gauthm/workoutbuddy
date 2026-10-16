@@ -1,5 +1,5 @@
 import ModalDialog from '../common/ModalDialog.js'
-import { reactive, ref, onMounted, onBeforeUnmount, inject, nextTick }
+import { reactive, ref, onMounted, onActivated, onDeactivated, onBeforeUnmount, inject, nextTick }
   from '/vendor/vue.esm-browser.prod.js'
 import { coach as coachApi, userProfile as profileApi } from '../../api.js'
 import { t } from '../../i18n.js'
@@ -41,11 +41,23 @@ export default {
     const inputRef       = ref(null)
     const messagesEndRef = ref(null)
     let streamController = null
+    let isActive = false
     onBeforeUnmount(() => { streamController?.abort() })
+    onActivated(() => {
+      isActive = true
+      scrollToBottom('instant')
+      // Le profil peut avoir changé dans les réglages pendant l'absence.
+      if (!state.loadingInit) {
+        profileApi.get().then(profile => { state.profile = profile }).catch(() => {})
+      }
+    })
+    onDeactivated(() => { isActive = false })
 
-    async function scrollToBottom() {
+    async function scrollToBottom(behavior = 'smooth') {
       await nextTick()
-      messagesEndRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      if (!isActive) return
+      const content = messagesEndRef.value?.closest('.coach-view__content')
+      content?.scrollTo({ top: content.scrollHeight, behavior })
     }
 
     // ── Initialisation ─────────────────────────────────────────
@@ -68,14 +80,18 @@ export default {
           state.messages = detail.messages.map(m => ({ role: m.role, content: m.content }))
         }
       } catch (_) {}
-      finally { state.loadingInit = false }
+      finally {
+        state.loadingInit = false
+        await scrollToBottom('instant')
+      }
 
     })
 
     // ── Envoi d'un message ─────────────────────────────────────
     async function sendMessage(text, silent = false) {
       const trimmed = (text || state.input).trim()
-      if (!trimmed || state.isStreaming) return
+      if (!trimmed || state.isStreaming || state.loadingInit) return
+      state.isStreaming = true
 
       if (!silent) {
         state.input = ''
@@ -89,7 +105,6 @@ export default {
       // Message assistant en cours de streaming
       const assistantMsg = reactive({ role: 'assistant', content: '', isStreaming: true })
       state.messages.push(assistantMsg)
-      state.isStreaming = true
 
       try {
         streamController = new AbortController()
@@ -160,6 +175,7 @@ export default {
     }
 
     async function newConversation() {
+      if (state.isStreaming) return
       try {
         const conv = await coachApi.createConversation()
         state.conversationId = conv.id
@@ -200,7 +216,7 @@ export default {
     function askDeleteConversation(conv) { state.deleteTarget = conv }
 
     async function confirmDeleteConversation() {
-      if (!state.deleteTarget) return
+      if (!state.deleteTarget || state.isStreaming) return
       try {
         await coachApi.deleteConversation(state.deleteTarget.id)
         if (state.deleteTarget.id === state.conversationId) {
@@ -257,6 +273,7 @@ export default {
           <button class="icon-btn" @click="openHistoryPanel()"
             :title="t('coach.history_title')" :aria-label="t('coach.history_title')">🕘</button>
           <button class="icon-btn" @click="newConversation()"
+            :disabled="state.isStreaming || state.loadingInit"
             :title="t('coach.new_conversation')" :aria-label="t('coach.new_conversation')">＋</button>
           <button v-if="state.profile?.fitness_level" class="icon-btn"
             @click="state.showProfile = !state.showProfile"
@@ -310,6 +327,7 @@ export default {
             <ChatMessage
               v-for="(msg, i) in state.messages" :key="i"
               :message="msg"
+              :user-sex="state.profile?.sex"
             />
 
             <div ref="messagesEndRef" style="height:16px" />
@@ -336,6 +354,7 @@ export default {
             <button class="coach-history__btn" :title="t('coach.rename')"
               @click.stop="renameConversation(c)" :aria-label="t('coach.rename')">✏️</button>
             <button class="coach-history__btn" :title="t('common.delete')"
+              :disabled="state.isStreaming"
               @click.stop="askDeleteConversation(c)" :aria-label="t('common.delete')">🗑</button>
           </div>
 

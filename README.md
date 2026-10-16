@@ -33,7 +33,7 @@ Le poids saisi à la création est ajouté au suivi du poids corporel à la date
 
 Un seul programme est actif à la fois ; un rappel apparaît dans la liste et sur chaque fiche. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances réellement complétées ou en cours, même hors programme, et les séances planifiées ou sautées du seul programme actif. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
 
-L’accueil et le titre de la fiche programme reprennent le libellé exact de l’objectif choisi dans le formulaire, selon la langue de l’interface, et l’accueil indique la fréquence hebdomadaire. Le calendrier garde des cases compactes, sans s’étirer sur les grands écrans, et s’adapte à la hauteur disponible, aux zones de sécurité iPhone et à l’orientation : état sans programme, semaine terminée et actions du jour restent visibles sans faire défiler la page. Les raccourcis Programmes et Historique sont des boutons à fond et contour visibles dans l’en-tête. En paysage, les informations du jour apparaissent à côté du calendrier.
+L’accueil et le titre de la fiche programme reprennent le libellé exact de l’objectif choisi dans le formulaire, selon la langue de l’interface, et l’accueil indique la fréquence hebdomadaire. Le calendrier occupe toute la hauteur disponible, avec des cases et des chiffres plus grands sur les grands écrans, et s’adapte aux zones de sécurité iPhone et à l’orientation : état sans programme, semaine terminée et actions du jour restent visibles sans faire défiler la page. Les raccourcis Programmes et Historique sont des boutons à fond et contour visibles dans l’en-tête. En paysage, les informations du jour apparaissent à côté du calendrier.
 
 Si plusieurs séances partagent une date, des flèches permettent de les consulter une par une, avec un compteur. La séance en cours apparaît en priorité, puis les séances planifiées ; toutes les actions restent accessibles. Le calendrier ouvert séparément conserve sa liste complète.
 
@@ -100,6 +100,10 @@ Le thème clair distingue les sections sur fond blanc, renforce les contours des
 Sur le déploiement Authelia, **Réglages → Se déconnecter** ferme la session de cet appareil, même mémorisée. La section affiche uniquement le bouton. Une confirmation permet de conserver un brouillon en annulant. Les données sauvegardées et la séance en cours restent sur le serveur ; une reconnexion permet de les retrouver. Le bouton apparaît uniquement si le proxy fournit cette intégration.
 
 Le Coach IA utilise une API compatible OpenAI, configurée avec une URL, un modèle et éventuellement une clé API. Le test de connexion et la liste des modèles peuvent utiliser la saisie avant sa sauvegarde. Le coach conseille et dialogue ; il ne configure pas l’application et ne crée pas les programmes.
+
+Le chat reste actif pendant la navigation dans l’application : le coach continue sa réponse sur les autres écrans. Chaque retour au chat affiche la fin de la conversation, même si la réponse est encore en cours. La création et la suppression de conversations sont bloquées pendant une réponse. Cette continuité concerne la navigation interne, pas la fermeture ou le rechargement de l’application.
+
+Pendant la réflexion, trois points s’animent en cascade ; l’animation respecte la préférence de mouvement réduit. L’icône à droite des messages utilisateur suit le sexe du profil : homme, femme ou neutre pour les autres choix et en l’absence de renseignement.
 
 Le champ de message grandit avec le texte jusqu’à 120 px, puis permet de faire défiler les messages longs. Il rétrécit après effacement ou envoi ; aucune barre de défilement n’apparaît pour une saisie courte. Majuscule + Entrée ajoute une ligne, Entrée envoie le message.
 

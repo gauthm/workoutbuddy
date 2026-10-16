@@ -7,6 +7,7 @@ const screens=[
  ['iphone',390,844,59,34],['safari',390,664,0,0],
  ['landscape',844,390,0,21],
  ['iphone-landscape',812,375,0,21],
+ ['large-iphone',430,932,59,34],['desktop',1280,900,0,0],
 ]
 const sixWeekDate='2026-11-15'
 
@@ -23,7 +24,9 @@ async function fits(page,info,state){
     if(scrollY!==0)errors.push('page already scrolled')
     const grid=document.querySelector('.calendar-grid').getBoundingClientRect(),legend=document.querySelector('.calendar-legend').getBoundingClientRect()
     if(grid.bottom>legend.top+.5)errors.push('calendar overlaps its legend')
-    if(grid.height>240)errors.push('calendar stretched beyond compact height')
+    const calendar=document.querySelector('.calendar-embedded').getBoundingClientRect()
+    if(Math.abs(calendar.bottom-nav.top)>2)errors.push('calendar leaves unused space above navigation')
+    if(innerHeight>=800 && grid.height<300)errors.push('calendar too small for available height')
     for(const button of document.querySelectorAll('.dashboard-shortcuts .btn')){
      const style=getComputedStyle(button)
      if(parseFloat(style.borderTopWidth)<1 || style.borderTopStyle==='none' || style.backgroundColor==='rgba(0, 0, 0, 0)')errors.push('shortcut lacks a visible button surface')

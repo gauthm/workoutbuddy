@@ -74,11 +74,13 @@ export default {
 
   template: `
     <div class="app-shell">
-      <component
-        :is="currentView"
-        :key="router.currentRoute.name + (router.currentRoute.name === 'ExerciseListView' ? '' : JSON.stringify(router.currentRoute.params))"
-        v-bind="router.currentRoute.params"
-      />
+      <KeepAlive include="CoachView">
+        <component
+          :is="currentView"
+          :key="router.currentRoute.name + (router.currentRoute.name === 'ExerciseListView' ? '' : JSON.stringify(router.currentRoute.params))"
+          v-bind="router.currentRoute.params"
+        />
+      </KeepAlive>
       <AppUpdateBanner />
       <BottomNav v-if="showNav" />
       <Toast v-if="store.toast" :toast="store.toast" @dismiss="store.dismissToast()" />
