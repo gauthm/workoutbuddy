@@ -132,7 +132,7 @@ export default {
 
   template: `
     <div class="view">
-      <PageHeader :title="state.program?.name || '…'" :show-back="true" />
+      <PageHeader :title="state.program ? t('programs.goal_' + (state.program.goal === 'general_fitness' ? 'general' : state.program.goal)) : '…'" :show-back="true" />
       <div class="view__content" style="padding:1rem">
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
@@ -166,6 +166,7 @@ export default {
           <p v-if="state.program.is_finished" class="settings-notice">{{ t('programs.finished_help') }}</p>
           <p v-if="state.program.is_active && !state.program.is_finished && state.program.weekly_progress?.is_complete"
             class="weekly-complete" role="status">✓ {{ t('programs.week_complete') }}</p>
+          <p class="program-activation-hint">{{ t('programs.single_active_hint') }}</p>
           <!-- Actions -->
           <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem">
             <button v-if="state.program.is_active" class="btn btn--primary btn--full"

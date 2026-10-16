@@ -53,16 +53,16 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | --- | --- |
 | Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
 | Détection des versions, protection des saisies et retour au portail après expiration | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
-| Accueil sans défilement, objectif du formulaire et fréquence | `js/views/DashboardView.js`, styles `.dashboard-view` dans `css/components.css` |
-| Calendrier ajustable et séances du jour paginées sur l’accueil | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
+| Accueil sans défilement, boutons d’en-tête, objectif et fréquence | `js/views/DashboardView.js`, styles `.dashboard-view` dans `css/components.css` |
+| Calendrier compact sans étirement et séances du jour paginées | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
 | Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
 | Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
 | Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
-| Questionnaire et fiche programme | `js/components/programs/` |
+| Questionnaire, fiche titrée par objectif et rappel d’un seul programme actif | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
 | Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
 | Saisie du Coach ajustable jusqu’à 120 px, défilement au-delà et réduction après envoi | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
-| Déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
+| Bouton seul de déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
 | RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
 | Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
 | Zoom tactile désactivé, défilement natif et champs mobiles sans zoom au focus | viewport dans `index.html`, `css/main.css`, `css/components.css` ; parcours dans `tests/e2e/security.spec.js` |

@@ -32,6 +32,7 @@ export default {
     <div class="view">
       <PageHeader :title="t('programs.title')"><template #actions><button v-if="state.programs.length" class="btn btn--primary" @click="router.push('#/programs/new')">{{ t('programs.new') }}</button></template></PageHeader>
       <div class="view__content">
+        <p class="program-activation-hint program-activation-hint--list">{{ t('programs.single_active_hint') }}</p>
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
         <EmptyState v-else-if="!state.programs.length" icon="🏋️" :message="t('dashboard.no_program')">

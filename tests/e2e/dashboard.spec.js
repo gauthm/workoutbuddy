@@ -23,6 +23,11 @@ async function fits(page,info,state){
     if(scrollY!==0)errors.push('page already scrolled')
     const grid=document.querySelector('.calendar-grid').getBoundingClientRect(),legend=document.querySelector('.calendar-legend').getBoundingClientRect()
     if(grid.bottom>legend.top+.5)errors.push('calendar overlaps its legend')
+    if(grid.height>240)errors.push('calendar stretched beyond compact height')
+    for(const button of document.querySelectorAll('.dashboard-shortcuts .btn')){
+     const style=getComputedStyle(button)
+     if(parseFloat(style.borderTopWidth)<1 || style.borderTopStyle==='none' || style.backgroundColor==='rgba(0, 0, 0, 0)')errors.push('shortcut lacks a visible button surface')
+    }
     for(const element of document.querySelectorAll('.dashboard-view button,.dashboard-view .empty-state__message,.dashboard-view .weekly-complete,.dashboard-view .calendar-legend,.dashboard-view .calendar-day-session__name,.dashboard-view .calendar-day-session__status,.dashboard-view .calendar-day-panel__date')){
      if(!element.getClientRects().length)continue
      const r=element.getBoundingClientRect()
@@ -97,7 +102,11 @@ test('accueil : libellé exact des cinq objectifs du formulaire, en français et
    await call(request,'put','/settings',{language})
    const labels=JSON.parse(readFileSync(new URL(`../../public/locales/${language}.json`,import.meta.url),'utf8'))
    await page.goto('/#/');await page.reload()
-   await expect(page.locator('.dashboard-program__goal')).toHaveText(labels['programs.goal_'+(goal==='general_fitness'?'general':goal)])
+   const label=labels['programs.goal_'+(goal==='general_fitness'?'general':goal)]
+   await expect(page.locator('.dashboard-program__goal')).toHaveText(label)
+   await page.locator('.dashboard-program').click()
+   await expect(page.locator('.page-header__title')).toHaveText(label)
+   await expect(page.locator('.program-activation-hint')).toHaveText(labels['programs.single_active_hint'])
    expect((await get(request,`/programs/${program.id}`)).name).toBe('Nom personnalisé distinct de l’objectif')
   }
  }

@@ -3,8 +3,11 @@
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
 - Accueil : six formats iPhone simulés, portrait/paysage et zones de sécurité,
   mois de six semaines, aucun programme, semaine accomplie et tous les statuts
-  du jour. Aucun défilement de page ni action masquée ; pagination des séances,
-  reprise prioritaire et libellé exact des cinq objectifs en français/anglais.
+  du jour. Grille plafonnée à une hauteur compacte et boutons d’en-tête avec
+  fond et contour visibles en thèmes clair/sombre. Aucun défilement de page ni
+  action masquée ; pagination des séances,
+  reprise prioritaire et libellé exact des cinq objectifs en français/anglais
+  sur l’accueil et dans le titre de fiche ; rappel d’un seul programme actif.
 - Coach : saisie courte sans barre, croissance avec Majuscule + Entrée jusqu’à
   120 px, défilement des textes longs, réduction après effacement et envoi.
   Requête réelle sur API isolée sans fournisseur configuré, aucun appel externe.
@@ -17,7 +20,8 @@
 - Thème clair : contrastes mesurés dans les réglages, l’accueil et la séance,
   textes contrôlés à 4,5:1 minimum, contours des champs à 3:1, focus visible,
   préférence persistante et valeurs validées lisibles ; captures examinées.
-- Réglages : absence du titre « Connexion », confirmation de déconnexion,
+- Réglages : bouton de déconnexion seul, sans titre ni texte explicatif,
+  confirmation de déconnexion,
   annulation avec brouillon intact,
   retour au portail et données sauvegardées conservées. Bouton absent sans proxy
   d’authentification. Icônes SVG/ICO décodées, dimensions et opacité des PNG

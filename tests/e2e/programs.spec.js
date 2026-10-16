@@ -4,6 +4,7 @@ import {L,get,homeGym,planned} from './helpers.js'
 test('questionnaire → aperçu → création → activation, puis persistance après rechargement',async({page,request})=>{
  await homeGym(request)
  await page.goto('/#/programs')
+ await expect(page.locator('.program-activation-hint')).toHaveText(L('programs.single_active_hint'))
  await page.getByRole('button',{name:L('programs.new'),exact:true}).click()
  const next=()=>page.getByRole('button',{name:L('planner.next'),exact:true}).click()
  await next();await next()
