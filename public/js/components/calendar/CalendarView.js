@@ -98,6 +98,7 @@ export default {
       // Popup jour sélectionné
       selectedDate:     props.embedded ? isoDate(today) : null,
       selectedSessions: [],
+      selectedSessionIndex: 0,
 
       // Modale replanification
       showReschedule:   false,
@@ -112,6 +113,9 @@ export default {
 
     // ── Grille ────────────────────────────────────────────────────
     const grid = computed(() => buildGrid(state.year, state.month))
+    const visibleSessions = computed(() => props.embedded
+      ? state.selectedSessions.slice(state.selectedSessionIndex, state.selectedSessionIndex + 1)
+      : state.selectedSessions)
 
     const monthLabel = computed(() => {
       const lang = store.getSetting('language', 'fr')
@@ -134,6 +138,13 @@ export default {
       return map
     })
 
+    function sessionsForDay(date) {
+      const sessions = sessionsByDate.value[date] || []
+      if (!props.embedded) return sessions
+      const priority = {in_progress:0,planned:1,completed:2,skipped:3}
+      return [...sessions].sort((a,b) => priority[a.status] - priority[b.status])
+    }
+
     // ── Chargement ────────────────────────────────────────────────
     let loadRevision=0
     async function load() {
@@ -150,7 +161,8 @@ export default {
         const data = await api.list({ from, to, limit: 200, calendar: 1 })
         if(revision!==loadRevision)return
         state.sessions = data.sessions
-        state.selectedSessions=state.selectedDate ? data.sessions.filter(s=>s.scheduled_date===state.selectedDate) : []
+        state.selectedSessions=state.selectedDate ? sessionsForDay(state.selectedDate) : []
+        state.selectedSessionIndex = 0
       } catch (err) {
         if(revision===loadRevision)state.error = err.message
       } finally {
@@ -175,12 +187,13 @@ export default {
 
     // ── Sélection d'un jour ───────────────────────────────────────
     function selectDay(cell) {
+      state.selectedSessionIndex = 0
       if (state.selectedDate === cell.date) {
         state.selectedDate = null
         return
       }
       state.selectedDate     = cell.date
-      state.selectedSessions = sessionsByDate.value[cell.date] || []
+      state.selectedSessions = sessionsForDay(cell.date)
     }
 
     // ── Actions séance ────────────────────────────────────────────
@@ -255,7 +268,7 @@ export default {
     onMounted(load)
 
     return {
-      state, grid, monthLabel, dayHeaders,
+      state, grid, visibleSessions, monthLabel, dayHeaders,
       sessionsByDate, STATUS_COLORS,
       prevMonth, nextMonth, selectDay,
       startSession, openReschedule, doReschedule,
@@ -267,7 +280,6 @@ export default {
   template: `
     <section :class="embedded ? 'calendar-embedded' : 'view'" :aria-label="t('calendar.title')">
       <PageHeader v-if="!embedded" :title="t('calendar.title')" />
-      <h2 v-else class="dashboard-section__title">{{t('calendar.title')}}</h2>
 
       <div :class="embedded ? 'calendar-embedded__content' : 'view__content'">
         <LoadingSpinner v-if="state.loading" />
@@ -282,7 +294,7 @@ export default {
           </div>
 
           <!-- En-têtes jours -->
-          <div class="calendar-grid">
+          <div class="calendar-grid" :style="{'--calendar-weeks': grid.length / 7}">
             <div
               v-for="h in dayHeaders" :key="h"
               class="calendar-grid__header">
@@ -328,28 +340,38 @@ export default {
 
           <!-- Panneau jour sélectionné -->
           <div v-if="state.selectedDate" class="calendar-day-panel">
-            <div class="calendar-day-panel__date">{{ state.selectedDate }}</div>
+            <div class="calendar-day-panel__heading">
+              <div class="calendar-day-panel__date">{{ state.selectedDate }}</div>
+              <div v-if="embedded && state.selectedSessions.length > 1" class="calendar-day-panel__pager">
+                <button type="button" class="calendar-nav__btn" :aria-label="t('calendar.previous_session')"
+                  :disabled="state.selectedSessionIndex === 0" @click="state.selectedSessionIndex--">‹</button>
+                <span role="status">{{ t('calendar.session_position', {current:state.selectedSessionIndex + 1,total:state.selectedSessions.length}) }}</span>
+                <button type="button" class="calendar-nav__btn" :aria-label="t('calendar.next_session')"
+                  :disabled="state.selectedSessionIndex === state.selectedSessions.length - 1" @click="state.selectedSessionIndex++">›</button>
+              </div>
+            </div>
 
             <div v-if="!state.selectedSessions.length"
-              style="color:var(--color-text-muted);font-size:0.9rem;padding:0.5rem 0">
+              class="calendar-day-panel__empty">
               {{ t('calendar.no_session') }}
             </div>
 
             <div
-              v-for="session in state.selectedSessions"
+              v-for="session in visibleSessions"
               :key="session.id"
               class="calendar-day-session">
-              <div class="calendar-day-session__name">{{ session.name }}</div>
-              <div class="calendar-day-session__status"
-                :style="{ color: STATUS_COLORS[session.status] }">
-                {{ t('calendar.' + session.status) }}
+              <div class="calendar-day-session__summary">
+                <div class="calendar-day-session__name">{{ session.name }}</div>
+                <div class="calendar-day-session__status"
+                  :style="{ color: session.status === 'skipped' ? 'var(--color-text-muted)' : STATUS_COLORS[session.status] }">
+                  {{ t('calendar.' + session.status) }}
+                </div>
               </div>
 
               <!-- Actions selon statut -->
               <div class="calendar-day-session__actions">
                 <template v-if="session.status === 'completed'">
                   <button class="btn btn--secondary"
-                    style="padding:0.3rem 0.75rem;font-size:0.8rem"
                     @click="viewSession(session)">
                     {{ t('calendar.view') }}
                   </button>
@@ -357,7 +379,6 @@ export default {
 
                 <template v-if="session.status === 'in_progress'">
                   <button class="btn btn--primary"
-                    style="padding:0.3rem 0.75rem;font-size:0.8rem"
                     @click="router.push('#/session')">
                     {{ t('calendar.resume') }}
                   </button>
@@ -373,17 +394,14 @@ export default {
 
                 <template v-if="session.status === 'planned'">
                   <button class="btn btn--primary"
-                    style="padding:0.3rem 0.75rem;font-size:0.8rem"
                     @click="startSession(session)">
                     {{ t('calendar.start') }}
                   </button>
                   <button class="btn btn--secondary"
-                    style="padding:0.3rem 0.75rem;font-size:0.8rem"
                     @click="openReschedule(session)">
                     {{ t('calendar.reschedule') }}
                   </button>
-                  <button class="btn btn--secondary"
-                    style="padding:0.3rem 0.75rem;font-size:0.8rem;color:var(--color-text-muted)"
+                  <button class="btn btn--secondary calendar-day-session__skip"
                     @click="openSkip(session)">
                     {{ t('calendar.mark_skipped') }}
                   </button>

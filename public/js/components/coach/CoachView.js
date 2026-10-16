@@ -77,7 +77,10 @@ export default {
       const trimmed = (text || state.input).trim()
       if (!trimmed || state.isStreaming) return
 
-      if (!silent) state.input = ''
+      if (!silent) {
+        state.input = ''
+        nextTick(() => resizeInput(inputRef.value))
+      }
 
       // Message utilisateur
       state.messages.push({ role: 'user', content: trimmed })
@@ -219,9 +222,19 @@ export default {
     }
 
     // ── Auto-resize textarea ───────────────────────────────────
+    function resizeInput(input) {
+      if (!input) return
+      input.style.height = 'auto'
+      input.style.overflowY = 'hidden'
+      const style = getComputedStyle(input)
+      const border = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth)
+      const limit = parseFloat(style.maxHeight)
+      const height = input.scrollHeight + border
+      input.style.height = Math.min(height, limit) + 'px'
+      input.style.overflowY = height > limit ? 'auto' : 'hidden'
+    }
     function autoResize(e) {
-      e.target.style.height = 'auto'
-      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+      resizeInput(e.target)
     }
 
     function onAdviceDismissed(id) { state.advice = state.advice.filter(a => a.id !== id) }

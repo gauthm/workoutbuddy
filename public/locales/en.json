@@ -816,9 +816,12 @@
   "updates.available": "An update is ready",
   "updates.apply": "Update now",
   "updates.unsaved": "Unsaved entries on this screen will be lost. Save them before continuing.",
-  "settings.account": "Sign-in session",
   "settings.logout": "Sign out",
   "settings.logout_hint": "End this device’s session, including a remembered sign-in.",
   "settings.logout_confirm": "You will be signed out of this browser. Saved data is kept, and your workout can be resumed after signing in again.",
-  "settings.logout_unsaved": "Unsaved changes will be lost. Cancel to save them before signing out."
+  "settings.logout_unsaved": "Unsaved changes will be lost. Cancel to save them before signing out.",
+  "calendar.previous_session": "Previous session",
+  "calendar.next_session": "Next session",
+  "calendar.session_position": "Session {{current}} / {{total}}",
+  "dashboard.program_frequency": "{{count}} days/week"
 }

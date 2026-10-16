@@ -110,7 +110,7 @@ Lire le lien de vérification **dans votre terminal SSH uniquement** :
 authentificateur et confirmer un code. Aucun SMTP ni adresse personnelle requis.
 Tronquer ensuite ce fichier privé. Ne transmettre aucun secret par messagerie.
 Tester en fenêtre privée : mot de passe seul insuffisant, accès après TOTP,
-puis déconnexion depuis **Réglages → Connexion → Se déconnecter**, ou via
+puis déconnexion depuis **Réglages → Se déconnecter**, ou via
 `https://auth.DOMAINE/logout`. Le proxy annonce le bouton avec
 `X-WorkoutBuddy-Logout: /auth/logout` et renvoie cette route vers le logout natif
 d’Authelia. La session mémorisée est révoquée sans supprimer les données SQLite.

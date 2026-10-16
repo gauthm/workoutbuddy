@@ -35,6 +35,8 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 
 | Fichier | Parcours et cas limites |
 | --- | --- |
+| `dashboard.spec.js` | Accueil sans défilement, texte coupé ni action sous la navigation : six formats iPhone/Safari, portrait/paysage, safe areas, six semaines, aucun programme, semaine accomplie, tous les statuts, pagination de plusieurs séances ; libellé exact des cinq objectifs FR/EN |
+| `coach.spec.js` | Saisie courte sans barre, croissance avec les lignes, limite de 120 px puis défilement, effacement et envoi avec réduction du champ ; vraie API sans fournisseur IA configuré |
 | `programs.spec.js` | Questionnaire, aperçu, activation, durée illimitée, jours valides/invalides, remplacement compatible |
 | `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue avant/après écriture sans doublon, conflit de réessai, fin bloquée pendant sauvegarde, réponses de fin/annulation perdues, arrêt brutal, continuer/quitter sans enregistrer |
 | `history.spec.js` | Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement, réinitialisation d’une séance terminée |

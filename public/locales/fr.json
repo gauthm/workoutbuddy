@@ -816,9 +816,12 @@
   "updates.available": "Une mise à jour est prête",
   "updates.apply": "Mettre à jour",
   "updates.unsaved": "Les saisies non enregistrées de cet écran seront perdues. Enregistre-les avant de continuer.",
-  "settings.account": "Connexion",
   "settings.logout": "Se déconnecter",
   "settings.logout_hint": "Ferme la connexion sur cet appareil, y compris si elle a été mémorisée.",
   "settings.logout_confirm": "Tu vas être déconnecté sur ce navigateur. Tes données enregistrées sont conservées et ta séance pourra être reprise après reconnexion.",
-  "settings.logout_unsaved": "Les modifications non enregistrées seront perdues. Annule pour les sauvegarder avant de te déconnecter."
+  "settings.logout_unsaved": "Les modifications non enregistrées seront perdues. Annule pour les sauvegarder avant de te déconnecter.",
+  "calendar.previous_session": "Séance précédente",
+  "calendar.next_session": "Séance suivante",
+  "calendar.session_position": "Séance {{current}} / {{total}}",
+  "dashboard.program_frequency": "{{count}} j/sem"
 }

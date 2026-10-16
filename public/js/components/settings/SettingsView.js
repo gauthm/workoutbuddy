@@ -224,9 +224,8 @@ export default {
 
           </fieldset>
         </template>
-        <section v-if="canLogout" class="settings-account" :aria-label="t('settings.account')">
+        <section v-if="canLogout" class="settings-account" :aria-label="t('settings.logout')">
           <div>
-            <h2>{{ t('settings.account') }}</h2>
             <p>{{ t('settings.logout_hint') }}</p>
           </div>
           <button type="button" class="btn btn--secondary" :disabled="busy || store.pendingRequests > 0"

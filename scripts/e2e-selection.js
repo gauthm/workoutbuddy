@@ -1,5 +1,5 @@
 // A shared dependency or an unknown source file triggers the complete suite.
-export const SUITES=['programs','sessions','history','equipment','settings','data','exercises','stats','motion','security','updates','theme']
+export const SUITES=['programs','sessions','history','equipment','settings','data','exercises','stats','motion','security','updates','theme','dashboard','coach']
 const rules=[
  [/^public\/js\/components\/exercises\/(?:ExerciseMotion|ExerciseDetailView)\.js$/,['exercises','sessions','motion']],
  [/^public\/js\/components\/session\/(?:ExerciseHelp|ExerciseBlock)\.js$/,['sessions','motion']],

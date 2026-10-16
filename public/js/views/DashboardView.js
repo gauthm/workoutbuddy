@@ -35,6 +35,10 @@ export default {
     <div class="view dashboard-view">
       <header class="page-header">
         <h1 class="page-header__title">WorkoutBuddy</h1>
+        <div class="dashboard-shortcuts">
+          <button class="btn btn--secondary" @click="router.push('#/programs')">{{ t('programs.title') }}</button>
+          <button class="btn btn--secondary" @click="router.push('#/session/history')">{{ t('session.history_title') }}</button>
+        </div>
       </header>
       <main class="view__content">
         <LoadingSpinner v-if="state.loading" />
@@ -42,7 +46,10 @@ export default {
         <button v-else-if="state.activeProgram" class="exercise-card dashboard-program"
           @click="router.push('#/programs/' + state.activeProgram.id)">
           <div class="exercise-card__main">
-            <span class="exercise-card__name">{{ state.activeProgram.name }}</span>
+            <span class="exercise-card__name">
+              <span class="dashboard-program__goal">{{ t('programs.goal_' + (state.activeProgram.goal === 'general_fitness' ? 'general' : state.activeProgram.goal)) }}</span>
+              <span class="dashboard-program__frequency"> · {{ t('dashboard.program_frequency', {count:state.activeProgram.days_per_week}) }}</span>
+            </span>
             <span class="badge badge--custom">{{ t(state.activeProgram.is_finished ? 'programs.finished_badge' : 'dashboard.active_program') }}</span>
           </div>
         </button>
@@ -57,10 +64,6 @@ export default {
         </EmptyState>
         <p v-if="state.activeProgram && !state.activeProgram.is_finished && state.activeProgram.weekly_progress?.is_complete"
           class="weekly-complete" role="status">✓ {{ t('programs.week_complete') }}</p>
-        <div class="dashboard-shortcuts">
-          <button class="btn btn--secondary" @click="router.push('#/programs')">{{ t('programs.title') }}</button>
-          <button class="btn btn--secondary" @click="router.push('#/session/history')">{{ t('session.history_title') }}</button>
-        </div>
         <CalendarView :embedded="true" />
       </main>
     </div>

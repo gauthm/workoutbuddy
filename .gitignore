@@ -8,6 +8,8 @@ data/
 
 # ── Variables d'environnement ─────────────────────────────────
 .env
+.env.*
+!.env.example
 # .env.example est versionné intentionnellement
 
 # ── Vendors téléchargés (régénérables via download-vendors.js) ─
@@ -86,3 +88,15 @@ workoutbuddy-export-*.json
 *.export.csv
 # Playwright browser reports and traces
 test-results/
+
+# Secrets et bases hors des dossiers habituels
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.key
+*.pem
+*.p12
+*.pfx

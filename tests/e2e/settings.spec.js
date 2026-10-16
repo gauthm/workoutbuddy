@@ -44,6 +44,7 @@ test('déconnexion : confirmation des brouillons, annulation puis retour au port
  try {
   const before=await get(request,'/user-profile')
   await page.goto(proxy.url+'/#/settings')
+  await expect(page.locator('.settings-account').getByRole('heading')).toHaveCount(0)
   await page.getByText(L('settings.section_profile'),{exact:true}).click()
   const name=page.getByLabel(L('settings.profile_display_name'),{exact:true})
   await name.fill('Draft before logout')

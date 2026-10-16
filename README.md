@@ -33,6 +33,10 @@ Le poids saisi à la création est ajouté au suivi du poids corporel à la date
 
 Un seul programme est actif à la fois. Son activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les séances réellement complétées ou en cours, même hors programme, et les séances planifiées ou sautées du seul programme actif. Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme, l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
 
+L’accueil reprend le libellé exact de l’objectif choisi dans le formulaire, selon la langue de l’interface, et indique la fréquence hebdomadaire. Le calendrier s’adapte à la hauteur disponible, aux zones de sécurité iPhone et à l’orientation : état sans programme, semaine terminée et actions du jour restent visibles sans faire défiler la page. Les raccourcis Programmes et Historique sont dans l’en-tête. En paysage, les informations du jour apparaissent à côté du calendrier.
+
+Si plusieurs séances partagent une date, des flèches permettent de les consulter une par une, avec un compteur. La séance en cours apparaît en priorité, puis les séances planifiées ; toutes les actions restent accessibles. Le calendrier ouvert séparément conserve sa liste complète.
+
 La durée totale peut être limitée ou illimitée. Une durée limitée est comptée depuis la première activation ; une réactivation conserve ce point de départ. À la fin, les nouvelles séances sont bloquées et l’historique reste accessible. Prolonger le programme reprend la planification.
 
 Depuis la fiche du programme, deux paramètres sont modifiables : la durée totale et les jours d’entraînement, en conservant le nombre de jours initial. Le niveau, l’objectif et la durée de séance restent ceux du programme créé.
@@ -93,9 +97,11 @@ Après une modification, une barre de sauvegarde apparaît au-dessus de la navig
 
 Le thème clair distingue les sections sur fond blanc, renforce les contours des champs et conserve des textes, états et graphiques lisibles. Les valeurs des séries validées restent visibles sur mobile.
 
-Sur le déploiement Authelia, **Réglages → Connexion → Se déconnecter** ferme la session de cet appareil, même mémorisée. Une confirmation permet de conserver un brouillon en annulant. Les données sauvegardées et la séance en cours restent sur le serveur ; une reconnexion permet de les retrouver. Le bouton apparaît uniquement si le proxy fournit cette intégration.
+Sur le déploiement Authelia, **Réglages → Se déconnecter** ferme la session de cet appareil, même mémorisée. Une confirmation permet de conserver un brouillon en annulant. Les données sauvegardées et la séance en cours restent sur le serveur ; une reconnexion permet de les retrouver. Le bouton apparaît uniquement si le proxy fournit cette intégration.
 
 Le Coach IA utilise une API compatible OpenAI, configurée avec une URL, un modèle et éventuellement une clé API. Le test de connexion et la liste des modèles peuvent utiliser la saisie avant sa sauvegarde. Le coach conseille et dialogue ; il ne configure pas l’application et ne crée pas les programmes.
+
+Le champ de message grandit avec le texte jusqu’à 120 px, puis permet de faire défiler les messages longs. Il rétrécit après effacement ou envoi ; aucune barre de défilement n’apparaît pour une saisie courte. Majuscule + Entrée ajoute une ligne, Entrée envoie le message.
 
 La clé est stockée côté serveur, masquée dans l’interface et absente des réponses API et de l’export JSON. Une clé existante est conservée lorsqu’une sauvegarde ne fournit pas de nouvelle clé.
 
@@ -203,3 +209,5 @@ Les anciens scénarios de `tests/ui/` servent aux contrôles visuels complément
 Le frontend utilise des modules JavaScript et des composants Vue avec templates, sans fichiers `.vue` ni compilation. Le backend utilise Express et SQLite synchrone. Les migrations existantes restent immuables ; les nouveaux changements de schéma prennent la forme d’une migration numérotée. Toute modification de `public/` doit mettre à jour le cache du service worker.
 
 Pour naviguer dans le dépôt : [CODEBASE.md](CODEBASE.md) est l’index du code, [AGENT.md](AGENT.md) contient les règles de développement et [TASKS.md](TASKS.md) suit les tâches. Le [dernier audit de fiabilité](docs/RELIABILITY_AUDIT.md) précise la couverture et ses limites. Les tâches terminées et anciens plans restent consultables dans l’historique Git.
+
+Le [contrôle du dépôt public](docs/REPOSITORY_SECURITY.md) décrit la recherche de secrets dans les fichiers et l’historique, ses limites et la commande pour la répéter.

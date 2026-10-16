@@ -1,20 +1,24 @@
 # Validation du déploiement Rocky
 
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
+- Accueil : six formats iPhone simulés, portrait/paysage et zones de sécurité,
+  mois de six semaines, aucun programme, semaine accomplie et tous les statuts
+  du jour. Aucun défilement de page ni action masquée ; pagination des séances,
+  reprise prioritaire et libellé exact des cinq objectifs en français/anglais.
+- Coach : saisie courte sans barre, croissance avec Majuscule + Entrée jusqu’à
+  120 px, défilement des textes longs, réduction après effacement et envoi.
+  Requête réelle sur API isolée sans fournisseur configuré, aucun appel externe.
 - Zoom mobile : gestes tactiles vérifiés avec Chromium (pincement, double tap,
   balayage natif), échelle conservée à 1 et champ d’effort à 16 px avec saisie
-  sans débordement. Les 51 parcours mobiles concernés passent pour cette
-  modification ; le comportement réel de Safari reste à confirmer sur iPhone.
-- Couverture navigateur : 100 cas, ordinateur et mobile, avec les 1 746 photos
-  installées. L’exécution globale a validé 95 cas avant interruption du processus ;
-  les cinq derniers cas de mise à jour mobile ont été relancés séparément.
-  Aucun échec après ces contrôles.
-  Alternance des deux positions, pause/reprise,
+  sans débordement. Le comportement réel de Safari reste à confirmer sur iPhone.
+- 112 parcours navigateur passent, ordinateur et mobile, avec les 1 746 photos.
+  Alternance des deux positions des photos, pause/reprise,
   réduction des animations, arrêt hors écran et aide en séance sont couverts.
 - Thème clair : contrastes mesurés dans les réglages, l’accueil et la séance,
   textes contrôlés à 4,5:1 minimum, contours des champs à 3:1, focus visible,
   préférence persistante et valeurs validées lisibles ; captures examinées.
-- Réglages : confirmation de déconnexion, annulation avec brouillon intact,
+- Réglages : absence du titre « Connexion », confirmation de déconnexion,
+  annulation avec brouillon intact,
   retour au portail et données sauvegardées conservées. Bouton absent sans proxy
   d’authentification. Icônes SVG/ICO décodées, dimensions et opacité des PNG
   Apple/manifeste contrôlées ; fichiers publics limités aux chemins explicites.
