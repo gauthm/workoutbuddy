@@ -26,13 +26,14 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  min-height: var(--header-height);
+  min-height: var(--header-space);
   flex-shrink: 0;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   padding: 0 1rem;
+  padding-top: var(--top-inset);
   gap: 0.5rem;
 }
 
@@ -1231,7 +1232,7 @@
 .session-active--resting { padding-bottom:calc(var(--nav-space) + 12rem); }
 
 .session-active .page-header > .btn { min-height:44px; }
-body:has(.session-active) .toast { top:calc(var(--header-height) + .5rem); bottom:auto; }
+body:has(.session-active) .toast { top:calc(var(--header-space) + .5rem); bottom:auto; }
 
 .warmup-instructions { padding-left:1.25rem; margin:.5rem 0 1rem; }
 .warmup-instructions li { margin-bottom:.8rem; line-height:1.5; }

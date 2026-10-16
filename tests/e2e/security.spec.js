@@ -1,6 +1,27 @@
 import {test,expect} from './fixtures.js'
 import {get,planned,trainThroughUI} from './helpers.js'
 
+test('la barre de titre respecte la zone de sécurité iOS au chargement, au défilement et après rotation',async({page})=>{
+ const screen=await page.context().newCDPSession(page)
+ await screen.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}})
+ await page.goto('/#/exercises')
+ const header=page.locator('.page-header'),title=header.locator('h1')
+ await expect(title).toBeVisible()
+ async function safeHeader(inset){
+  await expect.poll(async()=>Math.round((await header.boundingBox()).height)).toBe(52+inset)
+  expect((await title.boundingBox()).y).toBeGreaterThanOrEqual(inset)
+ }
+ await safeHeader(59)
+ await page.evaluate(()=>window.scrollTo(0,500))
+ await safeHeader(59)
+ expect(Math.round((await header.boundingBox()).y)).toBe(0)
+ await page.goto('/#/settings')
+ await safeHeader(59)
+ await screen.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:0,bottom:0,left:0,right:0}})
+ await safeHeader(0)
+ await screen.detach()
+})
+
 test('CSP active : interface Vue, séance complète, progression et statistiques fonctionnent',async({page,request})=>{
  const violations=[]
  await page.addInitScript(()=>{window.__cspViolations=[];document.addEventListener('securitypolicyviolation',e=>window.__cspViolations.push(e.violatedDirective+': '+e.blockedURI))})

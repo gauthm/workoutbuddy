@@ -8,6 +8,7 @@ Les actions testées passent par les boutons et champs de l’application. Les a
 
 - Installer normalement le projet et ses ressources locales (README principal).
 - Disposer de Playwright et de Google Chrome. Sur cette machine, le Playwright fourni par `@playwright/mcp` est réutilisé. Aucune dépendance npm n’est ajoutée au projet.
+- Sur un serveur Linux minimal, installer aussi des polices système (par exemple `dejavu-sans-fonts` et `liberation-sans-fonts` sur Rocky). Sans police, Chromium headless peut afficher des textes sans dimensions et fausser les clics ou les assertions de visibilité.
 - Le résolveur essaie un Playwright disponible localement, puis les installations globales `playwright` et `@playwright/mcp` obtenues avec `npm root -g`.
 - Si l’installation est ailleurs, définir `WB_PLAYWRIGHT_PATH` vers son `package.json` (celui de `playwright` ou de `@playwright/mcp`). Son environnement doit fournir `playwright/test` et le CLI de Playwright. Un Playwright installé ailleurs par l’équipe convient aussi ; le résolveur ne télécharge rien.
 - `WB_E2E_BROWSER_CHANNEL=chromium` permet d’utiliser le Chromium déjà installé avec cette même version de Playwright. Le défaut est le canal `chrome` installé sur la machine. `WB_E2E_HEADED=1` affiche les fenêtres.
