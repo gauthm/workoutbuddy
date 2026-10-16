@@ -21,6 +21,7 @@ __DOMAIN__ {
 	import security_headers
 	@app_bootstrap path / /index.html /sw.js /manifest.json /offline.html
 	header @app_bootstrap >Cache-Control "no-store"
+	header >X-WorkoutBuddy-Logout "/auth/logout"
 	log {
 		output file /var/log/caddy/workoutbuddy.json {
 			roll_size 5MiB
@@ -29,9 +30,9 @@ __DOMAIN__ {
 		}
 	}
 	route {
-		# Only the repair worker and a login redirect are public; no app/API data.
-		@worker path /sw.js
-		handle @worker {
+		# Public repair worker and installation metadata/icons contain no user data.
+		@public_assets path /sw.js /manifest.json /favicon.ico /apple-touch-icon.png /icons/workoutbuddy.svg /icons/icon-192.png /icons/icon-512.png
+		handle @public_assets {
 			reverse_proxy 127.0.0.1:3000 {
 				header_up Host __DOMAIN__
 				header_up X-Forwarded-Proto https
@@ -40,6 +41,10 @@ __DOMAIN__ {
 		handle /auth/login {
 			header Cache-Control "no-store"
 			redir https://auth.__DOMAIN__/?rd=https://__DOMAIN__/ 302
+		}
+		handle /auth/logout {
+			header Cache-Control "no-store"
+			redir https://auth.__DOMAIN__/logout 302
 		}
 		handle {
 			request_header -Remote-User

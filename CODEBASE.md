@@ -12,6 +12,7 @@ Installation, fonctionnement et tests : [README.md](README.md). Règles de déve
 | `src/db/backup.js`, `src/db/privateStorage.js` | Sauvegardes et permissions privées SQLite |
 | `src/seed/` | Catalogue source, traductions `exercises.fr.json`, chargement et synchronisation |
 | `scripts/` | Téléchargement des bibliothèques et import d’exercices |
+| `scripts/download-exercise-images.js` | Installation/reprise des photos à une révision source figée, contrôle hors ligne avec `--check`, sans import du catalogue ni accès SQLite |
 
 ## API — `/api/v1`
 
@@ -59,8 +60,10 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Questionnaire et fiche programme | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
 | Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
+| Déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
 | RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
 | Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
+| Logo d’onglet et d’écran d’accueil | `icons/workoutbuddy.svg`, `favicon.ico`, `apple-touch-icon.png`, `icons/icon-*.png`, `manifest.json`, génération via `scripts/generate-icons.js` |
 
 ## Tests et documentation
 
@@ -71,11 +74,13 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/helpers/` | Exécution isolée des requêtes |
 | `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
 | `tests/e2e/updates.spec.js` | Livraison sur copie isolée : rechargement, brouillon, panne réseau et proxy HTTP de session expirée, y compris ancien worker |
+| `tests/e2e/authProxy.js`, `settings.spec.js` | Proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
+| `tests/e2e/theme.spec.js`, `security.spec.js` | Contrastes du thème clair et séries validées ; liens et décodage des icônes, dimensions et opacité Apple/manifest |
 | `tests/ui/` | Scénarios visuels Playwright complémentaires |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
 | `docs/DEPLOYMENT_ROCKY.md`, `deploy/rocky/` | Caddy/Authelia, systemd, sauvegardes et configuration reproductible Rocky |
 | `deploy/rocky/workoutbuddy-maintenance`, `dnf-automatic-*.conf` | Sauvegarde avant mises à jour RPM, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
 | `deploy/rocky/workoutbuddy-audit.*`, `test-maintenance.py` | Audit npm hebdomadaire et tests simulés de la maintenance, sans toucher au serveur |
-| `deploy/rocky/workoutbuddy-deploy-assets` | Publication atomique de l’interface et conservation de la version précédente |
+| `deploy/rocky/workoutbuddy-deploy-assets` | Contrôle des photos obligatoires, publication atomique de l’interface et conservation de la version précédente |
 | `deploy/rocky/workoutbuddy-sessions.*`, `authelia-sessions.conf` | Stockage Redis privé et persistant des sessions Authelia, par socket Unix |
-| `deploy/rocky/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation, en-têtes et activation HTTPS du worker |
+| `deploy/rocky/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |

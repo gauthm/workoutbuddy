@@ -116,8 +116,10 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
  bind 127.0.0.1
  tls internal
  import security_headers
+ header >X-WorkoutBuddy-Logout "/auth/logout"
  route {{
- handle /sw.js {{
+ @public_assets path /sw.js /manifest.json /favicon.ico /apple-touch-icon.png /icons/workoutbuddy.svg /icons/icon-192.png /icons/icon-512.png
+ handle @public_assets {{
   reverse_proxy 127.0.0.1:{appport} {{
    header_up Host {domain}:{tlsport}
    header_up X-Forwarded-Proto https
@@ -125,6 +127,9 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
  }}
  handle /auth/login {{
   redir {auth}/?rd={base}/ 302
+ }}
+ handle /auth/logout {{
+  redir {auth}/logout 302
  }}
  handle {{
  request_header -X-Forwarded-For
@@ -152,6 +157,11 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
         spawn('caddy',['caddy','run','--config',str(caddyfile),'--adapter','caddyfile'])
         wait(lambda:request(auth+'/api/health')[0]==200)
         check('Authelia nonce CSP preserved by Caddy fallback',"'nonce-" in request(auth+'/')[2].get('Content-Security-Policy',''))
+        for path,content_type in [('/manifest.json','json'),('/favicon.ico','image/'),('/apple-touch-icon.png','image/png'),('/icons/workoutbuddy.svg','image/svg+xml'),('/icons/icon-192.png','image/png'),('/icons/icon-512.png','image/png')]:
+            code,_,headers=request(base+path+'?v=1')
+            check('Public installation asset '+path,code==200 and content_type in headers.get('Content-Type',''))
+        for path in ['/','/index.html','/js/api.js','/api/v1/settings','/icons/other.png','/exercises/images/dumbbell_bench_press/0.jpg']:
+            check('Protected route '+path,request(base+path)[0] in (302,401,403))
         if os.environ.get('WB_PLAYWRIGHT_PATH'):
             subprocess.run(['node',str(template.with_name('test-auth-recovery.mjs')),base,auth],check=True,timeout=45)
         last_step=0
@@ -165,6 +175,8 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
             token=str((struct.unpack('>I',digest[offset:offset+4])[0]&0x7fffffff)%1000000).zfill(6)
             check('TOTP accepted',request(auth+'/api/secondfactor/totp',{'token':token,'targetURL':base})[0]==200)
         login(True)
+        photo_code,photo_data,photo_headers=request(base+'/exercises/images/dumbbell_bench_press/0.jpg')
+        check('Exercise photo served locally behind TOTP protection',photo_code==200 and photo_data.startswith(b'\xff\xd8\xff') and photo_headers.get('Content-Type','').startswith('image/jpeg'))
         app_headers=request(base+'/')[2]
         check('Application Vue CSP preserved by Caddy fallback',"script-src 'self' 'unsafe-eval'" in app_headers.get('Content-Security-Policy',''))
         check('Authentication works with no-referrer policy',app_headers.get('Referrer-Policy')=='no-referrer')
@@ -183,7 +195,15 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
         copied=http.cookiejar.CookieJar()
         for item in jar:copied.set_cookie(copy.copy(item))
         check('Persisted browser cookie resumes the authenticated session',request(base+'/',other=opener(copied))[0]==200)
-        check('Logout succeeds',request(auth+'/api/logout',{'targetURL':base})[0]==200)
+        if os.environ.get('WB_PLAYWRIGHT_PATH'):
+            cookies=root/'browser-cookies.json'
+            cookies.write_text(json.dumps([{'name':c.name,'value':c.value,'domain':c.domain,'path':c.path,'expires':c.expires or -1,'secure':c.secure,'httpOnly':c.has_nonstandard_attr('HttpOnly'),'sameSite':'Lax'} for c in jar]))
+            before=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{appport}/api/v1/user-profile',headers={'Host':f'{domain}:{tlsport}'})).read()
+            subprocess.run(['node',str(template.with_name('test-auth-recovery.mjs')),base,auth,str(cookies)],check=True,timeout=45)
+            after=urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{appport}/api/v1/user-profile',headers={'Host':f'{domain}:{tlsport}'})).read()
+            check('Settings logout preserves saved application data',before==after)
+        else:
+            check('Logout succeeds',request(auth+'/api/logout',{'targetURL':base})[0]==200)
         check('Logout revokes even a previous copy of the cookie',request(base+'/',other=opener(copied))[0] in (302,401,403))
         login(False)
         check('Ordinary authenticated session initially works',request(base+'/')[0]==200)

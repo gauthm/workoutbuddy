@@ -7,6 +7,7 @@ Les actions testées passent par les boutons et champs de l’application. Les a
 ## Prérequis
 
 - Installer normalement le projet et ses ressources locales (README principal).
+- Vérifier les photos avec `node scripts/download-exercise-images.js --check` ; les installer avec la même commande sans `--check` si nécessaire. Les parcours d’animation utilisent les vraies photos du catalogue.
 - Disposer de Playwright et de Google Chrome. Sur cette machine, le Playwright fourni par `@playwright/mcp` est réutilisé. Aucune dépendance npm n’est ajoutée au projet.
 - Sur un serveur Linux minimal, installer aussi des polices système (par exemple `dejavu-sans-fonts` et `liberation-sans-fonts` sur Rocky). Sans police, Chromium headless peut afficher des textes sans dimensions et fausser les clics ou les assertions de visibilité.
 - Le résolveur essaie un Playwright disponible localement, puis les installations globales `playwright` et `@playwright/mcp` obtenues avec `npm root -g`.
@@ -38,13 +39,16 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | `sessions.spec.js` | Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même exercice, requête interrompue avant/après écriture sans doublon, conflit de réessai, fin bloquée pendant sauvegarde, réponses de fin/annulation perdues, arrêt brutal, continuer/quitter sans enregistrer |
 | `history.spec.js` | Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement, réinitialisation d’une séance terminée |
 | `equipment.spec.js` | Ajout quantité/poids, sauvegarde persistante, saisie invalide et annulation du brouillon |
-| `settings.spec.js` | Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise |
+| `settings.spec.js` | Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise ; déconnexion via proxy HTTP, annulation du brouillon et données conservées ; bouton absent sans authentification |
 | `data.spec.js` | Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence invalide |
 | `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur |
 | `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
-| `security.spec.js` | CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu et service worker |
+| `security.spec.js` | CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu, service worker et décodage des icônes navigateur/iPhone |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
 | `updates.spec.js` | Publication sur une copie des assets : détection au premier plan, reload sans hard refresh, brouillon préservé, vraie panne réseau, refus des assets de connexion ; proxy HTTP avec session expirée sur navigation, API, premier plan et mise à niveau d’un ancien worker |
+| `theme.spec.js` | Thème clair enregistré par l’interface, contraste des textes et champs, focus visible, navigation et calendrier ; valeurs des séries validées lisibles |
+
+`authProxy.js` fournit un proxy HTTP jetable commun aux réglages et aux mises à jour. Il reproduit les redirections et expirations ; la révocation d’une véritable session Authelia est vérifiée séparément avec `deploy/rocky/test-auth-sessions.py`, jamais avec une identité personnelle.
 
 `scripts/e2e-selection.js` décrit les dépendances. Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare les commits à cette référence, et ajoute les nouveaux fichiers non suivis.
 

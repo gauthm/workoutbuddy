@@ -1,5 +1,6 @@
 import {test,expect} from './fixtures.js'
 import {L,get,pending} from './helpers.js'
+import {authenticationProxy} from './authProxy.js'
 async function edit(page){
  await page.goto('/#/settings')
  await page.getByText(L('settings.section_general'),{exact:true}).click()
@@ -30,4 +31,32 @@ test('échec réseau à la sauvegarde → brouillon intact → nouvelle tentativ
  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
  await expect(pending(page)).toHaveCount(0)
  expect((await get(request,'/user-profile')).display_name).toBe('Camille test')
+})
+
+test('la déconnexion reste masquée pour une installation locale sans authentification',async({page})=>{
+ await page.goto('/#/settings')
+ await expect(page.locator('.settings-section')).toHaveCount(5)
+ await expect(page.getByRole('button',{name:L('settings.logout'),exact:true})).toHaveCount(0)
+})
+
+test('déconnexion : confirmation des brouillons, annulation puis retour au portail sans modifier les données',async({page,app,request})=>{
+ const proxy=await authenticationProxy(app)
+ try {
+  const before=await get(request,'/user-profile')
+  await page.goto(proxy.url+'/#/settings')
+  await page.getByText(L('settings.section_profile'),{exact:true}).click()
+  const name=page.getByLabel(L('settings.profile_display_name'),{exact:true})
+  await name.fill('Draft before logout')
+  const logout=page.getByRole('button',{name:L('settings.logout'),exact:true})
+  await logout.click()
+  await expect(page.getByRole('dialog')).toContainText(L('settings.logout_unsaved'))
+  await page.getByRole('dialog').getByRole('button',{name:L('common.cancel'),exact:true}).click()
+  await expect(name).toHaveValue('Draft before logout')
+  await logout.click()
+  await page.getByRole('dialog').getByRole('button',{name:L('settings.logout'),exact:true}).click()
+  await expect(page).toHaveURL(proxy.loginURL)
+  await expect(page.getByRole('heading',{name:'Authentication portal'})).toBeVisible()
+  expect((await request.get(proxy.url+'/api/v1/settings',{headers:{Accept:'application/json'},maxRedirects:0})).status()).toBe(401)
+  expect(await get(request,'/user-profile')).toEqual(before)
+ } finally {await proxy.dispose()}
 })

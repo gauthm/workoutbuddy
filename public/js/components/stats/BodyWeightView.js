@@ -86,6 +86,7 @@ export default {
       const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
       const textColor = styles.getPropertyValue('--color-text').trim()
       const gridColor = styles.getPropertyValue('--color-border').trim()
+      const primaryColor = styles.getPropertyValue('--color-primary').trim()
       if (!window.Chart) {
         console.warn('[BodyWeightView] Chart.js non disponible')
         return
@@ -123,8 +124,8 @@ export default {
             {
               label:           t('bodyweight.weight'),
               data:            rawData,
-              borderColor:     'rgba(230,126,34,0.5)',
-              backgroundColor: 'rgba(230,126,34,0.1)',
+              borderColor:     mutedColor,
+              backgroundColor: primaryColor + '1a',
               pointRadius:     3,
               pointHoverRadius: 5,
               tension:         0.2,
@@ -133,7 +134,7 @@ export default {
             {
               label:           t('bodyweight.moving_avg'),
               data:            avgData,
-              borderColor:     '#e67e22',
+              borderColor:     primaryColor,
               backgroundColor: 'transparent',
               pointRadius:     0,
               borderWidth:     2,

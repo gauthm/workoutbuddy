@@ -13,10 +13,13 @@ git clone https://github.com/gauthm/workoutbuddy.git
 cd workoutbuddy
 npm ci
 node scripts/download-vendors.js
+node scripts/download-exercise-images.js
 npm start
 ```
 
 Ouvrir [http://localhost:3000](http://localhost:3000). `npm start` lance le serveur et applique les migrations et le catalogue intégré. Aucun build frontend n’est nécessaire. Les bibliothèques Vue et Chart.js sont téléchargées une fois, puis servies localement.
+
+Les photos sont téléchargées une fois depuis [free-exercise-db](https://github.com/yuhonas/free-exercise-db), à une révision figée, puis servies localement avec l’application. Le script récupère uniquement les 1 746 JPEG référencés par le catalogue : il reprend les fichiers manquants, vérifie leur format et ne modifie ni le catalogue ni SQLite. `node scripts/download-exercise-images.js --check` vérifie l’installation sans réseau. Ces fichiers régénérables sont exclus de Git et doivent être installés sur chaque nouvelle machine.
 
 ## Utilisation
 
@@ -88,6 +91,10 @@ Les réglages regroupent Général, Profil, Séance, Coach IA et Réglages avanc
 
 Après une modification, une barre de sauvegarde apparaît au-dessus de la navigation. **Enregistrer** sauvegarde les changements de la page ensemble ; **Annuler** restaure les valeurs enregistrées. Un échec conserve les brouillons pour permettre de réessayer.
 
+Le thème clair distingue les sections sur fond blanc, renforce les contours des champs et conserve des textes, états et graphiques lisibles. Les valeurs des séries validées restent visibles sur mobile.
+
+Sur le déploiement Authelia, **Réglages → Connexion → Se déconnecter** ferme la session de cet appareil, même mémorisée. Une confirmation permet de conserver un brouillon en annulant. Les données sauvegardées et la séance en cours restent sur le serveur ; une reconnexion permet de les retrouver. Le bouton apparaît uniquement si le proxy fournit cette intégration.
+
 Le Coach IA utilise une API compatible OpenAI, configurée avec une URL, un modèle et éventuellement une clé API. Le test de connexion et la liste des modèles peuvent utiliser la saisie avant sa sauvegarde. Le coach conseille et dialogue ; il ne configure pas l’application et ne crée pas les programmes.
 
 La clé est stockée côté serveur, masquée dans l’interface et absente des réponses API et de l’export JSON. Une clé existante est conservée lorsqu’une sauvegarde ne fournit pas de nouvelle clé.
@@ -97,6 +104,8 @@ La clé est stockée côté serveur, masquée dans l’interface et absente des 
 Dans **Réglages → Réglages avancés**, configurer l’hôte réseau sur `0.0.0.0`, enregistrer et redémarrer le serveur. Depuis un téléphone sur le même réseau, ouvrir l’adresse IP locale de la machine, par exemple `http://192.168.1.10:3000`. Le pare-feu doit autoriser le port choisi.
 
 L’application est prévue pour un usage personnel sur un réseau de confiance : elle n’a pas d’authentification et ne doit pas être exposée directement à Internet.
+
+Le logo haltère apparaît dans l’onglet du navigateur et lors de **Partager → Sur l’écran d’accueil** dans Safari. Une icône Apple PNG 180×180 et les icônes du manifeste 192/512 complètent le favicon SVG/ICO. Leur source est `public/icons/workoutbuddy.svg` ; `node scripts/generate-icons.js` régénère les fichiers avec le Playwright déjà disponible pour les tests, sans dépendance ajoutée. iOS peut conserver l’ancienne icône d’un raccourci déjà installé : si nécessaire, retirer ce raccourci et l’ajouter à nouveau depuis Safari, sans effacer les données du site.
 
 En HTTPS, Safari et l’application ajoutée à l’écran d’accueil vérifient les nouvelles
 versions à l’ouverture, au retour au premier plan et toutes les cinq minutes pendant

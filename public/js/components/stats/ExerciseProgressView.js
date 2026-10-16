@@ -83,6 +83,7 @@ export default {
       const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
       const textColor = styles.getPropertyValue('--color-text').trim()
       const gridColor = styles.getPropertyValue('--color-border').trim()
+      const primaryColor = styles.getPropertyValue('--color-primary').trim()
       if (!window.Chart) return
       const canvas = document.getElementById('exercise-progress-chart')
       if (!canvas || !state.data.length) return
@@ -94,8 +95,8 @@ export default {
           datasets: [{
             label:           t('stats.rm_estimated'),
             data:            state.data.map(d => ({ x: d.date, y: d.estimated_1rm_kg })),
-            borderColor:     '#e67e22',
-            backgroundColor: 'rgba(230,126,34,0.1)',
+            borderColor:     primaryColor,
+            backgroundColor: primaryColor + '1a',
             pointRadius:     4,
             pointHoverRadius: 6,
             tension:         0.2,

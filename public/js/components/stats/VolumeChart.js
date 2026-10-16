@@ -39,6 +39,7 @@ export default {
       const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
       const textColor = styles.getPropertyValue('--color-text').trim()
       const gridColor = styles.getPropertyValue('--color-border').trim()
+      const primaryColor = styles.getPropertyValue('--color-primary').trim()
       if (!window.Chart) return
       if (!props.data || props.data.length === 0) return
 
@@ -56,8 +57,8 @@ export default {
             datasets: [{
               label:           props.metric==='sets' ? t('stats.sets') : t('stats.volume'),
               data:            props.data.map(value),
-              backgroundColor: 'rgba(230,126,34,0.7)',
-              borderColor:     '#e67e22',
+              backgroundColor: primaryColor,
+              borderColor:     primaryColor,
               borderWidth:     1,
               borderRadius:    4,
             }],

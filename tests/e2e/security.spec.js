@@ -1,6 +1,33 @@
 import {test,expect} from './fixtures.js'
 import {get,planned,trainThroughUI} from './helpers.js'
 
+test('icônes navigateur et écran d’accueil : liens, décodage et PNG opaques aux dimensions prévues',async({page,request})=>{
+ await page.goto('/')
+ const apple=page.locator('link[rel="apple-touch-icon"]')
+ await expect(apple).toHaveAttribute('sizes','180x180')
+ const sources=[{src:await apple.getAttribute('href'),size:180}]
+ const manifest=await(await request.get('/manifest.json')).json()
+ for(const icon of manifest.icons){
+  expect(icon.purpose).toContain('maskable')
+  sources.push({src:icon.src,size:Number(icon.sizes.split('x')[0])})
+ }
+ for(const {src,size} of sources){
+  const actual=await page.evaluate(async src=>{
+   const image=new Image();image.src=src;await image.decode()
+   const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight
+   const context=canvas.getContext('2d');context.drawImage(image,0,0)
+   return {width:image.naturalWidth,height:image.naturalHeight,cornerAlpha:context.getImageData(0,0,1,1).data[3]}
+  },src)
+  expect(actual).toEqual({width:size,height:size,cornerAlpha:255})
+ }
+ const svg=page.locator('link[rel="icon"][type="image/svg+xml"]')
+ const decoded=await page.evaluate(async src=>{const image=new Image();image.src=src;await image.decode();return image.naturalWidth>0},await svg.getAttribute('href'))
+ expect(decoded).toBe(true)
+ const ico=await request.get(await page.locator('link[rel="icon"]:not([type])').getAttribute('href'))
+ expect(ico.status()).toBe(200)
+ expect([...(await ico.body()).subarray(0,6)]).toEqual([0,0,1,0,2,0])
+})
+
 test('la barre de titre respecte la zone de sécurité iOS au chargement, au défilement et après rotation',async({page})=>{
  const screen=await page.context().newCDPSession(page)
  await screen.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}})

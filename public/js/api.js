@@ -17,10 +17,19 @@ function requestActivity(change) {
 }
 
 let redirectingToLogin = false
+// The trusted reverse proxy advertises this optional integration. Local/LAN
+// installations have no authentication session and must not offer a fake logout.
+export const authentication = {
+  logoutAvailable: false,
+  logout() {
+    if (this.logoutAvailable) window.location.assign('/auth/logout')
+  },
+}
 async function fetchApi(path, options = {}) {
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
   const response = await fetch(`${BASE}${path}`, { ...options, headers, redirect: 'manual', cache: 'no-store' })
+  authentication.logoutAvailable = response.headers.get('X-WorkoutBuddy-Logout') === '/auth/logout'
   if (response.status === 401 || response.type === 'opaqueredirect') {
     if (!redirectingToLogin && typeof window !== 'undefined') {
       redirectingToLogin = true

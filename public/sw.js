@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v73'
+const CACHE_NAME = 'workoutbuddy-v74'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -83,6 +83,11 @@ const PRECACHE_URLS = [
   '/locales/fr.json',
   '/locales/en.json',
   '/manifest.json',
+  '/favicon.ico?v=1',
+  '/icons/workoutbuddy.svg?v=1',
+  '/apple-touch-icon.png?v=1',
+  '/icons/icon-192.png?v=1',
+  '/icons/icon-512.png?v=1',
 ]
 
 // A release only activates after every shell asset is cached successfully.

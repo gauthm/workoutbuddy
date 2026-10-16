@@ -37,7 +37,8 @@ Créer aussi `groupadd --system workoutbuddy-sessions` ; le paquet Redis fournit
 son compte système. L’instance générique `redis.service` reste désactivée.
 
 Copier le code validé dans `/usr/local/lib/workoutbuddy`, root:root, sans écriture
-pour le service. Y lancer `npm ci --omit=dev` puis `node scripts/download-vendors.js`.
+pour le service. Y lancer `npm ci --omit=dev`, `node scripts/download-vendors.js`
+et `node scripts/download-exercise-images.js`.
 Les données restent exclusivement dans `/var/lib/workoutbuddy`.
 
 Définir le domaine non secret dans `$DOMAINE`, puis rendre les modèles hors dépôt :
@@ -109,7 +110,11 @@ Lire le lien de vérification **dans votre terminal SSH uniquement** :
 authentificateur et confirmer un code. Aucun SMTP ni adresse personnelle requis.
 Tronquer ensuite ce fichier privé. Ne transmettre aucun secret par messagerie.
 Tester en fenêtre privée : mot de passe seul insuffisant, accès après TOTP,
-puis déconnexion via `https://auth.DOMAINE/logout`. Sans **Se souvenir de moi** :
+puis déconnexion depuis **Réglages → Connexion → Se déconnecter**, ou via
+`https://auth.DOMAINE/logout`. Le proxy annonce le bouton avec
+`X-WorkoutBuddy-Logout: /auth/logout` et renvoie cette route vers le logout natif
+d’Authelia. La session mémorisée est révoquée sans supprimer les données SQLite.
+Sans **Se souvenir de moi** :
 15 min d’inactivité et 1 h maximum. Avec cette case cochée sur un appareil de
 confiance : connexion complète mémorisée pendant **60 jours**, sans expiration
 par inactivité ; nouveau navigateur, cookie effacé, déconnexion ou expiration
@@ -132,7 +137,10 @@ utilisateurs, TOTP et bases intégralement jetables, sur loopback ; il exige les
 binaires Node, Caddy, Redis et Authelia, et ne touche pas aux comptes réels.
 Avec `WB_PLAYWRIGHT_PATH` défini comme pour les E2E, il ajoute le test navigateur
 HTTPS `test-auth-recovery.mjs` : ancien cache et installation du worker anonyme,
-redirection effective vers Authelia sans blocage d’activation. Aucun certificat
+redirection effective vers Authelia sans blocage d’activation, puis déconnexion
+par le bouton des réglages, annulation d’un brouillon et révocation de l’ancien
+cookie mémorisé avec données sauvegardées inchangées. Les deux photos d’un exercice
+sont aussi décodées derrière le véritable TLS, la CSP et le MFA. Aucun certificat
 de test n’est ajouté au système ; le navigateur jetable accepte uniquement ce
 test avec sa propre autorité locale et des noms `.test` résolus sur loopback.
 
@@ -243,8 +251,12 @@ précharge les fichiers statiques après contrôle d’accès, jamais l’HTML p
 La navigation reste native pour laisser le navigateur suivre Authelia ; un 401 API
 provoque aussi le retour au portail, tandis qu’une vraie panne réseau garde `OFFLINE`.
 Le worker `/sw.js` est public pour pouvoir remplacer un ancien worker même après
-expiration ; `/auth/login` est un simple renvoi public au portail. Ce sont les seules
-exceptions : l’interface, ses autres assets et toute l’API restent authentifiés.
+expiration ; `/auth/login` et `/auth/logout` sont des renvois publics au portail.
+Le manifeste et les seuls fichiers d’icônes explicitement listés dans le matcher
+`@public_assets` sont publics pour les navigateurs et l’installation iPhone sans
+cookie partagé. Ils ne contiennent aucune donnée utilisateur. L’interface,
+les autres assets et toute l’API restent authentifiés ; ne pas ouvrir `icons/*`
+ou d’autres chemins par un joker.
 Un worker installé pendant une session expirée ne précharge aucun asset privé et
 répare les fenêtres visibles déjà en cache. Caddy interdit le cache HTTP du bootstrap,
 du worker et d’`offline.html`. Au premier plan, l’application vérifie sa connexion et
@@ -254,6 +266,11 @@ une saisie ou séance reporte ce rechargement et affiche un bouton avec confirma
 
 Après les tests isolés, publier sans changer le code possédé par le compte de service :
 `sudo /usr/local/sbin/workoutbuddy-deploy-assets /CHEMIN/DEPOT/public`.
+Installer d’abord les ressources dans le clone avec
+`node scripts/download-vendors.js` et `node scripts/download-exercise-images.js`.
+Le script de publication refuse une version dont des photos du catalogue sont
+absentes ou invalides. Les JPEG restent servis localement et protégés par Authelia ;
+aucun chargement d’image vers GitHub n’est nécessaire depuis le navigateur.
 Ce script root échange atomiquement deux dossiers `public/`, garde l’ancienne copie
 dans `.public-release-*` pour retour arrière, et ne touche pas à SQLite. Conserver
 une seule copie précédente après validation. Sous SELinux enforcing, vérifier les

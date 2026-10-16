@@ -3,6 +3,7 @@
 import argparse
 import ctypes
 import fcntl
+import json
 import os
 from pathlib import Path
 import re
@@ -23,6 +24,26 @@ def main():
     current=re.search(pattern,(live/'sw.js').read_text())
     if not version or not current or version[1]==current[1]:
         parser.error('Bump CACHE_NAME before publishing a new release')
+    # The media are generated/ignored by Git. A clone alone is not a complete
+    # release: never replace working photos with an incomplete public tree.
+    catalog=source.parent/'src/seed/exercises.json'
+    if not catalog.is_file():
+        parser.error('Use the repository public/ directory, with its source catalogue')
+    images={image for exercise in json.loads(catalog.read_text()) for image in exercise['image_paths']}
+    missing=[]
+    for image in images:
+        if not re.fullmatch(r'[a-z0-9_]+/[0-9]+\.jpg',image):
+            parser.error('Invalid catalogue image path')
+        try:
+            with (source/'exercises/images'/image).open('rb') as media:
+                start=media.read(3)
+                media.seek(-2,os.SEEK_END)
+                valid=start==b'\xff\xd8\xff' and media.read(2)==b'\xff\xd9'
+        except (OSError,ValueError):
+            valid=False
+        if not valid:missing.append(image)
+    if missing:
+        parser.error(f'{len(missing)} missing/invalid photos; run node scripts/download-exercise-images.js first')
     lock=Path('/run/workoutbuddy-deploy-assets.lock').open('w')
     fcntl.flock(lock,fcntl.LOCK_EX | fcntl.LOCK_NB)
     stage=Path(tempfile.mkdtemp(prefix='.public-release-',dir=live.parent))
@@ -37,7 +58,7 @@ def main():
     libc=ctypes.CDLL(None,use_errno=True)
     if libc.renameat2(-100,os.fsencode(stage),-100,os.fsencode(live),2):
         raise OSError(ctypes.get_errno(),'Atomic asset publication failed')
-    print(f'Published {version[1]}; previous public/ retained at {stage}')
+    print(f'Published {version[1]} with {len(images)} validated photos; previous public/ retained at {stage}')
 
 
 if __name__=='__main__':

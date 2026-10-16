@@ -1,22 +1,41 @@
 # Validation du déploiement Rocky
 
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
-- Couverture navigateur : 82 cas validés au total après suite complète et
-  contrôles ciblés ; huit cas restent bloqués par les photos absentes. Une attente
-  de test pendant un rechargement a été corrigée après la suite complète.
-- Dernier contrôle ciblé : 18 cas sécurité/mise à jour passent, ordinateur et mobile.
+- Couverture navigateur : 100 cas, ordinateur et mobile, avec les 1 746 photos
+  installées. L’exécution globale a validé 95 cas avant interruption du processus ;
+  les cinq derniers cas de mise à jour mobile ont été relancés séparément.
+  Aucun échec après ces contrôles.
+  Alternance des deux positions, pause/reprise,
+  réduction des animations, arrêt hors écran et aide en séance sont couverts.
+- Thème clair : contrastes mesurés dans les réglages, l’accueil et la séance,
+  textes contrôlés à 4,5:1 minimum, contours des champs à 3:1, focus visible,
+  préférence persistante et valeurs validées lisibles ; captures examinées.
+- Réglages : confirmation de déconnexion, annulation avec brouillon intact,
+  retour au portail et données sauvegardées conservées. Bouton absent sans proxy
+  d’authentification. Icônes SVG/ICO décodées, dimensions et opacité des PNG
+  Apple/manifeste contrôlées ; fichiers publics limités aux chemins explicites.
+- Photos : les 1 746 JPEG du catalogue sont présents, environ 101 Mio sur disque,
+  avec contrôle de format hors ligne. Installation reproductible à une révision
+  source figée, sans modifier le catalogue ni SQLite. Une publication avec photo
+  manquante est refusée avant tout échange de répertoire ; garde vérifiée sur
+  une copie synthétique, puis livraison complète validée.
+- Livraison et sécurité :
   Publication sans hard refresh, API jamais cachée, vraie panne réseau distinguée
   d’un 401, brouillon conservé, rejet des assets de connexion et retour au portail
   après expiration sur navigation, API, premier plan ou ancien worker.
 - Test TLS intégral jetable Caddy/Authelia/Redis/Node : mot de passe seul refusé,
   TOTP accepté, cookie Secure/HttpOnly de 60 jours, persistance après redémarrage
-  des deux services, reprise avec cookie conservé, déconnexion et révocation,
+  des deux services, reprise avec cookie conservé, déconnexion par le bouton
+  des réglages et révocation même avec une copie antérieure du cookie,
   expiration des sessions ordinaires. CSP Vue et nonce Authelia préservés,
   authentification avec no-referrer et IP pure transmise sans en-tête forgé.
+  Photos affichées derrière le véritable TLS, la CSP et le MFA, refusées sans
+  connexion ; icônes d’installation accessibles sans cookie partagé.
 - Site public vérifié sans identité personnelle : renvoi vers Authelia et case
   Se souvenir de moi visible. Un navigateur à ancien cache synthétique atteint le
-  portail réel après installation du worker de réparation. Le worker et le renvoi
-  de connexion sont publics ; les pages, autres assets et API restent protégés.
+  portail réel après installation du worker de réparation. Le worker, le manifeste,
+  les icônes listées et les renvois de connexion/déconnexion sont publics ;
+  les pages, photos d’exercices, autres assets et API restent protégés.
 - Maintenance nocturne : configuration DNF parsée, timer en heure de Paris et
   absence de rattrapage diurne contrôlés. Sept tests simulés vérifient le garde
   horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node/Redis.
@@ -24,7 +43,7 @@
   Audit npm exécuté sans privilèges, aucun accès aux bases/secrets, aucune
   vulnérabilité de production signalée. Aucun redémarrage réel du VPS effectué
   pour ces tests ; le prochain créneau nocturne reste à observer dans les journaux.
-- 10 parcours navigateur de sécurité passent (ordinateur et mobile) : zone sûre iOS, CSP,
+- 12 parcours navigateur de sécurité passent (ordinateur et mobile) : icônes, zone sûre iOS, CSP,
   service worker, origines étrangères, JSON, limitations IA et import interrompu.
 - HTTPS public, redirection HTTP, UI/API/export/IA protégés, en-têtes d'identité
   forgés refusés ; mot de passe seul insuffisant, TOTP accepté, déconnexion et
@@ -51,9 +70,7 @@ installation des polices, les parcours de réglages/import, matériel et charges
 de séance précédemment signalés passent. Ce n'étaient pas des régressions de
 l'application démontrées par ces tests.
 
-Les parcours d'animation des photos restent non validés : les fichiers sous
-`public/exercises/images/` sont absents de cette installation. Playwright utilise
-un Chromium headless de secours sur Rocky, qui ne fait pas partie de ses
+Playwright utilise un Chromium headless de secours sur Rocky, qui ne fait pas partie de ses
 distributions officiellement prises en charge. La marge haute est testée avec
 les safe-area insets simulés au chargement, au défilement, après navigation et
 changement des insets ; le rendu réel d'une webapp Safari iPhone reste à confirmer

@@ -1,5 +1,5 @@
 import { reactive, onMounted, inject, ref, computed } from '/vendor/vue.esm-browser.prod.js'
-import { settings as settingsApi } from '../../api.js'
+import { settings as settingsApi, authentication } from '../../api.js'
 import { t, i18n } from '../../i18n.js'
 import PageHeader       from '../layout/PageHeader.js'
 import LoadingSpinner   from '../common/LoadingSpinner.js'
@@ -8,16 +8,18 @@ import SettingsSection  from './SettingsSection.js'
 import AIProviderForm   from './AIProviderForm.js'
 import ExportImport     from './ExportImport.js'
 import ProfileSettings  from './ProfileSettings.js'
+import ConfirmModal from '../common/ConfirmModal.js'
 
 export default {
   name: 'SettingsView',
   components: {
     PageHeader, LoadingSpinner, ErrorBanner,
-    SettingsSection, AIProviderForm, ExportImport, ProfileSettings,
+    SettingsSection, AIProviderForm, ExportImport, ProfileSettings, ConfirmModal,
   },
 
   setup() {
     const store = inject('store'), profile = ref(null), ai = ref(null)
+    const canLogout = ref(authentication.logoutAvailable), showLogout = ref(false)
 
     const state = reactive({
       loading:  false,
@@ -25,6 +27,7 @@ export default {
       settings: null,
       baseline: {}, saving: false,
       networkChanged: false,
+      loggingOut: false,
     })
 
     // ── Chargement ───────────────────────────────────────────
@@ -32,6 +35,7 @@ export default {
       state.loading = true; state.error = null
       try {
         state.settings = await settingsApi.get()
+        canLogout.value = authentication.logoutAvailable
         state.baseline = JSON.parse(JSON.stringify(state.settings))
         store.setSettings(state.settings)
       } catch (err) {
@@ -43,7 +47,12 @@ export default {
 
     const settingChanges = computed(() => Object.fromEntries(Object.entries(state.settings || {}).filter(([key,value]) => JSON.stringify(value) !== JSON.stringify(state.baseline[key]))))
     const dirty = computed(() => Object.keys(settingChanges.value).length > 0 || !!profile.value?.dirty || !!ai.value?.dirty)
-    const busy = computed(() => state.saving || !!ai.value?.busy)
+    const busy = computed(() => state.saving || state.loggingOut || !!ai.value?.busy)
+    function logout() {
+      if (busy.value || store.pendingRequests > 0) return
+      state.loggingOut = true
+      authentication.logout()
+    }
     function updateSetting(key, value) { state.settings[key] = value }
     function discard() {
       state.settings = JSON.parse(JSON.stringify(state.baseline))
@@ -72,7 +81,7 @@ export default {
     }
 
     onMounted(load)
-    return { state, profile, ai, dirty, busy, load, updateSetting, saveAll, discard, t }
+    return { state, store, profile, ai, dirty, busy, canLogout, showLogout, logout, load, updateSetting, saveAll, discard, t }
   },
 
   template: `
@@ -215,7 +224,20 @@ export default {
 
           </fieldset>
         </template>
+        <section v-if="canLogout" class="settings-account" :aria-label="t('settings.account')">
+          <div>
+            <h2>{{ t('settings.account') }}</h2>
+            <p>{{ t('settings.logout_hint') }}</p>
+          </div>
+          <button type="button" class="btn btn--secondary" :disabled="busy || store.pendingRequests > 0"
+            @click="showLogout = true">{{ t('settings.logout') }}</button>
+        </section>
       </div>
+      <ConfirmModal v-if="showLogout" :title="t('settings.logout')" :body="t('settings.logout_confirm')"
+        :confirm-text="t('settings.logout')" :busy="busy || store.pendingRequests > 0"
+        @confirm="logout" @cancel="showLogout = false">
+        <p v-if="dirty" class="settings-notice settings-notice--warning">{{ t('settings.logout_unsaved') }}</p>
+      </ConfirmModal>
       <div v-if="dirty" class="settings-save-dock" role="region" :aria-label="t('settings.pending_changes')">
         <span class="settings-save-dock__message" role="status">{{ t('settings.pending_changes') }}</span>
         <button type="button" class="btn btn--secondary" :disabled="busy" @click="discard()">{{ t('common.cancel') }}</button>
