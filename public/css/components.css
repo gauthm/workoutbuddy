@@ -875,7 +875,6 @@
 .chat-msg { display: flex; align-items: flex-end; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0 0.75rem; }
 .chat-msg--user      { flex-direction: row; justify-content: flex-end; }
 .chat-msg--assistant { flex-direction: row; }
-.chat-msg__avatar    { font-size: 1.4rem; flex-shrink: 0; }
 .chat-msg__bubble {
   min-width: 0; overflow-wrap: anywhere;
   max-width: 82%; padding: 0.7rem 0.9rem;

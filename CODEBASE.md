@@ -54,7 +54,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
 | Détection des versions, protection des saisies et retour au portail après expiration | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
 | Accueil équilibré, boutons sous le programme actif, objectif et fréquence | `js/views/DashboardView.js`, styles `.dashboard-view` dans `css/components.css` |
-| Calendrier adapté à la place restante, panneau du jour agrandi et séances paginées | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
+| Calendrier de l’accueil avec sélection permanente, premier jour hors mois courant, aujourd’hui au retour et séances paginées | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
 | Maintien de l’écran allumé, préférence enregistrée et renouvellement au retour | `js/utils/screenWakeLock.js`, initialisation dans `js/app.js`, état dans `js/store.js`, Général dans `SettingsView.js`, migration `017_screen_wake_lock.sql` |
 | Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
 | Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
@@ -62,9 +62,9 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Questionnaire, fiche titrée par objectif et rappel d’un seul programme actif | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
 | Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
-| Saisie du Coach ajustable jusqu’à 120 px, défilement au-delà et réduction après envoi | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
+| Saisie du Coach ajustable jusqu’à 120 px, Entrée pour une nouvelle ligne et bouton pour envoyer | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
 | Chat conservé pendant la navigation, réponse hors écran et retour au dernier message | `KeepAlive` limité au Coach dans `js/components/layout/AppShell.js`, hooks d’activation et observation des dimensions dans `js/components/coach/CoachView.js` |
-| Indicateur de réflexion animé, mouvement réduit et avatar utilisateur selon le profil à droite des bulles | `js/components/coach/ChatMessage.js`, styles `.chat-msg` dans `css/components.css` |
+| Indicateur de réflexion animé, mouvement réduit et bulles sans avatars | `js/components/coach/ChatMessage.js`, styles `.chat-msg` dans `css/components.css` |
 | Bouton seul de déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
 | RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
 | Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
@@ -84,7 +84,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/e2e/authProxy.js`, `settings.spec.js` | Option écran allumé enregistrée, navigation/rechargement, désactivation, refus et incompatibilité ; proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
 | `tests/e2e/theme.spec.js`, `security.spec.js` | Contrastes du thème clair et séries validées ; liens et décodage des icônes, dimensions et opacité Apple/manifest |
 | `tests/e2e/dashboard.spec.js` | Accueil sur huit tailles/zones sûres, boutons sous le programme, zones agrandies et défilement sur les écrans courts, portrait/paysage, six semaines, tous les statuts, pagination, semaine complète ; cinq objectifs FR/EN |
-| `tests/e2e/coach.spec.js` | Saisie ajustable, animation avec mouvement réduit, avatars selon le profil ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
+| `tests/e2e/coach.spec.js` | Saisie ajustable, Entrée sans envoi, animation avec mouvement réduit, absence d’avatars ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
 | `tests/ui/` | Scénarios visuels Playwright complémentaires |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
 | `docs/DEPLOYMENT_ROCKY.md`, `deploy/rocky/` | Caddy/Authelia, systemd, sauvegardes et configuration reproductible Rocky |

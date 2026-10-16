@@ -136,9 +136,6 @@ export default {
             <p v-if="!store.screenWakeLock.supported" class="settings-notice" role="status">
               {{ t('settings.keep_screen_awake_unsupported') }}
             </p>
-            <p v-else-if="store.screenWakeLock.active" class="settings-notice" role="status">
-              {{ t('settings.keep_screen_awake_active') }}
-            </p>
             <p v-else-if="store.screenWakeLock.unavailable" class="settings-notice" role="status">
               {{ t('settings.keep_screen_awake_unavailable') }}
             </p>

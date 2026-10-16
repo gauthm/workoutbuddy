@@ -343,7 +343,6 @@
   "settings.keep_screen_awake": "Empêcher le téléphone de se verrouiller",
   "settings.keep_screen_awake_hint": "Garde l’écran allumé tant que l’application est affichée, si le navigateur le permet.",
   "settings.keep_screen_awake_unsupported": "Ce navigateur ne permet pas de garder l’écran allumé automatiquement.",
-  "settings.keep_screen_awake_active": "Maintien de l’écran allumé activé.",
   "settings.keep_screen_awake_unavailable": "Le navigateur a suspendu le maintien de l’écran allumé, par exemple en mode économie d’énergie.",
   "settings.default_rest": "Repos par défaut (secondes)",
   "settings.linear_increment": "Incrément linéaire barre (kg)",

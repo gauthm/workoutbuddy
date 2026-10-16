@@ -11,6 +11,62 @@ const screens=[
 ]
 const sixWeekDate='2026-11-15'
 
+test('accueil : le panneau du jour reste sélectionné après une séance sautée ou replanifiée',async({page,request})=>{
+ const program=await planned(request)
+ await call(request,'post','/sessions',{name:'Séance de sélection persistante',scheduled_date:sixWeekDate,
+  program_id:program.id,workout_template_id:program.templates[0].id},201)
+ await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
+ await page.goto('/#/')
+ const panel=page.locator('.calendar-day-panel')
+ await expect(panel).toContainText('Séance de sélection persistante')
+ await panel.getByRole('button',{name:L('calendar.mark_skipped'),exact:true}).click()
+ await page.getByRole('dialog').getByRole('button',{name:L('common.confirm'),exact:true}).click()
+ await expect(panel.getByRole('button',{name:L('calendar.restore'),exact:true})).toBeVisible()
+ await expect(page.getByRole('button',{name:sixWeekDate,exact:true})).toHaveAttribute('aria-pressed','true')
+ await panel.getByRole('button',{name:L('calendar.restore'),exact:true}).click()
+ await panel.getByRole('button',{name:L('calendar.reschedule'),exact:true}).click()
+ const dialog=page.getByRole('dialog')
+ await dialog.locator('input[type="date"]').fill('2026-11-16')
+ await dialog.getByRole('button',{name:L('common.confirm'),exact:true}).click()
+ await expect(panel.locator('.calendar-day-panel__date')).toHaveText(sixWeekDate)
+ await expect(panel).toContainText(L('calendar.no_session'))
+ await expect(page.getByRole('button',{name:sixWeekDate,exact:true})).toHaveAttribute('aria-pressed','true')
+ await page.getByRole('button',{name:'2026-11-16',exact:true}).click()
+ await expect(panel).toContainText('Séance de sélection persistante')
+})
+
+test('accueil : jour toujours sélectionné, premier du mois ailleurs et jour courant au retour',async({page})=>{
+ await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
+ await page.goto('/#/')
+ const selected=page.locator('.calendar-cell[aria-pressed="true"]')
+ async function selection(date) {
+  await expect(selected).toHaveCount(1)
+  await expect(selected).toHaveAttribute('aria-label',date)
+  await expect(page.locator('.calendar-day-panel')).toBeVisible()
+  await expect(page.locator('.calendar-day-panel__date')).toHaveText(date)
+ }
+ await selection(sixWeekDate)
+ await selected.click()
+ await selection(sixWeekDate)
+ await page.getByRole('button',{name:'2026-11-14',exact:true}).click()
+ await selection('2026-11-14')
+ await selected.click()
+ await selection('2026-11-14')
+ await page.getByRole('button',{name:L('calendar.previous_month'),exact:true}).click()
+ await selection('2026-10-01')
+ await page.getByRole('button',{name:L('calendar.next_month'),exact:true}).click()
+ await selection(sixWeekDate)
+ await page.getByRole('button',{name:L('calendar.next_month'),exact:true}).click()
+ await selection('2026-12-01')
+ await page.getByRole('button',{name:L('calendar.next_month'),exact:true}).click()
+ await selection('2027-01-01')
+ await page.getByRole('button',{name:L('calendar.previous_month'),exact:true}).click()
+ await selection('2026-12-01')
+ await page.clock.setFixedTime(new Date('2026-11-16T12:00:00'))
+ await page.getByRole('button',{name:L('calendar.previous_month'),exact:true}).click()
+ await selection('2026-11-16')
+})
+
 async function fits(page,info,state){
  const cdp=await page.context().newCDPSession(page)
  try{
@@ -111,6 +167,8 @@ test('accueil avec programme : semaine accomplie, plusieurs séances et toutes l
  await panel.getByRole('button',{name:L('calendar.next_session'),exact:true}).click()
  await panel.getByRole('button',{name:L('calendar.next_session'),exact:true}).click()
  await expect(panel.getByRole('button',{name:L('calendar.restore'),exact:true})).toBeVisible()
+ await expect(panel.locator('[role="status"]')).toHaveText(/3\s*\/\s*3/)
+ await page.getByRole('button',{name:sixWeekDate,exact:true}).click()
  await expect(panel.locator('[role="status"]')).toHaveText(/3\s*\/\s*3/)
  await fits(page,info,'skipped-week-complete')
  await panel.getByRole('button',{name:L('calendar.previous_session'),exact:true}).click()

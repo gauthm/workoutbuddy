@@ -2,17 +2,23 @@ import {test,expect} from './fixtures.js'
 import {L,call,get} from './helpers.js'
 import {createServer} from 'node:http'
 
-test('champ du Coach : grandit sans barre inutile, défile après la limite et rétrécit après effacement ou envoi',async({page})=>{
+test('champ du Coach : Entrée ajoute une ligne sans envoyer, croissance et réduction du champ',async({page})=>{
+ const sent=[]
+ page.on('request',request=>{if(request.url().endsWith('/api/v1/ai/chat') && request.method()==='POST')sent.push(request)})
  await page.goto('/#/coach')
  const input=page.getByRole('textbox',{name:L('coach.placeholder'),exact:true})
  await expect(input).toBeEnabled()
+ await expect(input).toHaveAttribute('enterkeyhint','enter')
+ await expect(page.locator('.coach-view')).not.toContainText('🤖')
  const metrics=()=>input.evaluate(element=>({height:element.getBoundingClientRect().height,client:element.clientHeight,scroll:element.scrollHeight,top:element.scrollTop,overflow:getComputedStyle(element).overflowY}))
  const initial=await metrics()
  expect(initial.overflow).toBe('hidden')
  await input.fill('Une ligne de test')
  expect((await metrics()).scroll).toBeLessThanOrEqual((await metrics()).client)
- await input.press('Shift+Enter');await input.press('Shift+Enter')
+ await input.press('Enter');await input.press('Shift+Enter')
  await input.pressSequentially('Troisième ligne')
+ await expect(input).toHaveValue('Une ligne de test\n\nTroisième ligne')
+ expect(sent).toHaveLength(0)
  const expanded=await metrics()
  expect(expanded.height).toBeGreaterThan(initial.height)
  expect(expanded.height).toBeLessThan(120)
@@ -37,6 +43,8 @@ test('champ du Coach : grandit sans barre inutile, défile après la limite et r
  await page.getByRole('button',{name:L('coach.send'),exact:true}).click()
  // The real isolated API rejects an unconfigured provider; no paid/external AI.
  expect((await(await response).json()).error).toBe('AI_NOT_CONFIGURED')
+ expect(sent).toHaveLength(1)
+ expect(sent[0].postDataJSON().message).toBe('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe')
  await expect(input).toHaveValue('')
  await expect(input).toHaveCSS('overflow-y','hidden')
  expect((await metrics()).height).toBe(initial.height)
@@ -58,7 +66,6 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
  const bottom=()=>page.locator('.coach-view__content').evaluate(el=>el.scrollHeight-el.clientHeight-el.scrollTop)
  try {
   await call(request,'put','/settings',{ai_base_url:`http://127.0.0.1:${provider.address().port}`,ai_model:'local-test'})
-  await call(request,'put','/user-profile',{sex:'female'})
   await page.goto('/#/coach')
   const input=page.getByRole('textbox',{name:L('coach.placeholder'),exact:true})
   await expect(input).toBeEnabled()
@@ -74,11 +81,9 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   await expect(dots.first()).toHaveCSS('animation-name','none')
   await page.emulateMedia({reducedMotion:'no-preference'})
   await expect(dots.first()).toHaveCSS('animation-name','coach-thinking')
-  const avatar=page.locator('.chat-msg--user .chat-msg__avatar')
-  await expect(avatar).toHaveText('👩')
-  const bubbleBox=await page.locator('.chat-msg--user .chat-msg__bubble').boundingBox()
-  expect((await avatar.boundingBox()).x).toBeGreaterThanOrEqual(bubbleBox.x+bubbleBox.width)
-  await page.screenshot({path:test.info().outputPath('coach-thinking-avatar.png')})
+  await expect(page.locator('.chat-msg__avatar')).toHaveCount(0)
+  await expect(page.locator('.coach-view')).not.toContainText('🤖')
+  await page.screenshot({path:test.info().outputPath('coach-thinking.png')})
 
   // Leave before any provider response, then return while it is still thinking.
   await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
@@ -144,13 +149,7 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Dernier conseil conservé.')
   await expect.poll(bottom).toBeLessThan(2)
 
-  // Profile changes are reflected on return, including all neutral choices.
-  for(const [sex,icon] of [['male','👨'],['other','🧑'],['prefer_not_to_say','🧑'],[null,'🧑']]) {
-   await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
-   await call(request,'put','/user-profile',{sex})
-   await page.getByRole('button',{name:L('nav.coach'),exact:true}).click()
-   await expect(avatar).toHaveText(icon)
-  }
+  await expect(page.locator('.chat-msg__avatar')).toHaveCount(0)
  } finally {
   provider.closeAllConnections()
   await new Promise(resolve=>provider.close(resolve))

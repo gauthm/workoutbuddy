@@ -171,27 +171,39 @@ export default {
     }
 
     // ── Navigation ────────────────────────────────────────────────
+    function selectMonthDefault() {
+      const now = new Date()
+      state.selectedDate = props.embedded
+        ? isoDate(now.getFullYear() === state.year && now.getMonth() === state.month
+          ? now : new Date(state.year, state.month, 1))
+        : null
+      state.selectedSessions = []
+      state.selectedSessionIndex = 0
+    }
+
     function prevMonth() {
       if (state.month === 0) { state.year--; state.month = 11 }
       else state.month--
-      state.selectedDate = null
+      selectMonthDefault()
       load()
     }
 
     function nextMonth() {
       if (state.month === 11) { state.year++; state.month = 0 }
       else state.month++
-      state.selectedDate = null
+      selectMonthDefault()
       load()
     }
 
     // ── Sélection d'un jour ───────────────────────────────────────
     function selectDay(cell) {
-      state.selectedSessionIndex = 0
       if (state.selectedDate === cell.date) {
+        if (props.embedded) return
         state.selectedDate = null
+        state.selectedSessions = []
         return
       }
+      state.selectedSessionIndex = 0
       state.selectedDate     = cell.date
       state.selectedSessions = sessionsForDay(cell.date)
     }
@@ -221,7 +233,7 @@ export default {
         store.showToast(t('calendar.rescheduled_toast'), 'success')
         state.showReschedule    = false
         state.rescheduleSession = null
-        state.selectedDate      = null
+        if (!props.embedded) state.selectedDate = null
         await load()
       } catch (err) {
         store.showToast(err.message, 'error')
@@ -240,7 +252,7 @@ export default {
         store.showToast(t('calendar.skipped_toast'), 'info')
         state.showSkip    = false
         state.skipSession = null
-        state.selectedDate = null
+        if (!props.embedded) state.selectedDate = null
         await load()
       } catch (err) {
         store.showToast(err.message, 'error')

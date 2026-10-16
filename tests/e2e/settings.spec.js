@@ -45,7 +45,8 @@ test('écran allumé : préférence enregistrée, conservée en navigation et li
  await expect(toggle).not.toBeChecked()
  await toggle.check()
  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
- await expect(page.getByText(L('settings.keep_screen_awake_active'),{exact:true})).toBeVisible()
+ await expect.poll(()=>page.evaluate(()=>window.__store.screenWakeLock.active)).toBe(true)
+ await expect(page.getByText('Maintien de l’écran allumé activé.',{exact:true})).toHaveCount(0)
  expect((await get(request,'/settings')).keep_screen_awake).toBe(true)
  await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
  expect(await page.evaluate(()=>window.__screenLock)).toEqual({requests:1,releases:0})
@@ -71,7 +72,7 @@ for(const mode of ['unsupported','denied']) {
   await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
   await expect(pending(page)).toHaveCount(0)
   await expect(page.getByText(L(mode==='unsupported'?'settings.keep_screen_awake_unsupported':'settings.keep_screen_awake_unavailable'),{exact:true})).toBeVisible()
-  await expect(page.getByText(L('settings.keep_screen_awake_active'),{exact:true})).toHaveCount(0)
+  expect(await page.evaluate(()=>window.__store.screenWakeLock.active)).toBe(false)
  })
 }
 test('échec réseau à la sauvegarde → brouillon intact → nouvelle tentative réussie',async({page,request})=>{

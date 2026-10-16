@@ -240,14 +240,6 @@ export default {
       } catch (err) { store.showToast(err.message, 'error') }
     }
 
-    // ── Gestion clavier ────────────────────────────────────────
-    function onKeydown(e) {
-      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-        e.preventDefault()
-        sendMessage()
-      }
-    }
-
     // ── Auto-resize textarea ───────────────────────────────────
     function resizeInput(input) {
       if (!input) return
@@ -273,7 +265,7 @@ export default {
       newConversation, openHistoryPanel, selectConversation,
       renameConversation, askDeleteConversation, confirmDeleteConversation,
       onAdviceDismissed, onAdvicePurchased,
-      onKeydown, autoResize, t, router,
+      autoResize, t, router,
     }
   },
 
@@ -329,7 +321,6 @@ export default {
             <!-- Placeholder si vide et profil complet -->
             <div v-if="!state.messages.length"
               class="coach-view__empty">
-              <div style="font-size:3rem;margin-bottom:0.75rem">🤖</div>
               <p style="color:var(--color-text-muted);text-align:center;padding:0 2rem;font-size:0.9rem">
                 {{ t('coach.no_messages') }}
               </p>
@@ -338,7 +329,6 @@ export default {
             <ChatMessage
               v-for="(msg, i) in state.messages" :key="i"
               :message="msg"
-              :user-sex="state.profile?.sex"
             />
 
             <div ref="messagesEndRef" style="height:16px" />
@@ -391,7 +381,7 @@ export default {
           :aria-label="t('coach.placeholder')"
           :disabled="state.isStreaming || state.loadingInit"
           rows="1"
-          @keydown="onKeydown"
+          enterkeyhint="enter"
           @input="autoResize"
         />
         <button
