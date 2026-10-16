@@ -9,7 +9,7 @@ Installation, fonctionnement et tests : [README.md](README.md). Règles de déve
 | `server.js` | Démarrage, routes, fichiers statiques |
 | `src/db/database.js` | Connexion SQLite |
 | `src/db/migrate.js`, `src/db/migrations/` | Migrations |
-| `src/db/backup.js` | Sauvegardes |
+| `src/db/backup.js`, `src/db/privateStorage.js` | Sauvegardes et permissions privées SQLite |
 | `src/seed/` | Catalogue source, traductions `exercises.fr.json`, chargement et synchronisation |
 | `scripts/` | Téléchargement des bibliothèques et import d’exercices |
 
@@ -43,6 +43,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
 | Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
 | Coach IA | `aiProvider.js`, `systemPromptBuilder.js`, `coachingAdvisor.js`, `adviceTextGenerator.js`, `actionStreamParser.js` |
+| Sécurité HTTP | `httpSecurity.js` : en-têtes, origine, limites et configuration du proxy |
 | Utilitaires et compatibilité | `date.js`, `validation.js`, `rotationEngine.js`, `catalogueCleanup.js` |
 
 ## Interface — `public/`

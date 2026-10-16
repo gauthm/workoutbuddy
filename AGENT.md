@@ -15,12 +15,12 @@ Express + SQLite + Vue 3, **aucun build frontend**, `npm start` = tout.
 
 | Rôle | Techno | Version |
 |---|---|---|
-| Runtime | Node.js | 20.x LTS |
-| HTTP | Express | 4.18.3 |
+| Runtime | Node.js | 24.x LTS |
+| HTTP | Express | 4.22.3 |
 | DB | better-sqlite3 | 13.0.3 |
 | UI | Vue 3 (fichier local) | 3.5.13 |
 | Graphiques | Chart.js (fichier local) | 4.4.4 |
-| Tests API | supertest | 7.0.0 |
+| Tests API | supertest | 7.3.1 |
 | Tests unit | node:test + assert | built-in |
 
 **Ne jamais ajouter de paquet npm.** Implémenter à la main ou poser la question.
@@ -91,6 +91,6 @@ Si un fichier source dépasse 500 lignes, copier seulement les sections pertinen
 
 ## 7. Parcours navigateur isolés
 
-Après une modification de l’interface ou d’un comportement API/métier, lancer `npm run test:e2e:affected` en plus de `npm test`. Pour cibler explicitement : `npm run test:e2e -- sessions` (ou programs, history, equipment, settings, data, exercises, stats, motion). Ajouter ou adapter le parcours du domaine si le comportement utilisateur change. Les dépendances partagées et les fichiers source inconnus déclenchent toute la suite.
+Après une modification de l’interface ou d’un comportement API/métier, lancer `npm run test:e2e:affected` en plus de `npm test`. Pour cibler explicitement : `npm run test:e2e -- sessions` (ou programs, history, equipment, settings, data, exercises, stats, motion, security). Ajouter ou adapter le parcours du domaine si le comportement utilisateur change. Les dépendances partagées et les fichiers source inconnus déclenchent toute la suite.
 
 Les tests de `tests/e2e/` utilisent Playwright déjà installé, le vrai serveur et une base SQLite **temporaire créée par la fixture**, sur un port local libre. Cette base fichier est nécessaire aux tests de redémarrage ; ne jamais leur fournir la base personnelle, une URL externe ou un serveur déjà lancé. Les autres tests conservent leurs règles d’isolation existantes. Guide : `tests/e2e/README.md`. Le hook local `.githooks/pre-push`, installable avec `npm run hooks:install`, lance les tests métier/API en mode `test:in-process` (sans ports TCP éphémères), puis les parcours concernés par les commits poussés avec de vrais serveurs HTTP.

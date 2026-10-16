@@ -3,6 +3,7 @@
 // L'appelant (composant ou store) gère les erreurs.
 
 const BASE = '/api/v1'
+const securityErrors = {RATE_LIMITED: 'errors.rate_limited', AI_BUSY: 'errors.ai_busy', IMPORT_BUSY: 'errors.import_busy'}
 
 async function request(method, path, body = undefined) {
   const opts = {
@@ -14,7 +15,9 @@ async function request(method, path, body = undefined) {
   if (res.status === 204) return null
   const data = await res.json()
   if (!res.ok) {
-    const err = new Error(data.error || `HTTP ${res.status}`)
+    const message = securityErrors[data.error]
+      ? (await import('./i18n.js')).t(securityErrors[data.error]) : data.error || `HTTP ${res.status}`
+    const err = new Error(message)
     err.status = res.status
     err.detail = data.detail
     err.details = data.details

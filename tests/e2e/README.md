@@ -41,6 +41,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | `data.spec.js` | Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence invalide |
 | `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur |
 | `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
+| `security.spec.js` | CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu et service worker |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
 
 `scripts/e2e-selection.js` décrit les dépendances. Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare les commits à cette référence, et ajoute les nouveaux fichiers non suivis.
@@ -68,4 +69,4 @@ La [documentation du trace viewer](https://playwright.dev/docs/trace-viewer) exp
 
 ## Limites explicites
 
-Cette suite couvre des parcours fonctionnels sous Chrome, avec une taille mobile émulée. Elle ne valide pas Safari/Firefox, les téléphones physiques, les performances sous charge ou toutes les possibilités d’erreur. Le service worker est bloqué pour que les cas interrogent bien les fichiers et le serveur de la version testée : le cache hors ligne demande des tests dédiés. Aucun service d’IA externe n’est sollicité. Les tests unitaires/API restent nécessaires pour explorer finement les règles du moteur.
+Cette suite couvre des parcours fonctionnels sous Chrome, avec une taille mobile émulée. Elle ne valide pas Safari/Firefox, les téléphones physiques, les performances sous charge ou toutes les possibilités d’erreur. Le service worker est bloqué par défaut pour interroger les fichiers et le serveur de la version testée. Un cas de sécurité l’autorise explicitement pour vérifier son installation et le rechargement sous CSP ; cela ne couvre pas tous les comportements hors ligne. Aucun service d’IA externe n’est sollicité. Les tests unitaires/API restent nécessaires pour explorer finement les règles du moteur.

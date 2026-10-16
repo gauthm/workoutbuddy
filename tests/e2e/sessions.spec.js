@@ -24,7 +24,10 @@ test('saisir → annuler une série → reprendre après rechargement et redéma
 })
 
 test('terminer toutes les séries → progression conservée → prochaines cibles proposées en séance',async({page,request})=>{
- const p=await planned(request)
+ // Include today: on a Friday, a Mon/Thu program only has next week's slots,
+ // and performing its first workout early legitimately occupies its original slot.
+ const weekday=(new Date().getDay()+6)%7
+ const p=await planned(request,{training_days:[weekday,(weekday+3)%7].sort((a,b)=>a-b)})
  const session=await trainThroughUI(page,request,p)
  const exported=(await get(request,'/export')).data
  expect(exported.exercise_progressions.length).toBeGreaterThan(0)

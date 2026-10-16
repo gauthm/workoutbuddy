@@ -34,4 +34,13 @@ async function init() {
 // Debug — accès console au store (toast, settings)
 window.__store = store
 
+// Keep registration in an external module so CSP never needs inline scripts.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[SW] Enregistré :', reg.scope))
+      .catch(err => console.warn('[SW] Échec enregistrement :', err.message))
+  })
+}
+
 init()

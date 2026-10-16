@@ -1,24 +1,26 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { privateCreation, privateFile, privateBackups } from './privateStorage.js'
 
 // VACUUM INTO lit aussi les transactions présentes dans le journal WAL.
 export function createBackup(db, dbPath, { force = false } = {}) {
   if (dbPath === ':memory:') return null
-  const directory = path.join(path.dirname(dbPath), 'backups')
-  fs.mkdirSync(directory, { recursive: true })
+  const directory = privateBackups(dbPath, {create: true})
   const today = new Date().toISOString().slice(0, 10)
   const suffix = force ? `_${Date.now()}_${randomUUID().slice(0, 8)}` : ''
   const destination = path.join(directory, `workoutbuddy_${today}${suffix}.db`)
   if (!fs.existsSync(destination)) {
     const temporary = `${destination}.${randomUUID()}.tmp`
     try {
-      db.prepare('VACUUM INTO ?').run(temporary)
+      privateCreation(() => db.prepare('VACUUM INTO ?').run(temporary))
+      privateFile(temporary)
       fs.renameSync(temporary, destination)
     } finally {
       if (fs.existsSync(temporary)) fs.unlinkSync(temporary)
     }
   }
+  privateFile(destination)
   const backups = fs.readdirSync(directory)
     .filter(name => /^workoutbuddy_.*\.db$/.test(name))
     .sort().reverse()

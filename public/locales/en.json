@@ -809,5 +809,8 @@
   "planner.warning_priority_tradeoff": "Allowed basic movements for the upper and lower body come first. Remaining time is shared between your priorities: to strengthen a limited focus, choose fewer priorities or longer workouts if possible. Your selected frequency is respected.",
   "planner.warning_balance_limited": "{{muscle}}: basic work for this group is missing. Check equipment, pain settings and exclusions; a focus should never deliberately exclude the other part of the body.",
   "planner.warning_bodyweight_today_exists": "A weight entry already exists today: it is kept in the tracker. The weight entered here remains saved as this program’s reference.",
-  "session.set_conflict": "This set has already been saved with different values. Reload the workout to see the saved version before editing it."
+  "session.set_conflict": "This set has already been saved with different values. Reload the workout to see the saved version before editing it.",
+  "errors.rate_limited": "Too many requests. Please try again shortly.",
+  "errors.ai_busy": "The AI Coach is already processing requests. Please try again shortly.",
+  "errors.import_busy": "An import is already in progress. Please try again shortly."
 }

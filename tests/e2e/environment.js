@@ -29,7 +29,7 @@ export async function isolatedApp() {
   }
   async function start() {
     child=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,
-      DB_PATH:dbPath,HOST:'127.0.0.1',PORT:String(port)},stdio:['ignore','pipe','pipe']})
+      NODE_ENV:'test',PUBLIC_ORIGIN:'',TRUST_PROXY:'',DB_PATH:dbPath,HOST:'127.0.0.1',PORT:String(port)},stdio:['ignore','pipe','pipe']})
     try {
       await new Promise((yes,no)=>{
         const timer=setTimeout(()=>done(new Error('Test server startup timed out\n'+logs)),15000)

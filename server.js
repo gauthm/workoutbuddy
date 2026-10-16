@@ -17,12 +17,19 @@ import userProfileRouter from './src/routes/userProfile.js'
 import aiRouter from './src/routes/ai.js'
 import exportImportRouter from './src/routes/exportImport.js'
 import { scheduleWeeks } from './src/services/sessionScheduler.js'
+import { securityConfig, securityHeaders, sameOriginApi, rateLimit, expensiveRequests } from './src/services/httpSecurity.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
+const security = securityConfig()
+app.disable('x-powered-by')
+app.set('trust proxy', security.trustProxy)
+app.use(securityHeaders(security))
+app.use('/api', sameOriginApi(security), rateLimit({limit: 600}))
+app.use('/api/v1', expensiveRequests())
 
-app.use('/api/v1/import', express.json({ limit: '20mb' }))
-app.use(express.json())
+app.use('/api/v1/import', express.json({ limit: '20mb', inflate: false }))
+app.use(express.json({ limit: '100kb', inflate: false }))
 app.use(express.static(path.join(__dirname, 'public')))
 
 // ── Montage des routes (à compléter tâche par tâche) ──────────
@@ -52,6 +59,7 @@ app.use((err, _req, res, _next) => {
   if (res.headersSent) return _next(err)
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'PAYLOAD_TOO_LARGE' })
   if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'INVALID_JSON' })
+  if (err.status === 415) return res.status(415).json({ error: 'UNSUPPORTED_ENCODING' })
   console.error('[HTTP]', err.message)
   res.status(500).json({ error: 'INTERNAL_ERROR' })
 })
@@ -82,6 +90,10 @@ async function bootstrap() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Port réseau invalide.')
   await new Promise((resolve, reject) => {
     const server = app.listen(port, host, resolve)
+    server.requestTimeout = 60_000
+    server.headersTimeout = 15_000
+    server.keepAliveTimeout = 5_000
+    server.maxHeadersCount = 100
     server.once('error', reject)
   })
   console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
