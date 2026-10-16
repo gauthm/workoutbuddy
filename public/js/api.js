@@ -4,6 +4,17 @@
 
 const BASE = '/api/v1'
 const securityErrors = {RATE_LIMITED: 'errors.rate_limited', AI_BUSY: 'errors.ai_busy', IMPORT_BUSY: 'errors.import_busy'}
+let pendingRequests = 0
+const activityListeners = new Set()
+export function onRequestActivity(listener) {
+  activityListeners.add(listener)
+  listener(pendingRequests)
+  return () => activityListeners.delete(listener)
+}
+function requestActivity(change) {
+  pendingRequests += change
+  for (const listener of activityListeners) listener(pendingRequests)
+}
 
 async function request(method, path, body = undefined) {
   const opts = {
@@ -11,19 +22,22 @@ async function request(method, path, body = undefined) {
     headers: { 'Content-Type': 'application/json' }
   }
   if (body !== undefined) opts.body = JSON.stringify(body)
-  const res = await fetch(`${BASE}${path}`, opts)
-  if (res.status === 204) return null
-  const data = await res.json()
-  if (!res.ok) {
-    const message = securityErrors[data.error]
-      ? (await import('./i18n.js')).t(securityErrors[data.error]) : data.error || `HTTP ${res.status}`
-    const err = new Error(message)
-    err.status = res.status
-    err.detail = data.detail
-    err.details = data.details
-    throw err
-  }
-  return data
+  requestActivity(1)
+  try {
+    const res = await fetch(`${BASE}${path}`, opts)
+    if (res.status === 204) return null
+    const data = await res.json()
+    if (!res.ok) {
+      const message = securityErrors[data.error]
+        ? (await import('./i18n.js')).t(securityErrors[data.error]) : data.error || `HTTP ${res.status}`
+      const err = new Error(message)
+      err.status = res.status
+      err.detail = data.detail
+      err.details = data.details
+      throw err
+    }
+    return data
+  } finally { requestActivity(-1) }
 }
 
 // ── Exercices ────────────────────────────────────────────────

@@ -78,6 +78,8 @@ coverage/
 *.temp
 *.bak
 *.orig
+__pycache__/
+*.pyc
 
 # ── Exports générés ──────────────────────────────────────────
 workoutbuddy-export-*.json

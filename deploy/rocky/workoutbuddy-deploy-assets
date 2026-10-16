@@ -1,0 +1,44 @@
+#!/usr/bin/python3
+"""Publish a validated public/ directory atomically on Rocky Linux (root only)."""
+import argparse
+import ctypes
+import fcntl
+import os
+from pathlib import Path
+import re
+import shutil
+import tempfile
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('source', type=Path, help='Validated repository public/ directory')
+    args=parser.parse_args()
+    if os.geteuid()!=0:
+        parser.error('Run as root')
+    source=args.source.resolve()
+    live=Path('/usr/local/lib/workoutbuddy/public')
+    pattern=r"const CACHE_NAME = '(workoutbuddy-v\d+)'"
+    version=re.search(pattern,(source/'sw.js').read_text())
+    current=re.search(pattern,(live/'sw.js').read_text())
+    if not version or not current or version[1]==current[1]:
+        parser.error('Bump CACHE_NAME before publishing a new release')
+    lock=Path('/run/workoutbuddy-deploy-assets.lock').open('w')
+    fcntl.flock(lock,fcntl.LOCK_EX | fcntl.LOCK_NB)
+    stage=Path(tempfile.mkdtemp(prefix='.public-release-',dir=live.parent))
+    shutil.copytree(source,stage,dirs_exist_ok=True)
+    for path in [stage,*stage.rglob('*')]:
+        if path.is_symlink():
+            raise RuntimeError('Symbolic links are not allowed in a public release')
+        path.chmod(0o755 if path.is_dir() else 0o644)
+        os.chown(path,0,0)
+    # Exchange two complete directories in one Linux syscall. The old tree is
+    # retained at the staging path for rollback; no process or DB is restarted.
+    libc=ctypes.CDLL(None,use_errno=True)
+    if libc.renameat2(-100,os.fsencode(stage),-100,os.fsencode(live),2):
+        raise OSError(ctypes.get_errno(),'Atomic asset publication failed')
+    print(f'Published {version[1]}; previous public/ retained at {stage}')
+
+
+if __name__=='__main__':
+    main()

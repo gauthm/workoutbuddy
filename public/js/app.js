@@ -5,6 +5,7 @@ import { i18n, t } from './i18n.js'
 import { settings as settingsApi } from './api.js'
 import { migratePainPreferences } from './utils/pain.js'
 import AppShell from './components/layout/AppShell.js'
+import { startAppUpdates } from './appUpdates.js'
 
 async function init() {
   // Charger les settings depuis le serveur
@@ -34,13 +35,4 @@ async function init() {
 // Debug — accès console au store (toast, settings)
 window.__store = store
 
-// Keep registration in an external module so CSP never needs inline scripts.
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('[SW] Enregistré :', reg.scope))
-      .catch(err => console.warn('[SW] Échec enregistrement :', err.message))
-  })
-}
-
-init()
+init().then(startAppUpdates)

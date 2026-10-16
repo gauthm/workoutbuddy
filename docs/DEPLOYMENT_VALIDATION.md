@@ -1,8 +1,19 @@
 # Validation du déploiement Rocky
 
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
-- Suite navigateur complète : 68 parcours passent sur 76 ; les huit échecs
+- Suite navigateur complète : 74 parcours passent sur 82 ; les huit échecs
   concernent uniquement les photos absentes (voir ci-dessous).
+- Six nouveaux parcours navigateur de mise à jour passent : publication sans
+  hard refresh, retour au premier plan, cache hors ligne, API jamais cachée,
+  brouillon conservé, annulation et sauvegarde avant application, rejet des
+  redirections d’authentification et reprise après une installation incomplète.
+- Maintenance nocturne : configuration DNF parsée, timer en heure de Paris et
+  absence de rattrapage diurne contrôlés. Six tests simulés vérifient le garde
+  horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node.
+  Lancement réel de l’unité en journée : aucune mutation ni aucun reboot.
+  Audit npm exécuté sans privilèges, aucun accès aux bases/secrets, aucune
+  vulnérabilité de production signalée. Aucun redémarrage réel du VPS effectué
+  pour ces tests ; le prochain créneau nocturne reste à observer dans les journaux.
 - 10 parcours navigateur de sécurité passent (ordinateur et mobile) : zone sûre iOS, CSP,
   service worker, origines étrangères, JSON, limitations IA et import interrompu.
 - HTTPS public, redirection HTTP, UI/API/export/IA protégés, en-têtes d'identité

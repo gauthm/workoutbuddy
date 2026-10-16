@@ -49,6 +49,7 @@ chiffre les secrets TOTP. Installer les fichiers ainsi :
 | rendu `Caddyfile` | `/etc/caddy/Caddyfile`, 0644 root:root |
 | rendu `workoutbuddy-auth-setup` | `/usr/local/sbin/`, 0700 root:root |
 | modèle `workoutbuddy-backup` | `/usr/local/sbin/`, 0750 root:root |
+| `workoutbuddy-deploy-assets`, `workoutbuddy-maintenance` | `/usr/local/sbin/`, 0750 root:root |
 | modèles `*.service`, `*.timer` | `/etc/systemd/system/`, 0644 root:root |
 | `caddy-hardening.conf` | `/etc/systemd/system/caddy.service.d/zzz-lxc-service.conf` |
 | `service-hardening.conf` | même nom pour les services workoutbuddy et authelia |
@@ -113,10 +114,13 @@ Depuis votre ordinateur, adapter l'utilisateur et le port SSH :
 
 ```sh
 umask 077
-ssh root@VPS 'tar -C /var/backups -czf - workoutbuddy' > workoutbuddy-backups.tar.gz
+ssh -t ADMIN@VPS 'umask 077; sudo tar -C /var/backups -czf - workoutbuddy > "$HOME/workoutbuddy-backups.tar.gz"'
+scp ADMIN@VPS:workoutbuddy-backups.tar.gz .
 ```
 
-Garder l'archive sur un disque chiffré. Pour restaurer : sauvegarder l'état courant,
+La première commande demande le mot de passe sudo dans le terminal et prépare une
+archive privée dans le home du compte SSH ; supprimer cette copie serveur après
+transfert vérifié. Garder l'archive locale sur un disque chiffré. Pour restaurer : sauvegarder l'état courant,
 arrêter Node et Authelia, extraire un instantané **dans un répertoire isolé**,
 contrôler les deux bases avec `sqlite3 COPIE 'PRAGMA integrity_check;'`, démarrer
 une instance isolée (`DB_PATH` vers la copie, loopback et autre port). Restaurer
@@ -139,14 +143,81 @@ et vérifier l'application et le MFA. Aucun essai destructif sur la base personn
   `sshd-jail.local` dans `/etc/fail2ban/jail.d/` ; adapter le port, valider avec
   `fail2ban-client -t`, activer le service. Tester le filtre sur une ligne synthétique
   puis bannir/débannir `192.0.2.123` en vérifiant la règle firewalld.
-- Dans `/etc/dnf/automatic.conf` : `upgrade_type = security`, `download_updates = yes`,
-  `apply_updates = yes`, `reboot = never`. Activer `dnf-automatic.timer` et lancer
-  `dnf upgrade --security`. Surveiller aussi les mises à jour Node/Caddy et les
-  releases Authelia, qui n'ont pas toutes de métadonnées errata. Sauvegarder avant
-  changement de binaire ou migration ; aucun redémarrage du VPS sans accord.
 - En LXC, l'hôte gère l'horloge : pas de contournement d'`adjtimex`. Chrony peut
   rester absent ; vérifier l'écart NTP sans modifier l'heure et faire intervenir
   l'hébergeur en cas de dérive, car le TOTP en dépend.
+
+## Mises à jour nocturnes
+
+Installer `dnf-automatic.conf` dans `/etc/dnf/automatic.conf`, les deux modèles
+`dnf-automatic-service.conf` et `dnf-automatic-timer.conf` dans les drop-ins
+respectifs `/etc/systemd/system/dnf-automatic.service.d/workoutbuddy.conf` et
+`dnf-automatic.timer.d/workoutbuddy.conf`. Le service utilise
+`/usr/local/sbin/workoutbuddy-maintenance --apply` : sauvegarde réussie obligatoire,
+mises à jour RPM stables, puis `dnf needs-restarting -r`. Les mises à jour incluent
+Node dans le **module 24**, les paquets Rocky/EPEL et Caddy ; elles ne changent pas
+de version majeure de Rocky ou Node. Ne pas activer un dépôt non fiable.
+
+Le timer démarre entre **04:00 et 04:15, Europe/Paris**, y compris lors des changements
+d’heure. Un redémarrage nécessaire est autorisé uniquement entre **04:00 et 06:00**.
+Un traitement long reporte le redémarrage à la nuit suivante ; l’indicateur est
+recontrôlé même sans nouveaux RPM. Un timer manqué ne se rattrape pas en journée.
+Sans redémarrage complet, les services applicatifs utilisant un binaire ou une
+bibliothèque mise à jour sont redémarrés ; Node nouvellement installé est ainsi
+effectivement utilisé. En LXC, ce redémarrage concerne le conteneur : le noyau et
+l’horloge de l’hôte restent sous la responsabilité de l’hébergeur.
+
+DNF garde `reboot = never` car le script décide du redémarrage et de son horaire.
+Ne pas appeler directement une variante `dnf-automatic-install.timer` en parallèle.
+`workoutbuddy-maintenance --check` est strictement en lecture ; `--apply` change le
+serveur seulement pendant la fenêtre nocturne. Tester le garde horaire sans effets
+réels : `python3 deploy/rocky/test-maintenance.py`.
+
+Créer `workoutbuddy-audit` avec `useradd --system --shell /sbin/nologin --home-dir
+/var/cache/workoutbuddy-audit workoutbuddy-audit`, installer `workoutbuddy-audit.*`
+dans `/etc/systemd/system/`, puis `service-hardening.conf` dans son drop-in
+`zzz-lxc-service.conf`. Il peut lire le code, sans accès aux bases ni aux secrets.
+L’audit npm hebdomadaire lit le lockfile de production le dimanche vers 05:30 ;
+une vulnérabilité modérée ou supérieure fait échouer le service et apparaît dans
+le journal. Une indisponibilité du registre fait également échouer le contrôle.
+Il n’y a pas de notification externe configurée.
+
+```sh
+systemctl daemon-reload
+systemctl enable --now dnf-automatic.timer workoutbuddy-audit.timer
+systemctl restart dnf-automatic.timer
+systemctl list-timers dnf-automatic.timer workoutbuddy-audit.timer
+/usr/local/sbin/workoutbuddy-maintenance --check
+journalctl -u dnf-automatic -u workoutbuddy-audit --since '7 days ago'
+# Suspendre la maintenance nocturne si nécessaire :
+systemctl disable --now dnf-automatic.timer
+```
+
+Pas de `npm update` ou `npm audit fix` automatique : mettre le lockfile à jour dans
+le dépôt, tester puis installer avec `npm ci --omit=dev`. Le binaire Authelia est
+hors RPM : vérifier ses releases officielles, sa configuration et les migrations,
+sauvegarder puis tester avant remplacement. Il n’est pas mis à jour sans validation.
+
+## Livraison de l’interface
+
+Chaque changement de `public/` incrémente `CACHE_NAME` dans `sw.js`. Le service worker
+précharge toute l’interface avant activation et refuse les redirections Authelia.
+L’HTML est vérifié sur le réseau ; Caddy interdit le cache HTTP du bootstrap et
+du worker. Au premier plan, l’application recherche une version au démarrage puis
+toutes les cinq minutes. Les écrans de consultation se rechargent automatiquement ;
+une saisie ou séance reporte ce rechargement et affiche un bouton avec confirmation.
+
+Après les tests isolés, publier sans changer le code possédé par le compte de service :
+`sudo /usr/local/sbin/workoutbuddy-deploy-assets /CHEMIN/DEPOT/public`.
+Ce script root échange atomiquement deux dossiers `public/`, garde l’ancienne copie
+dans `.public-release-*` pour retour arrière, et ne touche pas à SQLite. Conserver
+une seule copie précédente après validation. Sous SELinux enforcing, vérifier les
+contextes du staging et de la destination avant publication. Ce script ne déploie
+que l’interface : les changements backend nécessitent une livraison du code validé.
+
+Lors de la migration depuis l’ancien worker sans mécanisme de rechargement, fermer
+puis rouvrir une fois l’application peut être nécessaire ; ne pas effacer les données
+du site. Les versions suivantes utilisent la détection automatique.
 
 Validation avant mise à jour : `npm ci && npm test` dans la copie source ; parcours
 isolés selon `tests/e2e/README.md`. Vérifier TLS/HTTP 308, UI/API/export/IA/service

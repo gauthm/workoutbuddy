@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+"""Nightly RPM maintenance. --check is read-only; only --apply changes the host."""
+import argparse
+import fcntl
+import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from pathlib import Path
+import subprocess
+
+PARIS = ZoneInfo('Europe/Paris')
+SERVICES = {'workoutbuddy.service', 'caddy.service', 'authelia.service'}
+
+
+def in_window(now=None):
+    return 4 <= (now or datetime.now(PARIS)).hour < 6
+
+
+def run(*args, capture=False, check=True):
+    return subprocess.run(args, check=check, text=True,
+                          stdout=subprocess.PIPE if capture else None)
+
+
+def versions():
+    output = run('/usr/bin/rpm', '-q', '--qf', '%{NAME} %{EVR}.%{ARCH}\n',
+                 'nodejs', 'caddy', capture=True).stdout
+    return dict(line.split(' ', 1) for line in output.splitlines())
+
+
+def reboot_needed():
+    result = run('/usr/bin/dnf', '-q', 'needs-restarting', '-r', check=False)
+    if result.returncode not in (0, 1):
+        raise RuntimeError('Cannot determine whether a reboot is necessary')
+    return result.returncode == 1
+
+
+def apply():
+    if not in_window():
+        print('Outside 04:00–06:00 Europe/Paris; maintenance deferred.', flush=True)
+        return
+    lock = Path('/run/workoutbuddy-maintenance.lock').open('w')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    run('/usr/bin/systemctl', 'start', 'workoutbuddy-backup.service')
+    before = versions()
+    run('/usr/bin/dnf-automatic', '/etc/dnf/automatic.conf', '--timer')
+    after = versions()
+    if reboot_needed():
+        # Recheck after the transaction: a long update must never reboot by day.
+        # needs-restarting is checked again tomorrow even if no RPM changes then.
+        if in_window():
+            print('Updates require a reboot; rebooting within the night window.', flush=True)
+            run('/usr/bin/systemctl', 'reboot')
+            return
+        print('Reboot required but night window elapsed; deferred until next night.', flush=True)
+    affected = set(run('/usr/bin/dnf', '-q', 'needs-restarting', '-s', capture=True).stdout.splitlines()) & SERVICES
+    if before['nodejs'] != after['nodejs']:
+        affected.add('workoutbuddy.service')
+    if before['caddy'] != after['caddy']:
+        affected.add('caddy.service')
+    for service in sorted(affected):
+        print('Restarting updated service: ' + service, flush=True)
+        run('/usr/bin/systemctl', 'restart', service)
+        run('/usr/bin/systemctl', 'is-active', '--quiet', service)
+    print('Maintenance complete.', flush=True)
+
+
+def main():
+    os.umask(0o077)
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--check', action='store_true')
+    mode.add_argument('--apply', action='store_true')
+    args = parser.parse_args()
+    if args.check:
+        print('Night window open: ' + str(in_window()))
+        print('Reboot currently needed: ' + str(reboot_needed()))
+        print('Check only: no package changes, restarts or reboot.')
+    else:
+        apply()
+
+
+if __name__ == '__main__':
+    main()

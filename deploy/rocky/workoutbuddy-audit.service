@@ -1,0 +1,23 @@
+[Unit]
+Description=Read-only audit of locked WorkoutBuddy npm production dependencies
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=workoutbuddy-audit
+Group=workoutbuddy-audit
+WorkingDirectory=/usr/local/lib/workoutbuddy
+Environment=npm_config_cache=/var/cache/workoutbuddy-audit
+ExecStart=/usr/bin/npm audit --omit=dev --package-lock-only --audit-level=moderate
+CacheDirectory=workoutbuddy-audit
+CacheDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=5min
+MemoryMax=192M

@@ -1396,3 +1396,7 @@ body:has(.settings-save-dock) .toast { bottom: calc(var(--nav-space) + 8rem); }
 .exercise-motion__controls { display: flex; justify-content: center; align-items: center; gap: .75rem; margin-top: .5rem; }
 .session-exit-actions { display: grid; gap: .75rem; margin-top: 1rem; }
 .session-exit-actions .btn { white-space: normal; }
+
+/* Application updates remain visible above the bottom navigation. */
+.app-update { position: fixed; z-index: 120; bottom: calc(var(--nav-space) + .5rem); left: 50%; transform: translateX(-50%); width: calc(100% - 2rem); max-width: 568px; display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem); }

@@ -19,6 +19,8 @@
 
 __DOMAIN__ {
     import security_headers
+    @app_bootstrap path / /index.html /sw.js /manifest.json
+    header @app_bootstrap >Cache-Control "no-store"
     log {
         output file /var/log/caddy/workoutbuddy.json {
             roll_size 5MiB

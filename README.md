@@ -98,6 +98,15 @@ Dans **Réglages → Réglages avancés**, configurer l’hôte réseau sur `0.0
 
 L’application est prévue pour un usage personnel sur un réseau de confiance : elle n’a pas d’authentification et ne doit pas être exposée directement à Internet.
 
+En HTTPS, Safari et l’application ajoutée à l’écran d’accueil vérifient les nouvelles
+versions à l’ouverture, au retour au premier plan et toutes les cinq minutes pendant
+l’utilisation. Une version complète se charge automatiquement sur un écran de
+consultation. Pendant une séance ou une saisie, une notification propose **Mettre à
+jour**, avec confirmation avant de perdre une saisie non enregistrée. Aucun hard
+refresh ni effacement des données du site n’est nécessaire. Le cache garde les
+fichiers de l’interface pour le mode hors ligne, jamais les réponses API ni les
+redirections d’authentification. Chaque livraison doit changer la version du cache.
+
 ## Configuration du serveur
 
 Les variables d’environnement priment sur les réglages enregistrés. Elles peuvent être définies dans un fichier `.env` à la racine, en s’appuyant sur [.env.example](.env.example).
@@ -124,6 +133,12 @@ Limites par IP et par minute : 600 appels API ; dans ce total, 60 créations/ape
 Sur un VPS, faire écouter Node sur `127.0.0.1`, derrière un proxy ou tunnel avec HTTPS **et une authentification externe**. Définir `NODE_ENV=production` et `PUBLIC_ORIGIN=https://workout.example.com`. Le proxy doit conserver le champ Host public et rediriger HTTP vers HTTPS ; ne pas exposer directement le port de Node. `TRUST_PROXY=loopback` permet de lire l’IP transmise uniquement depuis un proxy local de confiance ; celui-ci doit supprimer ou réécrire les en-têtes fournis par le client. Par défaut, les en-têtes de proxy ne sont pas utilisés. Ne pas exécuter l’application en root.
 
 Les dépendances serveur sont verrouillées dans `package-lock.json`. Vérifier avec `npm audit`, installer avec `npm ci` et tester les mises à jour avant déploiement. La cible est Node 24 LTS ; Node 20 n’est plus pris en charge.
+
+Le [guide Rocky Linux](docs/DEPLOYMENT_ROCKY.md) et `deploy/rocky/` décrivent
+l’hébergement public gratuit avec Caddy et Authelia, les sauvegardes, les protections
+systemd et la maintenance nocturne. Les RPM stables et Node restent suivis par DNF
+sur la branche 24 ; les paquets npm sont audités chaque semaine puis mis à jour
+après tests, sans modification automatique des dépendances en production.
 
 ## Sauvegarde, export et réinitialisation
 

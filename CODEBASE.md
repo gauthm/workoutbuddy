@@ -51,6 +51,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Domaine | Emplacement |
 | --- | --- |
 | Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
+| Détection des versions et mise à jour sans perdre une saisie | `js/appUpdates.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
 | Accueil | `js/views/DashboardView.js` |
 | Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
 | Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
@@ -69,5 +70,10 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
 | `tests/helpers/` | Exécution isolée des requêtes |
 | `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
+| `tests/e2e/updates.spec.js` | Livraison sur copie isolée des assets : rechargement, brouillon, hors ligne et redirection d’authentification |
 | `tests/ui/` | Scénarios visuels Playwright complémentaires |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
+| `docs/DEPLOYMENT_ROCKY.md`, `deploy/rocky/` | Caddy/Authelia, systemd, sauvegardes et configuration reproductible Rocky |
+| `deploy/rocky/workoutbuddy-maintenance`, `dnf-automatic-*.conf` | Sauvegarde avant mises à jour RPM, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
+| `deploy/rocky/workoutbuddy-audit.*`, `test-maintenance.py` | Audit npm hebdomadaire et tests simulés de la maintenance, sans toucher au serveur |
+| `deploy/rocky/workoutbuddy-deploy-assets` | Publication atomique de l’interface et conservation de la version précédente |

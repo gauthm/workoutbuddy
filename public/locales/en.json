@@ -812,5 +812,8 @@
   "session.set_conflict": "This set has already been saved with different values. Reload the workout to see the saved version before editing it.",
   "errors.rate_limited": "Too many requests. Please try again shortly.",
   "errors.ai_busy": "The AI Coach is already processing requests. Please try again shortly.",
-  "errors.import_busy": "An import is already in progress. Please try again shortly."
+  "errors.import_busy": "An import is already in progress. Please try again shortly.",
+  "updates.available": "An update is ready",
+  "updates.apply": "Update now",
+  "updates.unsaved": "Unsaved entries on this screen will be lost. Save them before continuing."
 }

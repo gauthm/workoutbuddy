@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v70'
+const CACHE_NAME = 'workoutbuddy-v71'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -9,6 +9,7 @@ const PRECACHE_URLS = [
   '/css/main.css',
   '/css/components.css',
   '/js/app.js',
+  '/js/appUpdates.js',
   '/js/router.js',
   '/js/store.js',
   '/js/i18n.js',
@@ -32,6 +33,7 @@ const PRECACHE_URLS = [
   '/js/components/common/ConfirmModal.js',
   '/js/components/common/ModalDialog.js',
   '/js/components/common/Toast.js',
+  '/js/components/common/AppUpdateBanner.js',
   '/js/components/exercises/ExerciseListView.js',
   '/js/components/exercises/ExerciseCard.js',
   '/js/components/exercises/ExerciseDetailView.js',
@@ -85,88 +87,74 @@ const PRECACHE_URLS = [
   '/manifest.json',
 ]
 
-// ── Installation : pré-cache des assets statiques ─────────────
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // addAll échoue si une seule URL est introuvable.
-      // Utiliser des ajouts individuels pour être tolérant aux erreurs.
-      return Promise.allSettled(
-        PRECACHE_URLS.map(url =>
-          cache.add(url).catch(err =>
-            console.warn(`[SW] Pré-cache échoué pour ${url}:`, err.message)
-          )
-        )
-      )
-    })
-  )
-  self.skipWaiting()
+// A release only activates after every shell asset is cached successfully.
+// Authentication redirects must never replace JavaScript or HTML in the cache.
+async function cacheResponse(cache, request, response) {
+  if (!response.ok || response.redirected || response.type === 'opaqueredirect' ||
+      new URL(response.url).origin !== self.location.origin) return false
+  const path = new URL(request.url).pathname
+  const type = response.headers.get('content-type') || ''
+  if ((path.endsWith('.js') && !/javascript/.test(type)) ||
+      (path.endsWith('.css') && !type.includes('text/css')) ||
+      (path.endsWith('.json') && !type.includes('json'))) return false
+  await cache.put(request, response.clone())
+  return true
+}
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME)
+    const results = await Promise.allSettled(PRECACHE_URLS.map(async path => {
+      const request = new Request(new URL(path, self.location.origin), { cache: 'reload', credentials: 'same-origin', redirect: 'manual' })
+      if (!await cacheResponse(cache, request, await fetch(request))) throw new Error('Asset unavailable: ' + path)
+    }))
+    if (results.some(result => result.status === 'rejected')) {
+      await caches.delete(CACHE_NAME)
+      throw new Error('Incomplete app update; keeping the previous release')
+    }
+    await self.skipWaiting()
+  })())
 })
 
-// ── Activation : supprimer les anciens caches ─────────────────
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
-    )
-  )
-  self.clients.claim()
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys()
+    await Promise.all(keys.filter(key => key.startsWith('workoutbuddy-v') && key !== CACHE_NAME).map(key => caches.delete(key)))
+    await self.clients.claim()
+  })())
 })
 
-// ── Fetch : stratégie selon le type de requête ────────────────
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-  const url = new URL(request.url)
-
-  // ── API calls → Network First (jamais de cache)
+self.addEventListener('fetch', event => {
+  const request = event.request, url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request).catch(() =>
-        new Response(
-          JSON.stringify({ error: 'OFFLINE', message: 'Hors ligne' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        )
-      )
-    )
+    event.respondWith(fetch(request).catch(() => new Response(JSON.stringify({ error: 'OFFLINE' }), {
+      status: 503, headers: { 'Content-Type': 'application/json' },
+    })))
     return
   }
-
-  // ── Images d'exercices → Cache First avec fallback réseau
-  if (url.pathname.startsWith('/exercises/images/')) {
-    event.respondWith(
-      caches.match(request).then(cached => {
-        if (cached) return cached
-        return fetch(request).then(response => {
-          if (response.ok) {
-            const copy = response.clone()
-            caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
-          }
-          return response
-        }).catch(() => new Response('', { status: 404 }))
-      })
-    )
-    return
-  }
-
-  // ── Assets statiques → Cache First
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached
-      return fetch(request).then(response => {
-        if (response.ok && request.method === 'GET') {
-          const copy = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
-        }
+  if (request.method !== 'GET') return
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request)
+        const cache = await caches.open(CACHE_NAME)
+        await cacheResponse(cache, request, response)
         return response
-      }).catch(() => {
-        // Fallback : retourner offline.html pour les navigations HTML
-        if (request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/offline.html')
-        }
-        return new Response('', { status: 503 })
-      })
-    })
-  )
+      } catch {
+        const cache = await caches.open(CACHE_NAME)
+        return await cache.match(request) || await cache.match('/') || await cache.match('/offline.html')
+      }
+    })())
+    return
+  }
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME), cached = await cache.match(request)
+    if (cached) return cached
+    try {
+      const response = await fetch(request)
+      event.waitUntil(cacheResponse(cache, request, response).catch(() => {}))
+      return response
+    } catch { return new Response('', { status: 503 }) }
+  })())
 })

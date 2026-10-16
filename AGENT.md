@@ -88,6 +88,8 @@ Si un fichier source dépasse 500 lignes, copier seulement les sections pertinen
 - [ ] Colonnes JSON sérialisées/désérialisées correctement
 - [ ] Pas de concaténation SQL
 - [ ] Si `public/` modifié → `CACHE_NAME` bumpé dans `sw.js`
+- [ ] Après développement et tests, mettre `README.md` et l’index `CODEBASE.md` à jour pour refléter le fonctionnement et les fichiers actuels
+- [ ] Une fois les vérifications terminées, committer les changements et les pousser sur `main`
 
 ## 7. Parcours navigateur isolés
 

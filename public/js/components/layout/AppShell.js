@@ -3,6 +3,7 @@ import { computed, inject, defineAsyncComponent, h, resolveComponent }
 import BottomNav from './BottomNav.js'
 import PageHeader from './PageHeader.js'
 import Toast from '../common/Toast.js'
+import AppUpdateBanner from '../common/AppUpdateBanner.js'
 
 // Import statique de toutes les vues
 // (les vues non encore implémentées utilisent un placeholder)
@@ -53,7 +54,7 @@ const VIEW_MAP = {
 
 export default {
   name: 'AppShell',
-  components: { BottomNav, PageHeader, Toast },
+  components: { BottomNav, PageHeader, Toast, AppUpdateBanner },
 
   setup() {
     const router = inject('router')
@@ -78,6 +79,7 @@ export default {
         :key="router.currentRoute.name + (router.currentRoute.name === 'ExerciseListView' ? '' : JSON.stringify(router.currentRoute.params))"
         v-bind="router.currentRoute.params"
       />
+      <AppUpdateBanner />
       <BottomNav v-if="showNav" />
       <Toast v-if="store.toast" :toast="store.toast" @dismiss="store.dismissToast()" />
     </div>

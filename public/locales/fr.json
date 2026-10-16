@@ -812,5 +812,8 @@
   "session.set_conflict": "Cette série a déjà été enregistrée avec d’autres valeurs. Recharge la séance pour retrouver la version sauvegardée avant de la modifier.",
   "errors.rate_limited": "Trop de requêtes. Réessaie dans un instant.",
   "errors.ai_busy": "Le Coach IA traite déjà des demandes. Réessaie dans un instant.",
-  "errors.import_busy": "Une importation est déjà en cours. Réessaie dans un instant."
+  "errors.import_busy": "Une importation est déjà en cours. Réessaie dans un instant.",
+  "updates.available": "Une mise à jour est prête",
+  "updates.apply": "Mettre à jour",
+  "updates.unsaved": "Les saisies non enregistrées de cet écran seront perdues. Enregistre-les avant de continuer."
 }

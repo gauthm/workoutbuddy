@@ -1,4 +1,4 @@
-import { mkdtemp,rm,writeFile } from 'node:fs/promises'
+import { mkdtemp,rm,writeFile,mkdir,copyFile,cp,symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join,resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,11 +13,20 @@ async function freePort() {
   await new Promise((yes,no)=>server.close(err=>err?no(err):yes()))
   return port
 }
-export async function isolatedApp() {
+export async function isolatedApp({snapshotAssets=false}={}) {
   const directory=await mkdtemp(join(tmpdir(),'workoutbuddy-e2e-'))
   const dbPath=join(directory,'test.db'),port=await freePort()
   if (resolve(dbPath)===resolve(root,'data/workoutbuddy.db') || port===3000) {
     await rm(directory,{recursive:true,force:true});throw new Error('Unsafe E2E environment')
+  }
+  let serverRoot=root
+  if(snapshotAssets){
+    serverRoot=join(directory,'app')
+    await mkdir(serverRoot)
+    await copyFile(join(root,'server.js'),join(serverRoot,'server.js'))
+    await copyFile(join(root,'package.json'),join(serverRoot,'package.json'))
+    await cp(join(root,'public'),join(serverRoot,'public'),{recursive:true})
+    for(const name of ['src','node_modules'])await symlink(join(root,name),join(serverRoot,name),'dir')
   }
   let child,logs=''
   async function stop(signal='SIGTERM') {
@@ -28,7 +37,7 @@ export async function isolatedApp() {
     try { await exited } finally {clearTimeout(timer)}
   }
   async function start() {
-    child=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,
+    child=spawn(process.execPath,['server.js'],{cwd:serverRoot,env:{...process.env,
       NODE_ENV:'test',PUBLIC_ORIGIN:'',TRUST_PROXY:'',DB_PATH:dbPath,HOST:'127.0.0.1',PORT:String(port)},stdio:['ignore','pipe','pipe']})
     try {
       await new Promise((yes,no)=>{
@@ -44,7 +53,7 @@ export async function isolatedApp() {
     } catch(error) {await stop();throw error}
   }
   try {await start()} catch(error){await rm(directory,{recursive:true,force:true});throw error}
-  return {url:`http://127.0.0.1:${port}`,dbPath,directory,
+  return {url:`http://127.0.0.1:${port}`,dbPath,directory,assetDirectory:join(serverRoot,'public'),
     async restart({abrupt=false}={}){await stop(abrupt?'SIGKILL':'SIGTERM');await start()},
     async dispose(logPath){try{await stop();if(logPath)await writeFile(logPath,logs)}finally{await rm(directory,{recursive:true,force:true})}},
   }

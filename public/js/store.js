@@ -3,6 +3,7 @@ import { stopSessionTimers } from './timer-worker-singleton.js'
 
 export const store = reactive({
   // ── État global ───────────────────────────────────────────
+  pendingRequests: 0,
   settings:      null,       // objet settings chargé depuis GET /settings
   activeRest: null,
   activeRestExerciseId: null,
