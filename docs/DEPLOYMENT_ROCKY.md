@@ -52,9 +52,15 @@ chiffre les secrets TOTP. Installer les fichiers ainsi :
 | modèles `*.service`, `*.timer` | `/etc/systemd/system/`, 0644 root:root |
 | `caddy-hardening.conf` | `/etc/systemd/system/caddy.service.d/zzz-lxc-service.conf` |
 | `service-hardening.conf` | même nom pour les services workoutbuddy et authelia |
+| `workoutbuddy-isolation.conf` | `/etc/systemd/system/workoutbuddy.service.d/zzzz-isolation.conf` |
 
 Les drop-ins rétablissent des protections parfois remplacées par l'hébergeur.
-Vérifier les valeurs effectives avec `systemctl show`. Sous SELinux enforcing,
+Vérifier les valeurs effectives avec `systemctl show`. Le drop-in d’isolation
+WorkoutBuddy protège aussi l’horloge, les journaux noyau, le nom d’hôte et `/proc`,
+interdit la création d’espaces de noms et filtre les appels système privilégiés.
+Il désactive les core dumps. Garder les mappings exécutables nécessaires au JIT
+de Node et le réseau sortant nécessaire au Coach IA. Tester les protections dans
+une instance à base jetable avant application sur un autre hôte. Sous SELinux enforcing,
 installer `selinux-policy-targeted`, appliquer `restorecon` aux chemins installés,
 vérifier `ps -eZ` et les AVC après les parcours. Le paquet Caddy fournit sa politique.
 N'ajouter que les permissions justifiées ; aucune politique générale `audit2allow`.
@@ -64,6 +70,13 @@ Valider `authelia config validate --config /etc/authelia/configuration.yml` et
 `systemctl enable --now workoutbuddy authelia caddy workoutbuddy-backup.timer`.
 Vérifier le démarrage complet avant la première sauvegarde. Node écoute uniquement
 sur 127.0.0.1:3000, Authelia sur 127.0.0.1:9091, l'administration Caddy sur 127.0.0.1:2019.
+
+Caddy applique HSTS (un an), `nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, supprime `Server` et `X-Powered-By` et fournit
+une Permissions Policy par défaut. Les CSP de l’application (Vue) et d’Authelia
+(avec nonce) sont conservées ; une CSP restrictive de secours est prévue pour
+les réponses sans politique. Vérifier les en-têtes réellement reçus, pas seulement
+le Caddyfile, après chaque modification.
 
 Avant d'activer firewalld : autoriser **le port SSH réellement utilisé**, HTTP/TCP
 et HTTPS/TCP dans la zone de l'interface ; retirer les autres ouvertures. Prévoir

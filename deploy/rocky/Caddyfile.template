@@ -4,8 +4,21 @@
         protocols h1 h2
     }
 }
+(security_headers) {
+    header {
+        >Strict-Transport-Security "max-age=31536000"
+        >X-Content-Type-Options "nosniff"
+        >X-Frame-Options "DENY"
+        >Referrer-Policy "no-referrer"
+        ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+        -Server
+        -X-Powered-By
+    }
+}
+
 __DOMAIN__ {
-    header Strict-Transport-Security "max-age=31536000"
+    import security_headers
     log {
         output file /var/log/caddy/workoutbuddy.json {
             roll_size 5MiB
@@ -36,7 +49,7 @@ __DOMAIN__ {
     }
 }
 auth.__DOMAIN__ {
-    header Strict-Transport-Security "max-age=31536000"
+    import security_headers
     reverse_proxy 127.0.0.1:9091 {
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto https
