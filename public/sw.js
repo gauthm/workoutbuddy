@@ -1,11 +1,9 @@
-const CACHE_NAME = 'workoutbuddy-v71'
+const CACHE_NAME = 'workoutbuddy-v73'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
 // Règle complète : AGENT.md §14.
 const PRECACHE_URLS = [
-  '/',
-  '/offline.html',
   '/css/main.css',
   '/css/components.css',
   '/js/app.js',
@@ -101,9 +99,19 @@ async function cacheResponse(cache, request, response) {
   return true
 }
 
+let loginRequired = false
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME)
+    // The worker is public so even a logged-out client can recover from an old
+    // cached shell. It contains no user data. Never cache protected HTML.
+    const gate = await fetch('/', { redirect: 'manual', credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'text/html' } })
+    if (gate.type === 'opaqueredirect' || gate.status === 401) {
+      loginRequired = true
+      await self.skipWaiting()
+      return
+    }
+    if (!gate.ok) throw new Error('Application unavailable; keeping the previous release')
     const results = await Promise.allSettled(PRECACHE_URLS.map(async path => {
       const request = new Request(new URL(path, self.location.origin), { cache: 'reload', credentials: 'same-origin', redirect: 'manual' })
       if (!await cacheResponse(cache, request, await fetch(request))) throw new Error('Asset unavailable: ' + path)
@@ -121,33 +129,49 @@ self.addEventListener('activate', event => {
     const keys = await caches.keys()
     await Promise.all(keys.filter(key => key.startsWith('workoutbuddy-v') && key !== CACHE_NAME).map(key => caches.delete(key)))
     await self.clients.claim()
+    // A worker may be stopped and recreated between installation and activation.
+    if (!loginRequired) {
+      try {
+        const gate = await fetch('/', { redirect: 'manual', credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'text/html' } })
+        loginRequired = gate.type === 'opaqueredirect' || gate.status === 401
+      } catch { /* No network: leave an existing page intact. */ }
+    }
+    if (loginRequired) {
+      for (const client of await self.clients.matchAll({ type: 'window' })) {
+        // Never await this navigation inside activate: HTTPS navigation can wait
+        // for activation itself, deadlocking both the worker and the page.
+        if (client.visibilityState === 'visible') client.navigate('/auth/login').catch(() => {})
+      }
+    }
   })())
 })
 
 self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+  // Let the browser perform cross-origin login redirects as real navigations.
+  // A fetch() followed to the identity provider can fail CORS and masquerade as
+  // a network outage. Cached HTML must never shadow an expired login.
+  if (request.mode === 'navigate') return
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(request).catch(() => new Response(JSON.stringify({ error: 'OFFLINE' }), {
-      status: 503, headers: { 'Content-Type': 'application/json' },
-    })))
-    return
-  }
-  if (request.method !== 'GET') return
-  if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request)
-        const cache = await caches.open(CACHE_NAME)
-        await cacheResponse(cache, request, response)
+        const headers = new Headers(request.headers)
+        headers.set('Accept', 'application/json')
+        const response = await fetch(new Request(request, { headers, redirect: 'manual', cache: 'no-store' }))
+        if (response.status === 401 || response.type === 'opaqueredirect') {
+          // Also repairs already-open pages running the old client code.
+          event.waitUntil(self.clients.get(event.clientId).then(client => client?.navigate('/auth/login')).catch(() => {}))
+          return new Response(JSON.stringify({ error: 'AUTH_REQUIRED' }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+        }
         return response
       } catch {
-        const cache = await caches.open(CACHE_NAME)
-        return await cache.match(request) || await cache.match('/') || await cache.match('/offline.html')
+        return new Response(JSON.stringify({ error: 'OFFLINE' }), { status: 503, headers: { 'Content-Type': 'application/json' } })
       }
     })())
     return
   }
+  if (request.method !== 'GET') return
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME), cached = await cache.match(request)
     if (cached) return cached

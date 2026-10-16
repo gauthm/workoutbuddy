@@ -44,7 +44,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
 | `security.spec.js` | CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu et service worker |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
-| `updates.spec.js` | Publication sur une copie des assets : version détectée au retour au premier plan, reload sans hard refresh, brouillon préservé, API hors cache, refus des redirections d’authentification |
+| `updates.spec.js` | Publication sur une copie des assets : détection au premier plan, reload sans hard refresh, brouillon préservé, vraie panne réseau, refus des assets de connexion ; proxy HTTP avec session expirée sur navigation, API, premier plan et mise à niveau d’un ancien worker |
 
 `scripts/e2e-selection.js` décrit les dépendances. Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare les commits à cette référence, et ajoute les nouveaux fichiers non suivis.
 

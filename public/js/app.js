@@ -18,6 +18,7 @@ async function init() {
     // Appliquer le thème
     document.documentElement.setAttribute('data-theme', data.theme || 'dark')
   } catch (e) {
+    if (e.status === 401) return false // The proxy login redirect is already underway.
     console.warn('[app] Impossible de charger les settings :', e.message)
     await i18n.setLocale('fr')
   }
@@ -30,9 +31,10 @@ async function init() {
 
   router.init()
   app.mount('#app')
+  return true
 }
 
 // Debug — accès console au store (toast, settings)
 window.__store = store
 
-init().then(startAppUpdates)
+init().then(loaded => { if (loaded) startAppUpdates() })

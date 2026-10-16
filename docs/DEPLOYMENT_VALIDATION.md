@@ -1,15 +1,25 @@
 # Validation du déploiement Rocky
 
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
-- Suite navigateur complète : 74 parcours passent sur 82 ; les huit échecs
-  concernent uniquement les photos absentes (voir ci-dessous).
-- Six nouveaux parcours navigateur de mise à jour passent : publication sans
-  hard refresh, retour au premier plan, cache hors ligne, API jamais cachée,
-  brouillon conservé, annulation et sauvegarde avant application, rejet des
-  redirections d’authentification et reprise après une installation incomplète.
+- Couverture navigateur : 82 cas validés au total après suite complète et
+  contrôles ciblés ; huit cas restent bloqués par les photos absentes. Une attente
+  de test pendant un rechargement a été corrigée après la suite complète.
+- Dernier contrôle ciblé : 18 cas sécurité/mise à jour passent, ordinateur et mobile.
+  Publication sans hard refresh, API jamais cachée, vraie panne réseau distinguée
+  d’un 401, brouillon conservé, rejet des assets de connexion et retour au portail
+  après expiration sur navigation, API, premier plan ou ancien worker.
+- Test TLS intégral jetable Caddy/Authelia/Redis/Node : mot de passe seul refusé,
+  TOTP accepté, cookie Secure/HttpOnly de 60 jours, persistance après redémarrage
+  des deux services, reprise avec cookie conservé, déconnexion et révocation,
+  expiration des sessions ordinaires. CSP Vue et nonce Authelia préservés,
+  authentification avec no-referrer et IP pure transmise sans en-tête forgé.
+- Site public vérifié sans identité personnelle : renvoi vers Authelia et case
+  Se souvenir de moi visible. Un navigateur à ancien cache synthétique atteint le
+  portail réel après installation du worker de réparation. Le worker et le renvoi
+  de connexion sont publics ; les pages, autres assets et API restent protégés.
 - Maintenance nocturne : configuration DNF parsée, timer en heure de Paris et
-  absence de rattrapage diurne contrôlés. Six tests simulés vérifient le garde
-  horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node.
+  absence de rattrapage diurne contrôlés. Sept tests simulés vérifient le garde
+  horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node/Redis.
   Lancement réel de l’unité en journée : aucune mutation ni aucun reboot.
   Audit npm exécuté sans privilèges, aucun accès aux bases/secrets, aucune
   vulnérabilité de production signalée. Aucun redémarrage réel du VPS effectué
@@ -18,7 +28,7 @@
   service worker, origines étrangères, JSON, limitations IA et import interrompu.
 - HTTPS public, redirection HTTP, UI/API/export/IA protégés, en-têtes d'identité
   forgés refusés ; mot de passe seul insuffisant, TOTP accepté, déconnexion et
-  expirations vérifiées avec une identité jetable. Compte personnel à enrôler.
+  expirations vérifiées avec une identité jetable.
 - Import/export/sauvegarde derrière TLS testés avec une base jetable. Redémarrage
   propre, reprise après incident, persistance, restauration depuis un instantané
   et rétention de sept sauvegardes sur neuf essais synthétiques vérifiés.

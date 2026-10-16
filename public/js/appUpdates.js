@@ -1,7 +1,7 @@
 import { reactive, watch } from '/vendor/vue.esm-browser.prod.js'
 import { router } from './router.js'
 import { store } from './store.js'
-import { onRequestActivity } from './api.js'
+import { onRequestActivity, settings as settingsApi } from './api.js'
 
 export const appUpdates = reactive({ ready: false })
 let started = false, edited = false, reloading = false, idleTimer
@@ -51,9 +51,13 @@ export function startAppUpdates() {
       if (navigator.onLine && document.visibilityState === 'visible') reg.update().catch(() => {})
       scheduleUpdate()
     }
-    document.addEventListener('visibilitychange', check)
-    window.addEventListener('online', check)
-    window.addEventListener('pageshow', check)
+    const resume = () => {
+      check()
+      if (navigator.onLine && document.visibilityState === 'visible') settingsApi.get().catch(() => {})
+    }
+    document.addEventListener('visibilitychange', resume)
+    window.addEventListener('online', resume)
+    window.addEventListener('pageshow', resume)
     setInterval(check, 5 * 60_000)
     check()
   }).catch(err => console.warn('[SW] Échec enregistrement :', err.message))

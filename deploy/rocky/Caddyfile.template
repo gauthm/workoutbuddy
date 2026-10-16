@@ -1,60 +1,74 @@
 {
-    admin 127.0.0.1:2019
-    servers {
-        protocols h1 h2
-    }
+	admin 127.0.0.1:2019
+	servers {
+		protocols h1 h2
+	}
 }
 (security_headers) {
-    header {
-        >Strict-Transport-Security "max-age=31536000"
-        >X-Content-Type-Options "nosniff"
-        >X-Frame-Options "DENY"
-        >Referrer-Policy "no-referrer"
-        ?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-        ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-        -Server
-        -X-Powered-By
-    }
+	header {
+		>Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		>X-Content-Type-Options "nosniff"
+		>X-Frame-Options "DENY"
+		>Referrer-Policy "no-referrer"
+		?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+		-Server
+		-X-Powered-By
+	}
 }
 
 __DOMAIN__ {
-    import security_headers
-    @app_bootstrap path / /index.html /sw.js /manifest.json
-    header @app_bootstrap >Cache-Control "no-store"
-    log {
-        output file /var/log/caddy/workoutbuddy.json {
-            roll_size 5MiB
-            roll_keep 3
-            roll_keep_for 168h
-        }
-    }
-    route {
-        request_header -Remote-User
-        request_header -Remote-Groups
-        request_header -Remote-Name
-        request_header -Remote-Email
-        request_header -X-Forwarded-User
-        request_header -X-Forwarded-For
-        request_header -X-Forwarded-Host
-        request_header -X-Forwarded-Proto
-        forward_auth 127.0.0.1:9091 {
-            uri /api/authz/forward-auth
-            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
-        }
-        reverse_proxy 127.0.0.1:3000 {
-            header_up Host __DOMAIN__
-            header_up X-Forwarded-Host __DOMAIN__
-            header_up X-Forwarded-Proto https
-            header_up X-Forwarded-For {remote_host}
-            flush_interval -1
-        }
-    }
+	import security_headers
+	@app_bootstrap path / /index.html /sw.js /manifest.json /offline.html
+	header @app_bootstrap >Cache-Control "no-store"
+	log {
+		output file /var/log/caddy/workoutbuddy.json {
+			roll_size 5MiB
+			roll_keep 3
+			roll_keep_for 168h
+		}
+	}
+	route {
+		# Only the repair worker and a login redirect are public; no app/API data.
+		@worker path /sw.js
+		handle @worker {
+			reverse_proxy 127.0.0.1:3000 {
+				header_up Host __DOMAIN__
+				header_up X-Forwarded-Proto https
+			}
+		}
+		handle /auth/login {
+			header Cache-Control "no-store"
+			redir https://auth.__DOMAIN__/?rd=https://__DOMAIN__/ 302
+		}
+		handle {
+			request_header -Remote-User
+			request_header -Remote-Groups
+			request_header -Remote-Name
+			request_header -Remote-Email
+			request_header -X-Forwarded-User
+			request_header -X-Forwarded-For
+			request_header -X-Forwarded-Host
+			request_header -X-Forwarded-Proto
+			forward_auth 127.0.0.1:9091 {
+				uri /api/authz/forward-auth
+				copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+			}
+			reverse_proxy 127.0.0.1:3000 {
+				header_up Host __DOMAIN__
+				header_up X-Forwarded-Host __DOMAIN__
+				header_up X-Forwarded-Proto https
+				header_up X-Forwarded-For {remote_host}
+				flush_interval -1
+			}
+		}
+	}
 }
 auth.__DOMAIN__ {
-    import security_headers
-    reverse_proxy 127.0.0.1:9091 {
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto https
-        header_up X-Forwarded-Host auth.__DOMAIN__
-    }
+	import security_headers
+	reverse_proxy 127.0.0.1:9091 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host auth.__DOMAIN__
+	}
 }

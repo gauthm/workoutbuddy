@@ -1,0 +1,19 @@
+# Private Redis instance for Authelia; no TCP listener.
+port 0
+unixsocket /run/workoutbuddy-sessions/redis.sock
+unixsocketperm 660
+protected-mode yes
+requirepass __REDIS_PASSWORD__
+daemonize no
+supervised systemd
+logfile ""
+dir /var/lib/workoutbuddy-sessions
+databases 1
+maxclients 32
+maxmemory 32mb
+maxmemory-policy noeviction
+save ""
+appendonly yes
+appendfsync everysec
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 1mb

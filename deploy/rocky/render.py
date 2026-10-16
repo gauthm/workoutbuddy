@@ -6,7 +6,7 @@ domain, output = sys.argv[1:]
 if not re.fullmatch(r'[a-z0-9][a-z0-9.-]+\.[a-z]{2,}',domain): raise SystemExit('Invalid domain')
 root=pathlib.Path(output)
 root.mkdir(mode=0o700,parents=True,exist_ok=True)
-values={'DOMAIN':domain,**{k:secrets.token_hex(32) for k in ['JWT_SECRET','SECRET','ENCRYPTION_KEY']}}
+values={'DOMAIN':domain,**{k:secrets.token_hex(32) for k in ['JWT_SECRET','SECRET','ENCRYPTION_KEY','REDIS_PASSWORD']}}
 for source in pathlib.Path(__file__).parent.glob('*.template'):
  s=source.read_text()
  for k,v in values.items():s=s.replace('__'+k+'__',v)

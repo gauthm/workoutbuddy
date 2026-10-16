@@ -25,7 +25,11 @@ session:
   same_site: lax
   inactivity: 15m
   expiration: 1h
-  remember_me: -1
+  remember_me: 60d
+  redis:
+    host: /run/workoutbuddy-sessions/redis.sock
+    password: __REDIS_PASSWORD__
+    database_index: 0
   cookies:
     - domain: __DOMAIN__
       authelia_url: https://auth.__DOMAIN__

@@ -16,6 +16,8 @@ try:
     with tarfile.open(stage/'configuration.tar.gz','w:gz') as tar:
         for source in ['/etc/authelia','/etc/workoutbuddy','/etc/caddy/Caddyfile']:
             tar.add(source, arcname=source.lstrip('/'))
+        source='/etc/redis/workoutbuddy-sessions.conf'
+        if pathlib.Path(source).is_file():tar.add(source,arcname=source.lstrip('/'))
     stage.rename(root/stamp)
     for old in sorted([p for p in root.iterdir() if p.is_dir() and not p.name.startswith('.')], reverse=True)[7:]:
         shutil.rmtree(old)

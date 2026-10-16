@@ -23,7 +23,7 @@ class MaintenanceTest(unittest.TestCase):
             maintenance.apply()
             run.assert_not_called()
 
-    def exercise(self, reboot, windows, updated=False, backup_fails=False):
+    def exercise(self, reboot, windows, updated=False, backup_fails=False, redis_updated=False):
         calls=[]
         def run(*args, **kwargs):
             calls.append(args)
@@ -33,7 +33,7 @@ class MaintenanceTest(unittest.TestCase):
         with patch.object(maintenance, 'in_window', side_effect=windows), \
              patch.object(maintenance.Path, 'open'), patch.object(maintenance.fcntl, 'flock'), \
              patch.object(maintenance, 'run', side_effect=run), \
-             patch.object(maintenance, 'versions', side_effect=[{'nodejs':'old','caddy':'same'}, {'nodejs':'new' if updated else 'old','caddy':'same'}]), \
+             patch.object(maintenance, 'versions', side_effect=[{'nodejs':'old','caddy':'same','redis':'old'}, {'nodejs':'new' if updated else 'old','caddy':'same','redis':'new' if redis_updated else 'old'}]), \
              patch.object(maintenance, 'reboot_needed', return_value=reboot):
             if backup_fails:
                 with self.assertRaises(RuntimeError):maintenance.apply()
@@ -57,6 +57,11 @@ class MaintenanceTest(unittest.TestCase):
 
     def test_failed_backup_blocks_updates(self):
         self.assertEqual(len(self.exercise(False, [True], backup_fails=True)), 1)
+
+    def test_redis_update_restarts_only_private_session_store(self):
+        calls=self.exercise(False, [True], redis_updated=True)
+        self.assertIn(('/usr/bin/systemctl','restart','workoutbuddy-sessions.service'), calls)
+        self.assertNotIn(('/usr/bin/systemctl','reboot'), calls)
 
 
 if __name__ == '__main__':

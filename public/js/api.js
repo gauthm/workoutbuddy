@@ -16,6 +16,23 @@ function requestActivity(change) {
   for (const listener of activityListeners) listener(pendingRequests)
 }
 
+let redirectingToLogin = false
+async function fetchApi(path, options = {}) {
+  const headers = new Headers(options.headers)
+  headers.set('Accept', 'application/json')
+  const response = await fetch(`${BASE}${path}`, { ...options, headers, redirect: 'manual', cache: 'no-store' })
+  if (response.status === 401 || response.type === 'opaqueredirect') {
+    if (!redirectingToLogin && typeof window !== 'undefined') {
+      redirectingToLogin = true
+      window.location.replace('/auth/login')
+    }
+    const error = new Error('AUTH_REQUIRED')
+    error.status = 401
+    throw error
+  }
+  return response
+}
+
 async function request(method, path, body = undefined) {
   const opts = {
     method,
@@ -24,7 +41,7 @@ async function request(method, path, body = undefined) {
   if (body !== undefined) opts.body = JSON.stringify(body)
   requestActivity(1)
   try {
-    const res = await fetch(`${BASE}${path}`, opts)
+    const res = await fetchApi(path, opts)
     if (res.status === 204) return null
     const data = await res.json()
     if (!res.ok) {
@@ -136,7 +153,7 @@ export const userProfile = {
 
 // ── Coach IA ──────────────────────────────────────────────────
 export const coach = {
-  chat: (body, { signal } = {}) => fetch(`${BASE}/ai/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal }),
+  chat: (body, { signal } = {}) => fetchApi('/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal }),
   advice:              ()        => request('GET', '/ai/advice'),
   dismissAdvice:       (id)      => request('POST', `/ai/advice/${id}/dismiss`),
   purchasedAdvice:     (id)      => request('POST', `/ai/advice/${id}/purchased`),
@@ -154,14 +171,14 @@ export const coach = {
 export const exportImport = {
   // Export JSON complet
   exportJson: () =>
-    fetch(`${BASE}/export`).then(async res => {
+    fetchApi('/export').then(async res => {
       if (!res.ok) throw new Error('Erreur export')
       return res.blob()
     }),
 
   // Export CSV d'une table
   exportCsv: (table) =>
-    fetch(`${BASE}/export/csv/${table}`).then(async res => {
+    fetchApi(`/export/csv/${table}`).then(async res => {
       if (!res.ok) throw new Error('Erreur export CSV')
       return res.blob()
     }),

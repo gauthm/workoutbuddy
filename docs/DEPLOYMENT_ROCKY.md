@@ -1,6 +1,7 @@
 # Rocky Linux 9 : déploiement personnel
 
 Architecture gratuite : **Caddy → Authelia (mot de passe + TOTP) → Node 24 / SQLite**.
+Les sessions Authelia sont conservées dans une instance Redis privée et persistante.
 Les modèles sont dans `deploy/rocky/`. Exécuter les opérations système comme root.
 
 ## Préparation
@@ -21,7 +22,7 @@ Les modèles sont dans `deploy/rocky/`. Exécuter les opérations système comme
 ## Installation
 
 Installer `nodejs:24` depuis le module Rocky, puis `nodejs npm gcc-c++ make sqlite
-python3 dnf-automatic dnf-plugins-core policycoreutils-python-utils`. Aucun build
+python3 redis dnf-automatic dnf-plugins-core policycoreutils-python-utils`. Aucun build
 frontend. Pour Caddy : `dnf copr enable @caddy/caddy`, puis `dnf install caddy`.
 Installer le binaire stable Authelia dans `/usr/local/bin/authelia` (root:root,
 0755), depuis ses releases officielles, après vérification de `checksums.sha256`.
@@ -32,6 +33,8 @@ Créer les comptes `workoutbuddy` et `authelia` avec `useradd --system --shell
 appartenant au compte correspondant ; `/etc/authelia` en 0750 root:authelia,
 `/etc/workoutbuddy` en 0750 root:workoutbuddy, `/var/backups/workoutbuddy` en
 0700 root:root, `/var/log/caddy` en 0750 caddy:caddy.
+Créer aussi `groupadd --system workoutbuddy-sessions` ; le paquet Redis fournit
+son compte système. L’instance générique `redis.service` reste désactivée.
 
 Copier le code validé dans `/usr/local/lib/workoutbuddy`, root:root, sans écriture
 pour le service. Y lancer `npm ci --omit=dev` puis `node scripts/download-vendors.js`.
@@ -48,12 +51,14 @@ chiffre les secrets TOTP. Installer les fichiers ainsi :
 | rendu `environment` | `/etc/workoutbuddy/environment`, 0600 root:root |
 | rendu `Caddyfile` | `/etc/caddy/Caddyfile`, 0644 root:root |
 | rendu `workoutbuddy-auth-setup` | `/usr/local/sbin/`, 0700 root:root |
+| rendu `workoutbuddy-sessions.conf` | `/etc/redis/workoutbuddy-sessions.conf`, 0640 root:workoutbuddy-sessions |
 | modèle `workoutbuddy-backup` | `/usr/local/sbin/`, 0750 root:root |
 | `workoutbuddy-deploy-assets`, `workoutbuddy-maintenance` | `/usr/local/sbin/`, 0750 root:root |
 | modèles `*.service`, `*.timer` | `/etc/systemd/system/`, 0644 root:root |
 | `caddy-hardening.conf` | `/etc/systemd/system/caddy.service.d/zzz-lxc-service.conf` |
-| `service-hardening.conf` | même nom pour les services workoutbuddy et authelia |
+| `service-hardening.conf` | même nom pour les services workoutbuddy, authelia et workoutbuddy-sessions |
 | `workoutbuddy-isolation.conf` | `/etc/systemd/system/workoutbuddy.service.d/zzzz-isolation.conf` |
+| `authelia-sessions.conf` | `/etc/systemd/system/authelia.service.d/workoutbuddy-sessions.conf` |
 
 Les drop-ins rétablissent des protections parfois remplacées par l'hébergeur.
 Vérifier les valeurs effectives avec `systemctl show`. Le drop-in d’isolation
@@ -68,16 +73,23 @@ N'ajouter que les permissions justifiées ; aucune politique générale `audit2a
 
 Valider `authelia config validate --config /etc/authelia/configuration.yml` et
 `caddy validate --config /etc/caddy/Caddyfile`, puis `systemctl daemon-reload` et
-`systemctl enable --now workoutbuddy authelia caddy workoutbuddy-backup.timer`.
+`systemctl enable --now workoutbuddy workoutbuddy-sessions authelia caddy workoutbuddy-backup.timer`.
 Vérifier le démarrage complet avant la première sauvegarde. Node écoute uniquement
 sur 127.0.0.1:3000, Authelia sur 127.0.0.1:9091, l'administration Caddy sur 127.0.0.1:2019.
 
-Caddy applique HSTS (un an), `nosniff`, `X-Frame-Options: DENY`,
+Caddy applique HSTS (un an, `includeSubDomains`), `nosniff`, `X-Frame-Options: DENY`,
 `Referrer-Policy: no-referrer`, supprime `Server` et `X-Powered-By` et fournit
 une Permissions Policy par défaut. Les CSP de l’application (Vue) et d’Authelia
 (avec nonce) sont conservées ; une CSP restrictive de secours est prévue pour
 les réponses sans politique. Vérifier les en-têtes réellement reçus, pas seulement
 le Caddyfile, après chaque modification.
+
+La CSP de secours utilise le préfixe Caddy `?` : elle ne remplace ni la CSP Vue
+(qui exige encore `unsafe-eval`) ni celle d’Authelia avec nonce. `{remote_host}`
+transmet l’adresse sans port ; ce n’est pas `{remote}`. La politique `no-referrer`
+est compatible avec le flux testé : le retour utilise une URL explicite. Références :
+[en-têtes Caddy](https://caddyserver.com/docs/caddyfile/directives/header),
+[placeholders](https://caddyserver.com/docs/caddyfile/concepts#placeholders).
 
 Avant d'activer firewalld : autoriser **le port SSH réellement utilisé**, HTTP/TCP
 et HTTPS/TCP dans la zone de l'interface ; retirer les autres ouvertures. Prévoir
@@ -97,8 +109,34 @@ Lire le lien de vérification **dans votre terminal SSH uniquement** :
 authentificateur et confirmer un code. Aucun SMTP ni adresse personnelle requis.
 Tronquer ensuite ce fichier privé. Ne transmettre aucun secret par messagerie.
 Tester en fenêtre privée : mot de passe seul insuffisant, accès après TOTP,
-puis déconnexion via `https://auth.DOMAINE/logout`. Sessions : 15 min d'inactivité,
-1 h maximum, sans mémorisation. Les flux IA sont authentifiés à l'ouverture et
+puis déconnexion via `https://auth.DOMAINE/logout`. Sans **Se souvenir de moi** :
+15 min d’inactivité et 1 h maximum. Avec cette case cochée sur un appareil de
+confiance : connexion complète mémorisée pendant **60 jours**, sans expiration
+par inactivité ; nouveau navigateur, cookie effacé, déconnexion ou expiration
+imposent mot de passe et TOTP. Le cookie reste Secure, HttpOnly et SameSite=Lax.
+Ce mécanisme ne mémorise pas séparément le MFA. Voir la
+[configuration officielle](https://www.authelia.com/configuration/session/introduction/).
+
+`workoutbuddy-sessions.service` utilise uniquement un socket Unix 0660, sous un
+dossier 0750 accessible au groupe dédié d’Authelia. Aucun port TCP Redis. Le mot
+de passe aléatoire du fournisseur est généré hors dépôt par `render.py` ; pour
+une installation existante, l’ajouter sans changer les clés Authelia ni le compte.
+Son stockage `/var/lib/workoutbuddy-sessions` est en 0700, avec AOF synchronisé
+chaque seconde et limite Redis de 32 Mio. Le service est plafonné à 128 Mio de RAM
+au total et 20 % d’un CPU. Au repos, sa consommation mesurée est d’environ 7 à 8 Mio.
+Un arrêt propre conserve les sessions ; une coupure brutale peut perdre la dernière
+seconde. Ne pas restaurer les anciennes
+sessions depuis une sauvegarde : une restauration doit imposer une reconnexion.
+Le test `python3 deploy/rocky/test-auth-sessions.py` utilise des services, secrets,
+utilisateurs, TOTP et bases intégralement jetables, sur loopback ; il exige les
+binaires Node, Caddy, Redis et Authelia, et ne touche pas aux comptes réels.
+Avec `WB_PLAYWRIGHT_PATH` défini comme pour les E2E, il ajoute le test navigateur
+HTTPS `test-auth-recovery.mjs` : ancien cache et installation du worker anonyme,
+redirection effective vers Authelia sans blocage d’activation. Aucun certificat
+de test n’est ajouté au système ; le navigateur jetable accepte uniquement ce
+test avec sa propre autorité locale et des noms `.test` résolus sur loopback.
+
+Les flux IA sont authentifiés à l'ouverture et
 limités à 30 secondes côté fournisseur ; une déconnexion ne coupe pas un flux
 existant, mais interdit les requêtes suivantes. Arrêter Node pour couper immédiatement.
 
@@ -128,7 +166,7 @@ ensuite bases et configuration correspondante, avec propriétaires et modes init
 Déplacer l'ancien ensemble SQLite, WAL/SHM compris, avant remplacement. Redémarrer
 et vérifier l'application et le MFA. Aucun essai destructif sur la base personnelle.
 
-- État : `systemctl status workoutbuddy authelia caddy firewalld fail2ban`.
+- État : `systemctl status workoutbuddy authelia workoutbuddy-sessions caddy firewalld fail2ban`.
 - Journaux : `journalctl -u workoutbuddy -u authelia -u caddy --since today`.
 - Redémarrage : `systemctl restart workoutbuddy` ; drainage HTTP, limite 25 s
   pour les flux persistants, fermeture SQLite ; systemd attend 35 s.
@@ -201,9 +239,16 @@ sauvegarder puis tester avant remplacement. Il n’est pas mis à jour sans vali
 ## Livraison de l’interface
 
 Chaque changement de `public/` incrémente `CACHE_NAME` dans `sw.js`. Le service worker
-précharge toute l’interface avant activation et refuse les redirections Authelia.
-L’HTML est vérifié sur le réseau ; Caddy interdit le cache HTTP du bootstrap et
-du worker. Au premier plan, l’application recherche une version au démarrage puis
+précharge les fichiers statiques après contrôle d’accès, jamais l’HTML protégé.
+La navigation reste native pour laisser le navigateur suivre Authelia ; un 401 API
+provoque aussi le retour au portail, tandis qu’une vraie panne réseau garde `OFFLINE`.
+Le worker `/sw.js` est public pour pouvoir remplacer un ancien worker même après
+expiration ; `/auth/login` est un simple renvoi public au portail. Ce sont les seules
+exceptions : l’interface, ses autres assets et toute l’API restent authentifiés.
+Un worker installé pendant une session expirée ne précharge aucun asset privé et
+répare les fenêtres visibles déjà en cache. Caddy interdit le cache HTTP du bootstrap,
+du worker et d’`offline.html`. Au premier plan, l’application vérifie sa connexion et
+recherche une version au démarrage puis
 toutes les cinq minutes. Les écrans de consultation se rechargent automatiquement ;
 une saisie ou séance reporte ce rechargement et affiche un bouton avec confirmation.
 
@@ -220,8 +265,8 @@ puis rouvrir une fois l’application peut être nécessaire ; ne pas effacer le
 du site. Les versions suivantes utilisent la détection automatique.
 
 Validation avant mise à jour : `npm ci && npm test` dans la copie source ; parcours
-isolés selon `tests/e2e/README.md`. Vérifier TLS/HTTP 308, UI/API/export/IA/service
-worker protégés, en-têtes forgés, Host alternatif et ports directs. Tester MFA,
+isolés selon `tests/e2e/README.md`. Vérifier TLS/HTTP 308, UI/API/export/IA protégés,
+worker public sans donnée privée, en-têtes forgés, Host alternatif et ports directs. Tester MFA,
 déconnexion, expiration, import/export/sauvegarde sur base jetable derrière le proxy,
 redémarrages et restauration. Le Coach IA reste désactivé sans fournisseur gratuit
 explicitement choisi ; aucun appel réel ne peut être validé sans configuration.

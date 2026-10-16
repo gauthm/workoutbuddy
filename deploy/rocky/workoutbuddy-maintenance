@@ -9,7 +9,7 @@ from pathlib import Path
 import subprocess
 
 PARIS = ZoneInfo('Europe/Paris')
-SERVICES = {'workoutbuddy.service', 'caddy.service', 'authelia.service'}
+SERVICES = {'workoutbuddy.service', 'caddy.service', 'authelia.service', 'workoutbuddy-sessions.service'}
 
 
 def in_window(now=None):
@@ -23,7 +23,7 @@ def run(*args, capture=False, check=True):
 
 def versions():
     output = run('/usr/bin/rpm', '-q', '--qf', '%{NAME} %{EVR}.%{ARCH}\n',
-                 'nodejs', 'caddy', capture=True).stdout
+                 'nodejs', 'caddy', 'redis', capture=True).stdout
     return dict(line.split(' ', 1) for line in output.splitlines())
 
 
@@ -57,6 +57,8 @@ def apply():
         affected.add('workoutbuddy.service')
     if before['caddy'] != after['caddy']:
         affected.add('caddy.service')
+    if before.get('redis') != after.get('redis'):
+        affected.add('workoutbuddy-sessions.service')
     for service in sorted(affected):
         print('Restarting updated service: ' + service, flush=True)
         run('/usr/bin/systemctl', 'restart', service)

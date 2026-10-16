@@ -103,9 +103,11 @@ versions à l’ouverture, au retour au premier plan et toutes les cinq minutes 
 l’utilisation. Une version complète se charge automatiquement sur un écran de
 consultation. Pendant une séance ou une saisie, une notification propose **Mettre à
 jour**, avec confirmation avant de perdre une saisie non enregistrée. Aucun hard
-refresh ni effacement des données du site n’est nécessaire. Le cache garde les
-fichiers de l’interface pour le mode hors ligne, jamais les réponses API ni les
-redirections d’authentification. Chaque livraison doit changer la version du cache.
+refresh ni effacement des données du site n’est nécessaire. Le cache accélère les
+fichiers statiques, mais les navigations passent par le réseau : une session
+expirée renvoie vers le portail d’authentification, sans interface hors ligne
+trompeuse. Les appels API distinguent aussi une session expirée d’une panne réseau.
+Chaque livraison doit changer la version du cache.
 
 ## Configuration du serveur
 
@@ -139,6 +141,10 @@ l’hébergement public gratuit avec Caddy et Authelia, les sauvegardes, les pro
 systemd et la maintenance nocturne. Les RPM stables et Node restent suivis par DNF
 sur la branche 24 ; les paquets npm sont audités chaque semaine puis mis à jour
 après tests, sans modification automatique des dépendances en production.
+Sur un appareil de confiance, cocher **Se souvenir de moi** dans Authelia conserve
+la connexion complète pendant 60 jours, y compris après maintenance. Sans cette
+option : 15 minutes d’inactivité, une heure maximum. Une déconnexion invalide la
+session mémorisée ; le navigateur peut aussi supprimer son cookie plus tôt.
 
 ## Sauvegarde, export et réinitialisation
 
