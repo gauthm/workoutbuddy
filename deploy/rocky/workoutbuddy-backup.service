@@ -1,0 +1,14 @@
+[Unit]
+Description=Coherent WorkoutBuddy and Authelia backups
+After=workoutbuddy.service authelia.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/workoutbuddy-backup
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/backups/workoutbuddy

@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+import datetime, pathlib, sqlite3, tempfile, shutil, tarfile, os
+os.umask(0o077)
+root = pathlib.Path('/var/backups/workoutbuddy')
+stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+stage = pathlib.Path(tempfile.mkdtemp(prefix='.partial-', dir=root))
+try:
+    for name, source in [('workoutbuddy.db','/var/lib/workoutbuddy/workoutbuddy.db'),('authelia.db','/var/lib/authelia/db.sqlite3')]:
+        if not pathlib.Path(source).is_file(): raise RuntimeError('Missing database: '+source)
+        src = sqlite3.connect('file:'+source+'?mode=ro', uri=True, timeout=30)
+        dst = sqlite3.connect(stage/name)
+        src.backup(dst, pages=256, sleep=0.1)
+        assert dst.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+        dst.close(); src.close()
+        os.chmod(stage/name, 0o600)
+    with tarfile.open(stage/'configuration.tar.gz','w:gz') as tar:
+        for source in ['/etc/authelia','/etc/workoutbuddy','/etc/caddy/Caddyfile']:
+            tar.add(source, arcname=source.lstrip('/'))
+    stage.rename(root/stamp)
+    for old in sorted([p for p in root.iterdir() if p.is_dir() and not p.name.startswith('.')], reverse=True)[7:]:
+        shutil.rmtree(old)
+    print('Coherent SQLite backup and integrity checks: OK; retention: 7 snapshots')
+finally:
+    if stage.exists(): shutil.rmtree(stage)

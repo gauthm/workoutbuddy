@@ -65,6 +65,23 @@ app.use((err, _req, res, _next) => {
 })
 
 // ── Démarrage ─────────────────────────────────────────────────
+let httpServer
+let stopping = false
+
+function shutdown() {
+  if (stopping) return
+  stopping = true
+  const finish = () => {
+    getDb().close()
+    process.exit(0)
+  }
+  if (!httpServer) return finish()
+  httpServer.close(finish)
+  httpServer.closeIdleConnections()
+  // Bound long-lived AI streams while allowing ordinary requests to finish.
+  setTimeout(() => { httpServer.closeAllConnections() }, 25_000).unref()
+}
+
 async function bootstrap() {
   const db = getDb()
   migrate(db)
@@ -90,6 +107,7 @@ async function bootstrap() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Port réseau invalide.')
   await new Promise((resolve, reject) => {
     const server = app.listen(port, host, resolve)
+    httpServer = server
     server.requestTimeout = 60_000
     server.headersTimeout = 15_000
     server.keepAliveTimeout = 5_000
@@ -103,6 +121,8 @@ const isMain = process.argv[1] &&
   path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 
 if (isMain) {
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
   bootstrap().catch(err => {
     console.error('Erreur au démarrage :', err.message)
     process.exit(1)

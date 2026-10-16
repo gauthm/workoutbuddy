@@ -1,0 +1,45 @@
+{
+    admin 127.0.0.1:2019
+    servers {
+        protocols h1 h2
+    }
+}
+__DOMAIN__ {
+    header Strict-Transport-Security "max-age=31536000"
+    log {
+        output file /var/log/caddy/workoutbuddy.json {
+            roll_size 5MiB
+            roll_keep 3
+            roll_keep_for 168h
+        }
+    }
+    route {
+        request_header -Remote-User
+        request_header -Remote-Groups
+        request_header -Remote-Name
+        request_header -Remote-Email
+        request_header -X-Forwarded-User
+        request_header -X-Forwarded-For
+        request_header -X-Forwarded-Host
+        request_header -X-Forwarded-Proto
+        forward_auth 127.0.0.1:9091 {
+            uri /api/authz/forward-auth
+            copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+        }
+        reverse_proxy 127.0.0.1:3000 {
+            header_up Host __DOMAIN__
+            header_up X-Forwarded-Host __DOMAIN__
+            header_up X-Forwarded-Proto https
+            header_up X-Forwarded-For {remote_host}
+            flush_interval -1
+        }
+    }
+}
+auth.__DOMAIN__ {
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy 127.0.0.1:9091 {
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host auth.__DOMAIN__
+    }
+}
