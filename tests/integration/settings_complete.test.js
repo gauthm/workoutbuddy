@@ -22,7 +22,7 @@ describe('T6.1 — Settings API complète', () => {
       const res = await request(app).get('/api/v1/settings')
       assert.equal(res.status, 200)
       const REQUIRED_KEYS = [
-        'unit', 'rm_formula', 'default_rest_seconds', 'theme', 'language',
+        'unit', 'rm_formula', 'default_rest_seconds', 'theme', 'language', 'keep_screen_awake',
         'network_host', 'network_port',
         'ai_base_url', 'ai_model', 'ai_api_key_set',
         'progression_failure_threshold', 'progression_weight_reduction_pct',
@@ -52,11 +52,21 @@ describe('T6.1 — Settings API complète', () => {
       assert.equal(res.body.default_rest_seconds, 90)
       assert.equal(res.body.theme,              'dark')
       assert.equal(res.body.language,           'fr')
+      assert.equal(res.body.keep_screen_awake, false)
     })
   })
 
   // ── PUT /settings ──────────────────────────────────────────
   describe('PUT /settings', () => {
+    it('sauvegarde le maintien de l’écran et rejette les valeurs non booléennes', async () => {
+      const saved = await request(app).post('/api/v1/settings/save').send({settings:{keep_screen_awake:true}})
+      assert.equal(saved.status, 200)
+      assert.equal((await request(app).get('/api/v1/settings')).body.keep_screen_awake, true)
+      const invalid = await request(app).put('/api/v1/settings').send({keep_screen_awake:'false'})
+      assert.equal(invalid.status, 400)
+      assert.equal((await request(app).get('/api/v1/settings')).body.keep_screen_awake, true)
+      assert.equal((await request(app).put('/api/v1/settings').send({keep_screen_awake:false})).status, 200)
+    })
     it('met à jour une clé string valide', async () => {
       const res = await request(app).put('/api/v1/settings').send({ language: 'en' })
       assert.equal(res.status, 200)

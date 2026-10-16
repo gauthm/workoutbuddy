@@ -124,6 +124,24 @@ export default {
                 <option value="en">{{ t('settings.language_en') }}</option>
               </select>
             </div>
+            <div class="setting-row setting-row--switch">
+              <label class="setting-row__label" for="setting-keep-screen-awake">
+                {{ t('settings.keep_screen_awake') }}
+                <small class="setting-row__hint">{{ t('settings.keep_screen_awake_hint') }}</small>
+              </label>
+              <input id="setting-keep-screen-awake" type="checkbox" class="setting-row__switch"
+                :checked="state.settings.keep_screen_awake"
+                @change="updateSetting('keep_screen_awake', $event.target.checked)" />
+            </div>
+            <p v-if="!store.screenWakeLock.supported" class="settings-notice" role="status">
+              {{ t('settings.keep_screen_awake_unsupported') }}
+            </p>
+            <p v-else-if="store.screenWakeLock.active" class="settings-notice" role="status">
+              {{ t('settings.keep_screen_awake_active') }}
+            </p>
+            <p v-else-if="store.screenWakeLock.unavailable" class="settings-notice" role="status">
+              {{ t('settings.keep_screen_awake_unavailable') }}
+            </p>
           </SettingsSection>
 
           <!-- ⑤b Mon profil ─────────────────────────────────── -->

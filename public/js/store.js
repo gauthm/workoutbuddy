@@ -5,6 +5,7 @@ export const store = reactive({
   // ── État global ───────────────────────────────────────────
   pendingRequests: 0,
   settings:      null,       // objet settings chargé depuis GET /settings
+  screenWakeLock: { supported: false, active: false, unavailable: false },
   activeRest: null,
   activeRestExerciseId: null,
   activeSession: null,       // session en cours (status='in_progress')

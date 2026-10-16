@@ -36,6 +36,16 @@ async function fits(page,info,state){
     if(shortcuts.bottom>calendar.top+.5)errors.push('shortcuts overlap calendar')
     if(program.height<56 && document.querySelector('.dashboard-program'))errors.push('program bar too small')
     if(document.querySelector('.calendar-day-panel').getBoundingClientRect().height<140)errors.push('day panel too small')
+    const programElement=document.querySelector('.dashboard-program')
+    if(programElement && parseFloat(getComputedStyle(programElement).borderBottomWidth)!==0)errors.push('border under active program')
+    if(programElement?.querySelector('.badge'))errors.push('redundant active program badge')
+    const legendStyle=getComputedStyle(document.querySelector('.calendar-legend'))
+    if(parseFloat(legendStyle.borderTopWidth)!==0)errors.push('border above legend')
+    if(parseFloat(legendStyle.marginBottom)<6)errors.push('legend too close to day panel')
+    const panelStyle=getComputedStyle(document.querySelector('.calendar-day-panel'))
+    const headerStyle=getComputedStyle(document.querySelector('.dashboard-view .page-header'))
+    const edge=parseFloat(panelStyle.borderTopWidth)>0?'Top':'Left'
+    if(panelStyle['border'+edge+'Color']!==headerStyle.borderBottomColor || panelStyle['border'+edge+'Width']!==headerStyle.borderBottomWidth)errors.push('day border differs from header')
     for(const button of document.querySelectorAll('.dashboard-shortcuts .btn')){
      const style=getComputedStyle(button)
      if(parseFloat(style.borderTopWidth)<1 || style.borderTopStyle==='none' || style.backgroundColor==='rgba(0, 0, 0, 0)')errors.push('shortcut lacks a visible button surface')

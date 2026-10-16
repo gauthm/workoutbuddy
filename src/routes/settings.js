@@ -15,6 +15,7 @@ const SETTINGS_SCHEMA = {
   default_rest_seconds:               { type: 'number', min: 10,  max: 600 },
   theme:                              { type: 'enum',   enum: ['dark','light'] },
   language:                           { type: 'enum',   enum: ['fr','en'] },
+  keep_screen_awake:                  { type: 'boolean' },
   network_host:                       { type: 'enum',   enum: ['127.0.0.1','0.0.0.0'] },
   network_port:                       { type: 'number', min: 1024, max: 65535 },
   ai_base_url:                        { type: 'string' },

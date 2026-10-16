@@ -1454,7 +1454,7 @@ body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem
 .dashboard-view .page-header__title { font-size: 1.1rem; }
 .dashboard-view .dashboard-shortcuts { flex-wrap: nowrap; flex-shrink: 0; gap: .5rem; padding: .375rem .75rem; }
 .dashboard-view .dashboard-shortcuts .btn { flex: 1; min-height: 44px; padding: .4rem .65rem; font-size: .85rem; background: var(--color-surface-2); border: 1px solid var(--color-control-border, var(--color-border)); border-radius: var(--radius-md); }
-.dashboard-view .dashboard-program { flex-shrink: 0; min-height: 56px; padding: .75rem; }
+.dashboard-view .dashboard-program { flex-shrink: 0; min-height: 56px; padding: .75rem; border-bottom: 0; }
 .dashboard-view .dashboard-program .exercise-card__main { margin: 0; }
 .dashboard-view .dashboard-program .exercise-card__name { font-size: .9375rem; line-height: 1.35; }
 .dashboard-program__frequency { color: var(--color-text-muted); white-space: nowrap; }
@@ -1473,9 +1473,9 @@ body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem
 .dashboard-view .calendar-cell__day { width: clamp(20px, 3.5dvh, 32px); height: clamp(20px, 3.5dvh, 32px); font-size: clamp(.8125rem, 2dvh, 1rem); }
 .dashboard-view .calendar-cell__dots { margin-top: 1px; min-height: 4px; gap: 2px; flex-wrap: nowrap; }
 .dashboard-view .calendar-cell__dot { width: 4px; height: 4px; }
-.dashboard-view .calendar-legend { flex-shrink: 0; justify-content: space-between; gap: .25rem; padding: .25rem .5rem; font-size: .6875rem; line-height: 1.3; }
-.dashboard-view .calendar-legend__item { gap: .2rem; }
-.dashboard-view .calendar-day-panel { flex-shrink: 0; min-height: 140px; padding: .75rem; }
+.dashboard-view .calendar-legend { flex-shrink: 0; justify-content: space-between; gap: .375rem .25rem; padding: .5rem .75rem; margin-bottom: .375rem; font-size: .6875rem; line-height: 1.3; border-top: 0; }
+.dashboard-view .calendar-legend__item { gap: .3rem; }
+.dashboard-view .calendar-day-panel { flex-shrink: 0; min-height: 140px; padding: .875rem .75rem; border-top: 1px solid var(--color-border); }
 .dashboard-view .calendar-day-panel__heading { display: flex; justify-content: space-between; align-items: center; gap: .25rem; }
 .dashboard-view .calendar-day-panel__date { margin: 0; font-size: .85rem; line-height: 1.4; }
 .dashboard-view .calendar-day-panel__pager { display: flex; align-items: center; gap: .125rem; font-size: .6875rem; white-space: nowrap; }
@@ -1500,8 +1500,8 @@ body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem
   .dashboard-view .calendar-embedded__content:has(.calendar-day-panel) { display: grid; grid-template-columns: minmax(0,1fr) 40%; grid-template-rows: 45px minmax(0,1fr) auto; }
   .dashboard-view .calendar-nav { grid-column: 1; grid-row: 1; }
   .dashboard-view .calendar-grid { grid-column: 1; grid-row: 2; height: auto; min-height: calc(16px + 22px * var(--calendar-weeks)); grid-template-rows: 14px repeat(var(--calendar-weeks), minmax(22px,1fr)); padding-block: 1px; }
-  .dashboard-view .calendar-legend { grid-column: 1; grid-row: 3; padding: 0 .25rem; font-size: .625rem; line-height: 1; }
-  .dashboard-view .calendar-day-panel { grid-column: 2; grid-row: 1 / -1; border-top: 0; border-left: 2px solid var(--color-primary); padding-inline: .5rem; }
+  .dashboard-view .calendar-legend { grid-column: 1; grid-row: 3; padding: .375rem .25rem; font-size: .625rem; line-height: 1; }
+  .dashboard-view .calendar-day-panel { grid-column: 2; grid-row: 1 / -1; border-top: 0; border-left: 1px solid var(--color-border); padding-inline: .5rem; }
   .dashboard-view .calendar-day-session__summary { display: block; }
   .dashboard-view .calendar-day-session__status { margin-top: .25rem; }
   .dashboard-view .calendar-day-session__actions { grid-template-columns: repeat(2,minmax(0,1fr)); }

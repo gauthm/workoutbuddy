@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v79'
+const CACHE_NAME = 'workoutbuddy-v80'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
@@ -18,6 +18,7 @@ const PRECACHE_URLS = [
   '/js/utils/muscles.js',
   '/js/utils/programMuscles.js',
   '/js/utils/pain.js',
+  '/js/utils/screenWakeLock.js',
   '/js/utils/weight.js',
   '/js/utils/warmup.js',
   '/js/utils/date.js',

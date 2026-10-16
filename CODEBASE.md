@@ -55,6 +55,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Détection des versions, protection des saisies et retour au portail après expiration | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
 | Accueil équilibré, boutons sous le programme actif, objectif et fréquence | `js/views/DashboardView.js`, styles `.dashboard-view` dans `css/components.css` |
 | Calendrier adapté à la place restante, panneau du jour agrandi et séances paginées | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
+| Maintien de l’écran allumé, préférence enregistrée et renouvellement au retour | `js/utils/screenWakeLock.js`, initialisation dans `js/app.js`, état dans `js/store.js`, Général dans `SettingsView.js`, migration `017_screen_wake_lock.sql` |
 | Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
 | Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
 | Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
@@ -79,7 +80,8 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/helpers/` | Exécution isolée des requêtes |
 | `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
 | `tests/e2e/updates.spec.js` | Livraison sur copie isolée : rechargement, brouillon, panne réseau et proxy HTTP de session expirée, y compris ancien worker |
-| `tests/e2e/authProxy.js`, `settings.spec.js` | Proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
+| `tests/unit/screenWakeLock.test.js` | Acquisition unique, libération, arrière-plan/retour, requête en cours, refus du navigateur et absence de prise en charge |
+| `tests/e2e/authProxy.js`, `settings.spec.js` | Option écran allumé enregistrée, navigation/rechargement, désactivation, refus et incompatibilité ; proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
 | `tests/e2e/theme.spec.js`, `security.spec.js` | Contrastes du thème clair et séries validées ; liens et décodage des icônes, dimensions et opacité Apple/manifest |
 | `tests/e2e/dashboard.spec.js` | Accueil sur huit tailles/zones sûres, boutons sous le programme, zones agrandies et défilement sur les écrans courts, portrait/paysage, six semaines, tous les statuts, pagination, semaine complète ; cinq objectifs FR/EN |
 | `tests/e2e/coach.spec.js` | Saisie ajustable, animation avec mouvement réduit, avatars selon le profil ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |

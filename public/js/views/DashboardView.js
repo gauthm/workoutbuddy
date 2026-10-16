@@ -46,7 +46,7 @@ export default {
               <span class="dashboard-program__goal">{{ t('programs.goal_' + (state.activeProgram.goal === 'general_fitness' ? 'general' : state.activeProgram.goal)) }}</span>
               <span class="dashboard-program__frequency"> · {{ t('dashboard.program_frequency', {count:state.activeProgram.days_per_week}) }}</span>
             </span>
-            <span class="badge badge--custom">{{ t(state.activeProgram.is_finished ? 'programs.finished_badge' : 'dashboard.active_program') }}</span>
+            <span v-if="state.activeProgram.is_finished" class="badge badge--custom">{{ t('programs.finished_badge') }}</span>
           </div>
         </button>
         <EmptyState

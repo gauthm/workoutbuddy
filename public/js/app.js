@@ -1,4 +1,4 @@
-import { createApp } from '/vendor/vue.esm-browser.prod.js'
+import { createApp, watch } from '/vendor/vue.esm-browser.prod.js'
 import { router } from './router.js'
 import { store } from './store.js'
 import { i18n, t } from './i18n.js'
@@ -6,6 +6,7 @@ import { settings as settingsApi } from './api.js'
 import { migratePainPreferences } from './utils/pain.js'
 import AppShell from './components/layout/AppShell.js'
 import { startAppUpdates } from './appUpdates.js'
+import { createScreenWakeLock } from './utils/screenWakeLock.js'
 
 async function init() {
   // Charger les settings depuis le serveur
@@ -24,6 +25,11 @@ async function init() {
   }
 
   // Créer et monter l'app Vue
+  const screenWakeLock = createScreenWakeLock({ navigator, document,
+    onChange: state => { store.screenWakeLock = state },
+  })
+  watch(() => store.settings?.keep_screen_awake,
+    enabled => { screenWakeLock.setEnabled(enabled) }, { immediate: true })
   const app = createApp(AppShell)
   app.provide('router', router)
   app.provide('store', store)
