@@ -105,7 +105,7 @@ Le chat reste actif pendant la navigation dans l’application : le coach contin
 
 Pendant la réflexion, trois points s’animent en cascade ; l’animation respecte la préférence de mouvement réduit. Le chat affiche uniquement les bulles, sans emoji robot ni avatar utilisateur.
 
-Le champ de message grandit avec le texte jusqu’à 120 px, puis permet de faire défiler les messages longs. Il rétrécit après effacement ou envoi ; aucune barre de défilement n’apparaît pour une saisie courte. Entrée et Majuscule + Entrée ajoutent une ligne ; le message est envoyé avec le bouton d’envoi.
+Le champ de message grandit avec le texte jusqu’à 120 px, puis permet de faire défiler les messages longs. Il rétrécit après effacement ou envoi ; aucune barre de défilement n’apparaît pour une saisie courte. Sur ordinateur, Entrée envoie le message et Majuscule + Entrée ajoute une ligne. Sur mobile, Entrée ajoute toujours une ligne ; le bouton d’envoi permet d’envoyer sur tous les appareils.
 
 La clé est stockée côté serveur, masquée dans l’interface et absente des réponses API et de l’export JSON. Une clé existante est conservée lorsqu’une sauvegarde ne fournit pas de nouvelle clé.
 

@@ -62,7 +62,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Questionnaire, fiche titrée par objectif et rappel d’un seul programme actif | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
 | Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
-| Saisie du Coach ajustable jusqu’à 120 px, Entrée pour une nouvelle ligne et bouton pour envoyer | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
+| Saisie du Coach ajustable jusqu’à 120 px, Entrée pour envoyer sur desktop, Maj+Entrée pour une ligne ; Entrée pour une ligne sur mobile | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
 | Chat conservé pendant la navigation, réponse hors écran et retour au dernier message | `KeepAlive` limité au Coach dans `js/components/layout/AppShell.js`, hooks d’activation et observation des dimensions dans `js/components/coach/CoachView.js` |
 | Indicateur de réflexion animé, mouvement réduit et bulles sans avatars | `js/components/coach/ChatMessage.js`, styles `.chat-msg` dans `css/components.css` |
 | Bouton seul de déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
@@ -86,7 +86,7 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/e2e/authProxy.js`, `settings.spec.js` | Option écran allumé enregistrée, navigation/rechargement, désactivation, refus et incompatibilité ; proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
 | `tests/e2e/theme.spec.js`, `security.spec.js` | Contrastes du thème clair et séries validées ; liens et décodage des icônes, dimensions et opacité Apple/manifest |
 | `tests/e2e/dashboard.spec.js` | Accueil sur huit tailles/zones sûres, boutons sous le programme, zones agrandies et défilement sur les écrans courts, portrait/paysage, six semaines, tous les statuts, pagination, semaine complète ; cinq objectifs FR/EN |
-| `tests/e2e/coach.spec.js` | Saisie ajustable, Entrée sans envoi, animation avec mouvement réduit, absence d’avatars ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
+| `tests/e2e/coach.spec.js` | Saisie ajustable, Entrée desktop pour envoyer, Maj+Entrée et Entrée mobile pour une ligne, composition du clavier préservée, animation avec mouvement réduit, absence d’avatars ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
 | `tests/ui/` | Scénarios visuels Playwright complémentaires |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
 | `docs/DEPLOYMENT_ROCKY.md`, `deploy/rocky/` | Caddy/Authelia, systemd, sauvegardes et configuration reproductible Rocky |

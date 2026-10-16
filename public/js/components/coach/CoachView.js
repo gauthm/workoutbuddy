@@ -240,6 +240,16 @@ export default {
       } catch (err) { store.showToast(err.message, 'error') }
     }
 
+    function onKeydown(event) {
+      if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey ||
+          event.isComposing || event.keyCode === 229) return
+      // Use input capabilities rather than viewport width: a narrow desktop still
+      // has keyboard shortcuts, while a touch-first device keeps native newlines.
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+      event.preventDefault()
+      if (!event.repeat) sendMessage()
+    }
+
     // ── Auto-resize textarea ───────────────────────────────────
     function resizeInput(input) {
       if (!input) return
@@ -265,7 +275,7 @@ export default {
       newConversation, openHistoryPanel, selectConversation,
       renameConversation, askDeleteConversation, confirmDeleteConversation,
       onAdviceDismissed, onAdvicePurchased,
-      autoResize, t, router,
+      autoResize, onKeydown, t, router,
     }
   },
 
@@ -383,6 +393,7 @@ export default {
           rows="1"
           enterkeyhint="enter"
           @input="autoResize"
+          @keydown="onKeydown"
         />
         <button
           class="coach-view__send"

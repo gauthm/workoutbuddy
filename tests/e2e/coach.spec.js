@@ -2,7 +2,8 @@ import {test,expect} from './fixtures.js'
 import {L,call,get} from './helpers.js'
 import {createServer} from 'node:http'
 
-test('champ du Coach : Entrée ajoute une ligne sans envoyer, croissance et réduction du champ',async({page})=>{
+test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; Maj+Entrée et taille du champ',async({page},testInfo)=>{
+ const mobile=testInfo.project.name==='mobile'
  const sent=[]
  page.on('request',request=>{if(request.url().endsWith('/api/v1/ai/chat') && request.method()==='POST')sent.push(request)})
  await page.goto('/#/coach')
@@ -15,7 +16,7 @@ test('champ du Coach : Entrée ajoute une ligne sans envoyer, croissance et réd
  expect(initial.overflow).toBe('hidden')
  await input.fill('Une ligne de test')
  expect((await metrics()).scroll).toBeLessThanOrEqual((await metrics()).client)
- await input.press('Enter');await input.press('Shift+Enter')
+ await input.press(mobile?'Enter':'Shift+Enter');await input.press('Shift+Enter')
  await input.pressSequentially('Troisième ligne')
  await expect(input).toHaveValue('Une ligne de test\n\nTroisième ligne')
  expect(sent).toHaveLength(0)
@@ -40,7 +41,14 @@ test('champ du Coach : Entrée ajoute une ligne sans envoyer, croissance et réd
  await input.fill('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe')
  expect((await metrics()).height).toBeGreaterThan(initial.height)
  const response=page.waitForResponse(r=>r.url().endsWith('/api/v1/ai/chat') && r.request().method()==='POST')
- await page.getByRole('button',{name:L('coach.send'),exact:true}).click()
+ if(mobile){
+  await input.press('Enter')
+  await expect(input).toHaveValue('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe\n')
+  expect(sent).toHaveLength(0)
+  await page.getByRole('button',{name:L('coach.send'),exact:true}).click()
+ }else{
+  await input.press('Enter')
+ }
  // The real isolated API rejects an unconfigured provider; no paid/external AI.
  expect((await(await response).json()).error).toBe('AI_NOT_CONFIGURED')
  expect(sent).toHaveLength(1)
@@ -50,6 +58,31 @@ test('champ du Coach : Entrée ajoute une ligne sans envoyer, croissance et réd
  expect((await metrics()).height).toBe(initial.height)
  const nav=await page.locator('.bottom-nav').boundingBox()
  expect((await input.boundingBox()).y+(await input.boundingBox()).height).toBeLessThanOrEqual(nav.y)
+})
+
+test('Entrée respecte la composition du clavier et ne soumet pas un message vide',async({page},testInfo)=>{
+ test.skip(testInfo.project.name==='mobile','Raccourci réservé au clavier desktop')
+ const sent=[]
+ page.on('request',request=>{if(request.url().endsWith('/api/v1/ai/chat') && request.method()==='POST')sent.push(request)})
+ await page.goto('/#/coach')
+ const input=page.getByRole('textbox',{name:L('coach.placeholder'),exact:true})
+ await expect(input).toBeEnabled()
+ await input.press('Enter')
+ await expect(input).toHaveValue('')
+ await input.fill('Texte en composition')
+ const accepted=await input.evaluate(el=>[
+  el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,bubbles:true,cancelable:true})),
+  el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,bubbles:true,cancelable:true})),
+ ])
+ expect(accepted).toEqual([true,true])
+ await expect(input).toHaveValue('Texte en composition')
+ expect(sent).toHaveLength(0)
+ // Resizing a desktop window must not turn the keyboard shortcut into mobile mode.
+ await page.setViewportSize({width:390,height:844})
+ const response=page.waitForResponse(r=>r.url().endsWith('/api/v1/ai/chat') && r.request().method()==='POST')
+ await input.press('Enter')
+ expect((await(await response).json()).error).toBe('AI_NOT_CONFIGURED')
+ expect(sent).toHaveLength(1)
 })
 
 test('le Coach continue hors écran avant et pendant la réponse, puis revient au dernier message',async({page,request})=>{
