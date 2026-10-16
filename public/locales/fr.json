@@ -45,6 +45,7 @@
   "exercises.primary": "Muscles primaires",
   "exercises.secondary": "Muscles secondaires",
   "exercises.equipment": "Équipement",
+  "exercises.dumbbell_weight_entry": "Charge à saisir : le poids de 1 haltère, même si vous utilisez 2 haltères. Exemple : 2 haltères de 10 kg → saisir 10 kg, pas 20 kg.",
   "exercises.instructions": "Instructions",
   "exercises.history": "Historique",
   "exercises.add_custom": "Ajouter un exercice",

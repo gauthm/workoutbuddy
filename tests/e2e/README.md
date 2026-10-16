@@ -27,6 +27,7 @@ npm run test:e2e -- settings --project=desktop
 npm run test:e2e -- --list
 npm run test:e2e:affected
 npm run test:e2e:affected -- --base origin/main
+npm run test:e2e:affected -- --domains exercises,motion
 ```
 
 Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844, avec Chrome, locale française et fuseau Europe/Paris. Les scénarios privilégient les rôles et libellés accessibles, les attentes sur l’état visible et les données réellement persistées. Pas de temporisations arbitraires ni de réessais automatiques masquant les échecs.
@@ -43,7 +44,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 | `equipment.spec.js` | Ajout quantité/poids, sauvegarde persistante, saisie invalide et annulation du brouillon |
 | `settings.spec.js` | Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise ; déconnexion via proxy HTTP, annulation du brouillon et données conservées ; bouton absent sans authentification |
 | `data.spec.js` | Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence invalide |
-| `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur |
+| `exercises.spec.js` | Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur ; consigne de poids par haltère sur le catalogue entier, FR/EN |
 | `motion.spec.js` | Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en séance |
 | `security.spec.js` | Pincement/double tap sans zoom, vrai balayage tactile conservé, champs compacts à 16 px ; CSP, séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en cours/interrompu, service worker et décodage des icônes navigateur/iPhone |
 | `stats.spec.js` | Compteurs et graphique après séance, regroupement, état vide |
@@ -52,7 +53,7 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 
 `authProxy.js` fournit un proxy HTTP jetable commun aux réglages et aux mises à jour. Il reproduit les redirections et expirations ; la révocation d’une véritable session Authelia est vérifiée séparément avec `deploy/rocky/test-auth-sessions.py`, jamais avec une identité personnelle.
 
-`scripts/e2e-selection.js` décrit les dépendances. Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare les commits à cette référence, et ajoute les nouveaux fichiers non suivis.
+`scripts/e2e-selection.js` décrit les dépendances. Le chat, l’accueil et un fichier de parcours modifié sélectionnent leurs propres domaines ; un simple changement de numéro de cache est ignoré (une modification du comportement du worker sélectionne `updates`). Une modification du moteur de progression lance séances, historique, données et statistiques ; une modification du matériel lance aussi les programmes et les exercices. Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur. Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`, elle compare cette référence à l’arbre de travail, y compris les modifications non committées, et ajoute les nouveaux fichiers non suivis. Après lecture du diff, `--domains exercises,motion` permet de cibler une modification locale dans un fichier partagé ; conserver la sélection complète si son effet est global.
 
 ## Contrôle avant push
 
@@ -60,9 +61,9 @@ Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844
 npm run hooks:install
 ```
 
-Cette commande active `.githooks` **pour ce dépôt seulement**. Elle refuse de remplacer un autre chemin de hooks ou un hook pre-push existant. Ensuite chaque push lance `npm run test:in-process`, puis les domaines Playwright concernés par les commits effectivement poussés. Le mode in-process, également utilisé par défaut par `npm test`, exécute Express et ses routes sans ouvrir de ports TCP éphémères pour les tests métier/API ; le réseau HTTP réel reste testé par Playwright. Une nouvelle branche ou une référence distante indisponible déclenche toute la suite. Un échec empêche le push. Une suppression de branche ne lance pas les tests.
+Cette commande active `.githooks` **pour ce dépôt seulement**. Elle refuse de remplacer un autre chemin de hooks ou un hook pre-push existant. Ensuite chaque push sélectionne les fichiers Node et les domaines Playwright concernés par les commits effectivement poussés. `scripts/test-selection.js` suit les imports des tests unitaires et les dépendances explicites des tests API ; un nouveau test API non classé reste inclus pour les changements backend. Les dépendances globales et sources inconnues conservent un repli complet. Le mode in-process, également utilisé par défaut par `npm test`, exécute Express et ses routes sans ouvrir de ports TCP éphémères pour les tests métier/API ; le réseau HTTP réel reste testé par Playwright. Une nouvelle branche ou une référence distante indisponible déclenche toute la suite. Un échec empêche le push. Une suppression de branche ne lance pas les tests.
 
-Pour le développement courant, lancer le domaine touché ou `test:e2e:affected`, en plus des tests métier. Les changements de tests se vérifient aussi en exécutant le fichier concerné.
+Pour le développement courant, lancer le domaine touché ou `test:e2e:affected`, avec seulement les tests Node concernés (`npm run test:affected`, aperçu `-- --list`, ou fichiers `.test.js` explicites). Éviter les suites complètes à chaque modification et les répétitions sans changement nouveau ; voir `AGENT.md`. Les changements de tests se vérifient aussi en exécutant le fichier concerné.
 
 ## Résultats et diagnostic
 

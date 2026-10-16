@@ -8,6 +8,7 @@
     "start": "node server.js",
     "load:exercises": "node scripts/load-exercises.js",
     "test": "node --import ./tests/helpers/register-in-process.js --test tests/unit/*.test.js tests/integration/*.test.js tests/journeys/*.test.js",
+    "test:affected": "node scripts/test-affected.js",
     "test:in-process": "node --import ./tests/helpers/register-in-process.js --test tests/unit/*.test.js tests/integration/*.test.js tests/journeys/*.test.js",
     "test:journeys": "node --test tests/journeys/*.test.js",
     "test:e2e": "node scripts/test-e2e.js",

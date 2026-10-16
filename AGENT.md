@@ -82,7 +82,7 @@ Si un fichier source dépasse 500 lignes, copier seulement les sections pertinen
 ## 6. Checklist avant de soumettre
 
 - [ ] Aucune dépendance npm ajoutée
-- [ ] `npm test` passe sans erreur
+- [ ] Les tests ciblés des parties touchées passent ; ne pas lancer systématiquement `npm test` ou tous les parcours
 - [ ] Chaînes visibles dans `fr.json` ET `en.json`
 - [ ] Aucune clé API dans les réponses HTTP
 - [ ] Colonnes JSON sérialisées/désérialisées correctement
@@ -93,6 +93,13 @@ Si un fichier source dépasse 500 lignes, copier seulement les sections pertinen
 
 ## 7. Parcours navigateur isolés
 
-Après une modification de l’interface ou d’un comportement API/métier, lancer `npm run test:e2e:affected` en plus de `npm test`. Pour cibler explicitement : `npm run test:e2e -- sessions` (ou programs, history, equipment, settings, data, exercises, stats, motion, security, updates, theme, dashboard, coach). Ajouter ou adapter le parcours du domaine si le comportement utilisateur change. Les dépendances partagées et les fichiers source inconnus déclenchent toute la suite.
+Pour chaque modification, lire le diff et tester uniquement les comportements touchés et leurs dépendances. **Ne pas relancer toutes les suites après chaque petite modification, ni répéter une validation déjà réussie sans nouvelle raison.**
 
-Les tests de `tests/e2e/` utilisent Playwright déjà installé, le vrai serveur et une base SQLite **temporaire créée par la fixture**, sur un port local libre. Cette base fichier est nécessaire aux tests de redémarrage ; ne jamais leur fournir la base personnelle, une URL externe ou un serveur déjà lancé. Les autres tests conservent leurs règles d’isolation existantes. Guide : `tests/e2e/README.md`. Le hook local `.githooks/pre-push`, installable avec `npm run hooks:install`, lance les tests métier/API en mode `test:in-process` (sans ports TCP éphémères), puis les parcours concernés par les commits poussés avec de vrais serveurs HTTP.
+- Tests Node ciblés : `npm run test:affected` sélectionne les fichiers concernés (imports des tests unitaires, domaines API et parcours métier dépendants). `npm run test:affected -- --list` affiche la sélection sans exécuter. Pour préciser les fichiers après lecture du diff : `npm run test:affected -- tests/unit/equipmentCalc.test.js tests/integration/equipmentEnhancements.test.js`. Les options Node, par exemple `--test-name-pattern=...`, permettent aussi de cibler un scénario des parcours métier.
+- Interface : lancer les domaines concernés, par exemple `npm run test:e2e -- coach` ou `npm run test:e2e -- exercises motion`. `npm run test:e2e:affected` fait une sélection automatique, y compris pour l’accueil, le chat et un fichier de parcours modifié. Un simple changement de numéro de cache ne déclenche pas de parcours supplémentaire.
+- Pour les fichiers partagés (styles, traductions, i18n, etc.), inspecter les lignes modifiées : si la portée est locale, choisir explicitement les domaines avec `npm run test:e2e:affected -- --domains exercises,motion`. Ne pas employer cette option pour contourner une modification réellement globale. Si nécessaire, cibler aussi un cas avec `--grep`, en conservant ordinateur et mobile pour les changements d’interface.
+- Ajouter ou adapter le test du domaine si le comportement utilisateur change. Une modification purement documentaire n’exige pas de tests. Une modification de la sélection des tests se vérifie avec `tests/unit/e2eSelection.test.js` et les commandes de sélection, sans lancer tous les parcours de l’application.
+- Réserver `npm test` et `npm run test:e2e` complets aux changements transversaux (serveur, schéma, dépendances, navigation globale…), aux impacts incertains ou à une demande explicite. Les sélecteurs gardent un repli complet pour les sources inconnues et les dépendances globales. Mettre à jour les règles quand un nouveau domaine ou test est ajouté.
+- En cas d’échec, analyser la cause, puis relancer le cas concerné après correction. Ne pas recommencer toute la suite par défaut.
+
+Les tests de `tests/e2e/` utilisent Playwright déjà installé, le vrai serveur et une base SQLite **temporaire créée par la fixture**, sur un port local libre. Cette base fichier est nécessaire aux tests de redémarrage ; ne jamais leur fournir la base personnelle, une URL externe ou un serveur déjà lancé. Les autres tests conservent leurs règles d’isolation existantes. Guide : `tests/e2e/README.md`. Le hook local `.githooks/pre-push`, installable avec `npm run hooks:install`, lance uniquement les fichiers Node et les domaines navigateur concernés par les commits poussés : tests Node sans ports TCP éphémères, puis navigateur contre de vrais serveurs HTTP.

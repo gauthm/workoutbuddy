@@ -75,6 +75,8 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 
 | Emplacement | Contenu |
 | --- | --- |
+| `scripts/test-selection.js`, `test-affected.js` | Sélection Node par imports et domaines API, commande `test:affected`, fichiers explicites et aperçu `--list` |
+| `scripts/e2e-selection.js`, `test-e2e-affected.js`, `pre-push.js` | Domaines navigateur concernés, surcharge explicite après lecture du diff, numéro de cache seul ignoré, hook Node et navigateur ciblé ; tests `tests/unit/e2eSelection.test.js` |
 | `tests/unit/`, `tests/integration/` | Logique métier et API ; `reliabilityStress.test.js` pour les simulations de durée et incidents |
 | `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
 | `tests/helpers/` | Exécution isolée des requêtes |
@@ -95,3 +97,5 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `deploy/rocky/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |
 
 Sécurité des contenus et de l’historique Git : [docs/REPOSITORY_SECURITY.md](docs/REPOSITORY_SECURITY.md).
+
+Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en séance dans `motion.spec.js`.

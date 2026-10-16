@@ -37,10 +37,12 @@ test('traductions FR et EN : recherche, consignes, aide et langue conservée au 
  await page.goto('/#/exercises/dumbbell_bench_press')
  await expect(page.getByRole('heading',{name:'Développé couché avec haltères',exact:true})).toBeVisible()
  await expect(page.locator('.instruction-list li').first()).toHaveText(ex.instructions_fr[0])
+ await expect(page.locator('.instruction-list li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
  await language(page,'en')
  await page.goto('/#/exercises/dumbbell_bench_press')
  await expect(page.getByRole('heading',{name:ex.name_en,exact:true})).toBeVisible()
  await expect(page.locator('.instruction-list li').first()).toHaveText(ex.instructions_en[0])
+ await expect(page.locator('.instruction-list li').last()).toHaveText(en['exercises.dumbbell_weight_entry'])
  await page.goto('/#/exercises')
  const search=page.getByRole('searchbox',{name:en['exercises.search'],exact:true})
  await search.fill('DEVELOPPE COUCHE AVEC HALTERES')
@@ -51,10 +53,12 @@ test('traductions FR et EN : recherche, consignes, aide et langue conservée au 
  await expect(page.locator('html')).toHaveAttribute('lang','en')
  await page.goto('/#/exercises/dumbbell_bench_press')
  await expect(page.locator('.instruction-list li').first()).toHaveText(ex.instructions_en[0])
+ await expect(page.locator('.instruction-list li').last()).toHaveText(en['exercises.dumbbell_weight_entry'])
  await language(page,'fr')
  await page.goto('/#/exercises/dumbbell_bench_press')
  await expect(page.getByRole('heading',{name:ex.name_fr,exact:true})).toBeVisible()
  await expect(page.locator('.instruction-list li').first()).toHaveText(ex.instructions_fr[0])
+ await expect(page.locator('.instruction-list li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
 })
 
 test('changer de langue traduit les noms du programme, de la séance et des records sans changer les performances',async({page,request})=>{
@@ -112,3 +116,22 @@ test('exclure un exercice persiste après rechargement et met à jour le compteu
  await expect(badge).toHaveText(String(initial-1))
  expect((await get(request,'/exercises?excluded=1')).exercises.some(e=>e.name_fr===name)).toBe(true)
 })
+
+ test('consigne de charge sur tous les haltères, sans ajout pour les autres équipements',async({page,request})=>{
+  const catalog=(await get(request,'/exercises')).exercises
+  await page.goto('/#/exercises/dumbbell_bench_press')
+  const failures=await page.evaluate(async(catalog)=>{
+   const {exerciseInstructions,t}=await import('/js/i18n.js')
+   return catalog.filter(ex=>{
+    const notes=exerciseInstructions(ex)
+    return notes.includes(t('exercises.dumbbell_weight_entry'))!==ex.equipment_required.some(c=>c.startsWith('dumbbell'))
+   }).map(ex=>ex.id)
+  },catalog)
+  expect(failures).toEqual([])
+  for(const id of ['one_arm_dumbbell_row','dumbbell_bench_press']){
+   await page.goto('/#/exercises/'+id)
+   await expect(page.locator('.instruction-list li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
+  }
+  await page.goto('/#/exercises/barbell_bench_press_medium_grip')
+  await expect(page.getByText(L('exercises.dumbbell_weight_entry'),{exact:true})).toHaveCount(0)
+ })

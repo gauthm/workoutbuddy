@@ -57,8 +57,12 @@ export function exerciseName(exercise) {
 export function exerciseInstructions(exercise) {
   if (!exercise) return []
   const preferred = exercise['instructions_' + i18n.locale]
-  if (Array.isArray(preferred) && preferred.length) return preferred
-  return exercise.instructions_en?.length ? exercise.instructions_en : exercise.instructions_fr || []
+  const instructions = Array.isArray(preferred) && preferred.length
+    ? preferred
+    : exercise.instructions_en?.length ? exercise.instructions_en : exercise.instructions_fr || []
+  // All suggested and logged dumbbell loads use the weight of a single dumbbell.
+  const dumbbell = exercise.equipment_required?.some(category => category.startsWith('dumbbell'))
+  return dumbbell ? [...instructions, t('exercises.dumbbell_weight_entry')] : instructions
 }
 
 // Initialisation : charger fr dès le démarrage

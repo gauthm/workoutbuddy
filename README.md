@@ -77,7 +77,7 @@ La dernière séance du même exercice est présentée dans un tableau séparé.
 
 La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements. La fin de séance et l’enregistrement des progrès forment une seule transaction : en cas d’échec du calcul, la séance reste en cours et peut être terminée à nouveau.
 
-Pour débuter, le moteur limite chaque exercice à trois séries et utilise la double progression, y compris pour un objectif de force, avec une plage initiale de 8–12 répétitions. Les poids des haltères sont exprimés par haltère ; le calcul de départ distingue un mouvement à deux haltères d’un mouvement à un bras. Les hausses automatiques restent limitées à 10 % de la charge ou 1 kg pour les petites charges ; si le matériel impose un saut supérieur, la charge est maintenue. Une série menée à l’échec (RPE ≥ 9,5 ou RIR = 0) bloque une nouvelle hausse immédiate. Les cibles s’ajustent au matériel actuel sans effacer les performances passées.
+Pour débuter, le moteur limite chaque exercice à trois séries et utilise la double progression, y compris pour un objectif de force, avec une plage initiale de 8–12 répétitions. Les poids des haltères sont exprimés par haltère. Les consignes le rappellent sur la fiche et dans l’aide en séance (2 haltères de 10 kg → saisir 10 kg). Le calcul de départ distingue un mouvement à deux haltères d’un mouvement à un bras. Les hausses automatiques restent limitées à 10 % de la charge ou 1 kg pour les petites charges ; si le matériel impose un saut supérieur, la charge est maintenue. Une série menée à l’échec (RPE ≥ 9,5 ou RIR = 0) bloque une nouvelle hausse immédiate. Les cibles s’ajustent au matériel actuel sans effacer les performances passées.
 
 Ces règles sont des choix de programmation, avec des repères issus des recommandations [ACSM 2026](https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/) : entraînement progressif des grands groupes musculaires, volume adapté et absence d’obligation d’aller à l’échec. Elles ne constituent pas une validation individuelle des charges de départ.
 
@@ -195,18 +195,22 @@ L’export JSON et la sauvegarde locale contiennent des données personnelles ; 
 ## Tests et développement
 
 ```sh
-npm test                  # Tests unitaires, API et parcours complets sans port TCP
+npm run test:affected     # Seulement les fichiers Node concernés
+npm run test:affected -- --list # Voir la sélection sans exécution
+npm run test:affected -- tests/unit/equipmentCalc.test.js # Fichier précis
+npm test                  # Suite Node complète, pour les changements transversaux
 npm run test:journeys     # Sept parcours de fiabilité
 npm run test:e2e          # Vrais parcours navigateur, ordinateur et mobile
 npm run test:e2e -- sessions  # Domaine séance uniquement
 npm run test:e2e:affected # Domaines concernés par les fichiers modifiés
+npm run test:e2e:affected -- --domains exercises,motion # Portée locale vérifiée dans le diff
 npm run hooks:install    # Contrôles avant push pour ce dépôt
-npm run test:in-process   # Même suite que npm test, alias du hook
+npm run test:in-process   # Même suite complète que npm test
 ```
 
 Les tests utilisent des bases isolées en mémoire ou temporaires. Par défaut, `npm test` exécute les requêtes Express directement, sans ports TCP éphémères ; les vrais échanges HTTP sont couverts par Playwright. Les parcours complets exécutent l’API et le moteur réels sans service IA : programme/calendrier, séance/progression, suppressions/historique, export/import, réglages, remplacement et rollback d’un import invalide. Voir [leur guide](tests/journeys/README.md). `tests/integration/reliabilityStress.test.js` ajoute une simulation de 24 séances sur douze semaines, doubles requêtes, corrections historiques, imports incohérents, rollback et allègement après fatigue. Le temps historique y est préparé dans les fixtures ; le serveur et les calculs restent réels. Résultats et limites : [audit de fiabilité](docs/RELIABILITY_AUDIT.md).
 
-Les tests de `tests/e2e/` pilotent le navigateur contre le vrai serveur et une base temporaire indépendante pour chaque cas, sans réponses API simulées. Ils sont séparés par domaine : programmes, séances, historique/calendrier, matériel, réglages, données, exercices et statistiques. Les parcours vérifient aussi rechargements, redémarrages et erreurs réseau ; ils tournent sous Chrome en formats ordinateur et mobile. Le hook avant push lance les tests métier/API avec `test:in-process` (sans ouvrir de ports TCP), puis les domaines navigateur concernés par les commits, contre de vrais serveurs HTTP. Voir [installation, sélection et rapports](tests/e2e/README.md).
+Les tests de `tests/e2e/` pilotent le navigateur contre le vrai serveur et une base temporaire indépendante pour chaque cas, sans réponses API simulées. Ils sont séparés par domaine : programmes, séances, historique/calendrier, matériel, réglages, données, exercices et statistiques. Les parcours vérifient aussi rechargements, redémarrages et erreurs réseau ; ils tournent sous Chrome en formats ordinateur et mobile. Pour les modifications courantes, lancer seulement les fichiers Node et les domaines navigateur concernés, sans répéter les validations déjà réussies. Les dépendances globales ou les sources inconnues gardent un repli complet. Le hook avant push utilise cette sélection pour les commits poussés, avec tests Node sans ports TCP puis vrais serveurs HTTP pour le navigateur. Un simple numéro de cache ne relance pas les tests de livraison. Voir [installation, sélection et rapports](tests/e2e/README.md).
 
 Les anciens scénarios de `tests/ui/` servent aux contrôles visuels complémentaires ; certains utilisent des réponses API simulées. Les tests navigateur restent séparés de `npm test`.
 

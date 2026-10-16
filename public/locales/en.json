@@ -45,6 +45,7 @@
   "exercises.primary": "Primary muscles",
   "exercises.secondary": "Secondary muscles",
   "exercises.equipment": "Equipment",
+  "exercises.dumbbell_weight_entry": "Weight to enter: the weight of 1 dumbbell, even when using 2 dumbbells. Example: 2 × 10 kg dumbbells → enter 10 kg, not 20 kg.",
   "exercises.instructions": "Instructions",
   "exercises.history": "History",
   "exercises.add_custom": "Add exercise",

@@ -35,6 +35,7 @@ test('la même animation est disponible dans l’aide de l’exercice pendant un
  const p=await planned(request);await startThroughUI(page,p)
  await page.locator('.exercise-block--active').getByRole('button',{name:L('session.help'),exact:true}).click()
  await ready(page)
+ await expect(page.getByRole('dialog').locator('ol li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
  await expect(page.getByRole('dialog').getByRole('button',{name:L('exercises.motion_pause'),exact:true})).toBeVisible()
  await page.getByRole('dialog').getByRole('button',{name:L('common.close'),exact:true}).click()
  await expect(page.locator('.exercise-motion')).toHaveCount(0)
