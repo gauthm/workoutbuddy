@@ -11,6 +11,6 @@ for source in pathlib.Path(__file__).parent.glob('*.template'):
  s=source.read_text()
  for k,v in values.items():s=s.replace('__'+k+'__',v)
  p=root/source.name.removesuffix('.template');p.write_text(s);p.chmod(0o600)
-r=subprocess.run(['authelia','crypto','hash','generate','argon2','--random'],capture_output=True,text=True,check=True)
+r=subprocess.run(['/usr/local/bin/authelia','crypto','hash','generate','argon2','--random'],capture_output=True,text=True,check=True)
 digest=re.search(r'Digest:\s*(\S+)',r.stdout)[1]
 (root/'users.yml').write_text('users:\n  pending:\n    disabled: true\n    displayname: WorkoutBuddy\n    password: '+json.dumps(digest)+'\n    email: owner@'+domain+'\n')

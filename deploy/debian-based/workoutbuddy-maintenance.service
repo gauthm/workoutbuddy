@@ -1,0 +1,12 @@
+[Unit]
+Description=Nightly WorkoutBuddy host maintenance after coherent backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/workoutbuddy-maintenance --apply
+TimeoutStartSec=infinity
+UMask=0077
+Nice=10
+IOSchedulingClass=idle

@@ -147,7 +147,7 @@ Après chaque changement applicatif :
 1. Terminer le développement et relire le diff.
 2. Exécuter les tests ciblés du code modifié et vérifier les comportements de l’interface touchés, sur ordinateur et mobile si concernés, selon le §7. Corriger les échecs avant livraison.
 3. Actualiser la documentation concernée, committer et pousser sur `main`.
-4. Déployer directement la version validée selon `docs/DEPLOYMENT_ROCKY.md`. Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
+4. Déployer directement la version validée selon les guides `docs/DEPLOYMENT_LINUX.md` et de la famille du serveur (`docs/DEPLOYMENT_REDHAT.md` ou `docs/DEPLOYMENT_DEBIAN.md`). Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
 5. Vérifier les fichiers ou la version réellement servis en production et l’état du service. Indiquer explicitement dans la réponse finale que le déploiement a été effectué, ou expliquer le blocage si la livraison n’a pas abouti.
 
 Une modification purement documentaire ne nécessite ni tests applicatifs ni redéploiement de

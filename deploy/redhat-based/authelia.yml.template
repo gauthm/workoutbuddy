@@ -1,0 +1,54 @@
+server:
+  address: tcp://127.0.0.1:9091/
+log:
+  level: warn
+  format: json
+identity_validation:
+  reset_password:
+    jwt_secret: __JWT_SECRET__
+authentication_backend:
+  password_reset:
+    disable: true
+  file:
+    path: /etc/authelia/users.yml
+    watch: true
+    password:
+      algorithm: argon2
+access_control:
+  default_policy: deny
+  rules:
+    - domain: __DOMAIN__
+      policy: two_factor
+session:
+  name: __Secure-workoutbuddy_session
+  secret: __SECRET__
+  same_site: lax
+  inactivity: 15m
+  expiration: 1h
+  remember_me: 60d
+  redis:
+    host: /run/workoutbuddy-sessions/redis.sock
+    password: __REDIS_PASSWORD__
+    database_index: 0
+  cookies:
+    - domain: __DOMAIN__
+      authelia_url: https://auth.__DOMAIN__
+      default_redirection_url: https://__DOMAIN__
+totp:
+  disable: false
+  issuer: WorkoutBuddy
+  period: 30
+  skew: 1
+webauthn:
+  disable: true
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 15m
+storage:
+  encryption_key: __ENCRYPTION_KEY__
+  local:
+    path: /var/lib/authelia/db.sqlite3
+notifier:
+  filesystem:
+    filename: /var/lib/authelia/notifications.txt

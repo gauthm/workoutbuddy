@@ -49,7 +49,8 @@ reconnexion.
 
 ### Tests isolés de l’authentification
 
-Le test `python3 deploy/rocky/test-auth-sessions.py` utilise des services, secrets, utilisateurs,
+Le test `python3 deploy/redhat-based/test-auth-sessions.py` (ou son équivalent
+`deploy/debian-based/test-auth-sessions.py`) utilise des services, secrets, utilisateurs,
 TOTP et bases intégralement jetables, sur loopback ; il exige les binaires Node, Caddy, Redis et
 Authelia, et ne touche pas aux comptes réels.
 
@@ -67,3 +68,6 @@ sa propre autorité locale et des noms `.test` résolus sur loopback.
 Les flux IA sont authentifiés à l'ouverture et limités à 30 secondes côté fournisseur ; une
 déconnexion ne coupe pas un flux existant, mais interdit les requêtes suivantes. Arrêter Node pour
 couper immédiatement.
+
+Avec Valkey, utiliser le drop-in décrit dans l’[installation commune](DEPLOYMENT_LINUX.md).
+Le socket privé et la configuration Authelia restent identiques.

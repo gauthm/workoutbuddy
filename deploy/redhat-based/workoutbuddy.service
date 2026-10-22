@@ -1,0 +1,35 @@
+[Unit]
+Description=WorkoutBuddy
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+[Service]
+Type=simple
+User=workoutbuddy
+Group=workoutbuddy
+WorkingDirectory=/usr/local/lib/workoutbuddy
+EnvironmentFile=/etc/workoutbuddy/environment
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=35
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/workoutbuddy
+TasksMax=64
+MemoryHigh=384M
+MemoryMax=640M
+[Install]
+WantedBy=multi-user.target

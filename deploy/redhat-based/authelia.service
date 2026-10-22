@@ -1,0 +1,33 @@
+[Unit]
+Description=Authelia authentication
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+[Service]
+User=authelia
+Group=authelia
+ExecStart=/usr/local/bin/authelia --config /etc/authelia/configuration.yml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/authelia
+TasksMax=64
+MemoryHigh=256M
+MemoryMax=384M
+[Install]
+WantedBy=multi-user.target

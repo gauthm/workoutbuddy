@@ -69,13 +69,13 @@ Les dépendances serveur sont verrouillées dans `package-lock.json`. Vérifier 
 installer avec `npm ci` et tester les mises à jour avant déploiement. La cible est Node 24 LTS ;
 Node 20 n’est plus pris en charge.
 
-### Rocky Linux et sessions Authelia
+### Hébergement Linux et sessions Authelia
 
-Le [guide Rocky Linux](DEPLOYMENT_ROCKY.md) et `deploy/rocky/` décrivent l’hébergement public
-gratuit avec Caddy et Authelia, les sauvegardes, les protections systemd et la maintenance nocturne.
-Les RPM stables et Node restent suivis par DNF sur la branche 24 ; les paquets npm sont audités
-chaque semaine puis mis à jour après tests, sans modification automatique des dépendances en
-production.
+Les guides [Red Hat](DEPLOYMENT_REDHAT.md), [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md) et
+[configuration commune](DEPLOYMENT_LINUX.md) décrivent l’hébergement public avec Caddy
+et Authelia. Les deux familles disposent de sauvegardes, protections systemd et maintenance
+nocturne propres à leur gestionnaire de paquets. Les dépendances npm restent auditées
+chaque semaine et mises à jour après tests.
 
 Sur un appareil de confiance, cocher **Se souvenir de moi** dans Authelia conserve la connexion
 complète pendant 60 jours, y compris après maintenance. Sans cette option : 15 minutes d’inactivité,

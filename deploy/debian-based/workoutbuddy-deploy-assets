@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Publish a validated public/ directory atomically on Rocky Linux (root only)."""
+"""Publish a validated public/ directory atomically on Linux (root only)."""
 import argparse
 import ctypes
 import fcntl

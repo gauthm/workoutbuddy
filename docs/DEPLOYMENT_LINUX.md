@@ -1,16 +1,21 @@
-# Rocky Linux 9 : déploiement personnel
+# Installation Linux : configuration commune
 
 [Accueil de la documentation](INDEX.md) · [README](../README.md)
 
 Architecture gratuite : **Caddy → Authelia (mot de passe + TOTP) → Node 24 / SQLite**. Les sessions
 Authelia sont conservées dans une instance Redis privée et persistante. Les modèles sont dans
-`deploy/rocky/`. Exécuter les opérations système comme root.
+`deploy/redhat-based/` et `deploy/debian-based/`. Exécuter les opérations système comme root.
+
+Choisir d’abord les paquets et protections du guide [Red Hat](DEPLOYMENT_REDHAT.md) ou
+[Debian/Ubuntu](DEPLOYMENT_DEBIAN.md), puis suivre cette procédure commune.
+Définir `WB_DEPLOY_DIR=deploy/redhat-based` ou `WB_DEPLOY_DIR=deploy/debian-based`
+dans le terminal utilisé pour les commandes.
 
 ## Préparation
 
 - Lire `docs/AGENT.md`, `README.md`, `package.json`, `.env.example`. Examiner
-  `systemd-detect-virt`, `free -m`, `df -h /`, `ss -lntup`, `getenforce`,
-  `sshd -t`, `sshd -T` et les zones firewalld. Garder une session SSH ouverte.
+  `systemd-detect-virt`, `free -m`, `df -h /`, `ss -lntup`,
+  `sshd -t`, `sshd -T` et le pare-feu de la distribution. Garder une session SSH ouverte.
 - Conserver SELinux enforcing si le noyau le fournit. Dans certains LXC, il est
   indisponible : ses paquets ne suffisent pas à l'activer ; cela dépend de l'hôte.
 - DNS : `DOMAINE` et `auth.DOMAINE` doivent pointer vers le VPS (A/AAAA cohérents).
@@ -23,25 +28,30 @@ Authelia sont conservées dans une instance Redis privée et persistante. Les mo
 
 ## Installation
 
-### Paquets et versions
-
-Installer `nodejs:24` depuis le module Rocky, puis `nodejs npm gcc-c++ make sqlite python3 redis
-dnf-automatic dnf-plugins-core policycoreutils-python-utils`. Aucun build frontend. Pour Caddy :
-`dnf copr enable @caddy/caddy`, puis `dnf install caddy`. Installer le binaire stable Authelia dans
-`/usr/local/bin/authelia` (root:root, 0755), depuis ses releases officielles, après vérification de
-`checksums.sha256`.
-
-Versions validées : Node 24.21, Caddy 2.11.7, Authelia 4.39.28.
-
 ### Comptes et répertoires
 
-Créer les comptes `workoutbuddy` et `authelia` avec `useradd --system --shell /sbin/nologin
+Créer les comptes `workoutbuddy` et `authelia` avec `useradd --system --shell /usr/sbin/nologin
 --home-dir /var/lib/NOM NOM`. Créer `/var/lib/NOM` en 0700, appartenant au compte correspondant ;
 `/etc/authelia` en 0750 root:authelia, `/etc/workoutbuddy` en 0750 root:workoutbuddy,
 `/var/backups/workoutbuddy` en 0700 root:root, `/var/log/caddy` en 0750 caddy:caddy.
 
 Créer aussi `groupadd --system workoutbuddy-sessions` ; le paquet Redis fournit son compte système.
-L’instance générique `redis.service` reste désactivée.
+Sur cette installation dédiée, rendre le dossier de configuration accessible au groupe privé :
+
+```sh
+install -d -o root -g workoutbuddy-sessions -m 0750 /etc/redis
+```
+
+Le fichier `workoutbuddy-sessions.conf` est root:workoutbuddy-sessions, 0640.
+Désactiver l’instance générique du paquet (`redis.service`, `redis-server.service` ou
+`valkey.service` suivant la distribution) si elle n’a aucun autre usage. Le service privé
+`workoutbuddy-sessions` reste indépendant.
+
+Avec Valkey, installer `valkey-sessions.conf` en
+`/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf`. Ce drop-in choisit
+le compte `valkey` et `/usr/bin/valkey-server` ; le groupe privé reste
+`workoutbuddy-sessions`. Créer `/etc/redis` avec les droits requis même si Redis
+n’est pas installé : ce chemin commun est utilisé aussi par les sauvegardes et Authelia.
 
 ### Installer l’application
 
@@ -52,8 +62,7 @@ scripts/download-exercise-images.js`. Les données restent exclusivement dans
 
 ### Configuration et droits
 
-Définir le domaine non secret dans `$DOMAINE`, puis rendre les modèles hors dépôt : `python3
-deploy/rocky/render.py "$DOMAINE" /root/wb-config`. **Ne pas régénérer les clés d'une installation
+Définir le domaine non secret dans `$DOMAINE`, puis rendre les modèles hors dépôt : `python3 "$WB_DEPLOY_DIR/render.py" "$DOMAINE" /root/wb-config`. **Ne pas régénérer les clés d'une installation
 existante**, notamment celle qui chiffre les secrets TOTP. Installer les fichiers ainsi :
 
 | Source | Destination / droits |
@@ -67,23 +76,19 @@ existante**, notamment celle qui chiffre les secrets TOTP. Installer les fichier
 | `workoutbuddy-deploy-assets`, `workoutbuddy-maintenance` | `/usr/local/sbin/`, 0750 root:root |
 | modèles `*.service`, `*.timer` | `/etc/systemd/system/`, 0644 root:root |
 | `caddy-hardening.conf` | `/etc/systemd/system/caddy.service.d/zzz-lxc-service.conf` |
+| `valkey-sessions.conf` (si Valkey) | `/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf` |
 | `service-hardening.conf` | même nom pour les services workoutbuddy, authelia et workoutbuddy-sessions |
 | `workoutbuddy-isolation.conf` | `/etc/systemd/system/workoutbuddy.service.d/zzzz-isolation.conf` |
 | `authelia-sessions.conf` | `/etc/systemd/system/authelia.service.d/workoutbuddy-sessions.conf` |
 
-### Isolation et SELinux
+### Vérifier les prérequis
 
-Les drop-ins rétablissent des protections parfois remplacées par l'hébergeur. Vérifier les valeurs
-effectives avec `systemctl show`. Le drop-in d’isolation WorkoutBuddy protège aussi l’horloge, les
-journaux noyau, le nom d’hôte et `/proc`, interdit la création d’espaces de noms et filtre les
-appels système privilégiés. Il désactive les core dumps.
+```sh
+python3 "$WB_DEPLOY_DIR/check-platform.py"
+```
 
-Garder les mappings exécutables nécessaires au JIT de Node et le réseau sortant nécessaire au Coach
-IA. Tester les protections dans une instance à base jetable avant application sur un autre hôte.
-Sous SELinux enforcing, installer `selinux-policy-targeted`, appliquer `restorecon` aux chemins
-installés, vérifier `ps -eZ` et les AVC après les parcours. Le paquet Caddy fournit sa politique.
-
-N'ajouter que les permissions justifiées ; aucune politique générale `audit2allow`.
+Ce contrôle en lecture vérifie la famille Linux, Python 3.9+, Node 24, systemd 247+,
+les exécutables et le gestionnaire de paquets. Il ne valide pas une installation complète.
 
 ### Démarrer et valider les services
 
@@ -112,16 +117,32 @@ utilise une URL explicite.
 Références : [en-têtes Caddy](https://caddyserver.com/docs/caddyfile/directives/header),
 [placeholders](https://caddyserver.com/docs/caddyfile/concepts#placeholders).
 
-### Pare-feu et accès SSH
-
-Avant d'activer firewalld : autoriser **le port SSH réellement utilisé**, HTTP/TCP et HTTPS/TCP dans
-la zone de l'interface ; retirer les autres ouvertures. Prévoir un retour automatique temporaire,
-vérifier SSH puis désarmer ce retour. Ne pas modifier SSH simultanément. Les modèles supposent le
-port 22 : l'adapter si besoin.
-
 ## Guides complémentaires
 
 - [Compte, MFA et sessions](AUTHENTIFICATION.md)
 - [Sauvegardes, administration et maintenance nocturne](DEPLOYMENT_OPERATIONS.md)
 - [Livraison de l’interface](DEPLOYMENT_RELEASES.md)
 - [Résultats de validation du déploiement](DEPLOYMENT_VALIDATION.md)
+
+## Vérifications des variantes
+
+```sh
+python3 deploy/redhat-based/test-maintenance.py
+python3 deploy/debian-based/test-maintenance.py
+python3 deploy/test-deployment.py
+```
+
+Les tests de maintenance simulent les transactions, erreurs de sauvegarde, redémarrages
+et limites horaires sans exécuter DNF/APT ni systemctl. Le test commun vérifie le rendu
+privé des configurations, la détection de famille et la parité des fichiers partagés.
+
+Le test TLS/MFA peut être lancé avec la variante choisie :
+
+```sh
+python3 "$WB_DEPLOY_DIR/test-auth-sessions.py"
+```
+
+Il démarre de vrais services sur des ports et bases temporaires. Avec `WB_PLAYWRIGHT_PATH`,
+il ajoute le contrôle navigateur mobile de récupération du worker et de déconnexion.
+Les prérequis des tests sont décrits dans [Authentification](AUTHENTIFICATION.md).
+Ces tests ne remplacent pas un essai d’installation sur chaque distribution cible.

@@ -145,7 +145,8 @@ calendrier ; valeurs des séries validées lisibles.
 
 `authProxy.js` fournit un proxy HTTP jetable commun aux réglages et aux mises à jour. Il reproduit
 les redirections et expirations ; la révocation d’une véritable session Authelia est vérifiée
-séparément avec `deploy/rocky/test-auth-sessions.py`, jamais avec une identité personnelle.
+séparément avec `deploy/redhat-based/test-auth-sessions.py` ou
+`deploy/debian-based/test-auth-sessions.py`, jamais avec une identité personnelle.
 
 ### Sélection des tests concernés
 

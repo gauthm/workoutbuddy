@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly WorkoutBuddy maintenance window
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Europe/Paris
+RandomizedDelaySec=15m
+AccuracySec=1m
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -22,9 +22,11 @@ conservent les détails du fonctionnement et de l’exploitation.
 | Guide | Contenu |
 | --- | --- |
 | [Configuration du serveur](CONFIGURATION.md) | Variables d’environnement, protections HTTP et limites |
-| [Installation Rocky Linux](DEPLOYMENT_ROCKY.md) | Paquets, comptes, Caddy, systemd, SELinux et pare-feu |
+| [Famille Red Hat](DEPLOYMENT_REDHAT.md) | DNF 4/5, RPM, SELinux et firewalld |
+| [Debian et Ubuntu](DEPLOYMENT_DEBIAN.md) | APT, dpkg, needrestart et pare-feu |
+| [Installation Linux commune](DEPLOYMENT_LINUX.md) | Comptes, configurations privées, Caddy, Authelia et systemd |
 | [Authentification](AUTHENTIFICATION.md) | Compte, TOTP, déconnexion, sessions Redis et tests isolés |
-| [Exploitation et maintenance](DEPLOYMENT_OPERATIONS.md) | Sauvegardes, restauration, journaux, DNF et audit npm |
+| [Exploitation et maintenance](DEPLOYMENT_OPERATIONS.md) | Sauvegardes, restauration, journaux, DNF/APT et audit npm |
 | [Livrer l’interface](DEPLOYMENT_RELEASES.md) | Cache, publication atomique, ancienne version et vérifications |
 
 ## Développer et tester

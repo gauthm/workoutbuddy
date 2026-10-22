@@ -1,4 +1,4 @@
-# Exploitation et maintenance Rocky
+# Exploitation et maintenance Linux
 
 [Accueil de la documentation](INDEX.md) · [README](../README.md)
 
@@ -40,7 +40,7 @@ l'application et le MFA. Aucun essai destructif sur la base personnelle.
 
 ### Commandes et protections du serveur
 
-- État : `systemctl status workoutbuddy authelia workoutbuddy-sessions caddy firewalld fail2ban`.
+- État : `systemctl status workoutbuddy authelia workoutbuddy-sessions caddy` ; vérifier aussi le pare-feu et fail2ban s’ils sont installés.
 - Journaux : `journalctl -u workoutbuddy -u authelia -u caddy --since today`.
 - Redémarrage : `systemctl restart workoutbuddy` ; drainage HTTP, limite 25 s
   pour les flux persistants, fermeture SQLite ; systemd attend 35 s.
@@ -51,7 +51,7 @@ l'application et le MFA. Aucun essai destructif sur la base personnelle.
   journald : limites 128 Mo persistants / 32 Mo volatils, 14 jours. Caddy tourne
   ses accès à 5 Mo, trois archives, sept jours. Ne pas activer `log_credentials`.
 - Authelia : bannissement après trois échecs en deux minutes, pendant quinze minutes.
-  Si SSH accepte les mots de passe, installer `fail2ban-server` et le modèle
+  Si SSH accepte les mots de passe, installer `fail2ban-server` (Red Hat) ou `fail2ban` (Debian/Ubuntu) et le modèle
   `sshd-jail.local` dans `/etc/fail2ban/jail.d/` ; adapter le port, valider avec
   `fail2ban-client -t`, activer le service. Tester le filtre sur une ligne synthétique
   puis bannir/débannir `192.0.2.123` en vérifiant la règle firewalld.
@@ -61,17 +61,38 @@ l'application et le MFA. Aucun essai destructif sur la base personnelle.
 
 ## Mises à jour nocturnes
 
-### Installer la maintenance DNF
+### Installer la maintenance de la famille choisie
 
-Installer `dnf-automatic.conf` dans `/etc/dnf/automatic.conf`, les deux modèles
-`dnf-automatic-service.conf` et `dnf-automatic-timer.conf` dans les drop-ins respectifs
-`/etc/systemd/system/dnf-automatic.service.d/workoutbuddy.conf` et
-`dnf-automatic.timer.d/workoutbuddy.conf`.
+Définir `WB_DEPLOY_DIR=deploy/redhat-based` ou `WB_DEPLOY_DIR=deploy/debian-based`.
+Installer les fichiers `workoutbuddy-maintenance`, `workoutbuddy-maintenance.service`
+et `workoutbuddy-maintenance.timer` de cette variante :
 
-Le service utilise `/usr/local/sbin/workoutbuddy-maintenance --apply` : sauvegarde réussie
-obligatoire, mises à jour RPM stables, puis `dnf needs-restarting -r`. Les mises à jour incluent
-Node dans le **module 24**, les paquets Rocky/EPEL et Caddy ; elles ne changent pas de version
-majeure de Rocky ou Node. Ne pas activer un dépôt non fiable.
+```sh
+install -o root -g root -m 0750 "$WB_DEPLOY_DIR/workoutbuddy-maintenance" /usr/local/sbin/workoutbuddy-maintenance
+install -o root -g root -m 0644 "$WB_DEPLOY_DIR/workoutbuddy-maintenance.service" /etc/systemd/system/workoutbuddy-maintenance.service
+install -o root -g root -m 0644 "$WB_DEPLOY_DIR/workoutbuddy-maintenance.timer" /etc/systemd/system/workoutbuddy-maintenance.timer
+```
+
+La sauvegarde doit réussir avant la première transaction. La variante Red Hat utilise
+DNF 4/5 et son plugin `needs-restarting`. La variante Debian utilise APT et `needrestart`
+en mode batch/liste. Elles suivent les dépôts configurés, sans changer de release Linux.
+Conserver Node sur la branche 24 via la politique du dépôt ou un verrouillage du paquet ;
+aucun script ne garantit la branche majeure d’un dépôt tiers qui change sa politique.
+Ne pas activer de dépôt non fiable.
+
+Désactiver les planificateurs concurrents sur une installation dédiée :
+
+- Red Hat : `dnf-automatic.timer`, `dnf-automatic-install.timer` ou le timer DNF 5,
+  selon les unités réellement installées. Les anciens drop-ins `dnf-automatic*.conf`
+  sont conservés dans le dépôt pour les installations DNF 4 existantes ; leur wrapper
+  continue de fonctionner, mais un seul timer doit lancer la maintenance.
+- Debian/Ubuntu : `apt-daily.timer` et `apt-daily-upgrade.timer`. Si `unattended-upgrades`
+  reste installé, désactiver son exécution périodique dans la configuration APT et
+  conserver `Unattended-Upgrade::Automatic-Reboot "false";`. Désactiver aussi tout
+  planificateur d’un outil tiers qui installerait les mises à jour en parallèle.
+
+Ne pas interrompre une transaction de paquets en cours lors de la migration.
+Contrôler les unités actives avant de changer de planificateur.
 
 ### Horaires et redémarrages
 
@@ -87,10 +108,19 @@ de l’hébergeur.
 
 ### Vérifier sans modifier le serveur
 
-DNF garde `reboot = never` car le script décide du redémarrage et de son horaire. Ne pas appeler
-directement une variante `dnf-automatic-install.timer` en parallèle. `workoutbuddy-maintenance
---check` est strictement en lecture ; `--apply` change le serveur seulement pendant la fenêtre
-nocturne. Tester le garde horaire sans effets réels : `python3 deploy/rocky/test-maintenance.py`.
+`workoutbuddy-maintenance --check` vérifie l’état sans installer de paquet,
+redémarrer de service ou rebooter. `--apply` commence seulement entre 04 h et 06 h.
+Après une transaction longue, les services concernés peuvent être relancés même si la
+fenêtre vient de se fermer ; seul le reboot est reporté à la nuit suivante.
+Les scripts internes des paquets peuvent aussi relancer leurs propres services.
+
+Tester les deux variantes sans modifier le serveur :
+
+```sh
+python3 deploy/redhat-based/test-maintenance.py
+python3 deploy/debian-based/test-maintenance.py
+python3 deploy/test-deployment.py
+```
 
 ### Audit des dépendances
 
@@ -107,19 +137,19 @@ registre fait également échouer le contrôle. Il n’y a pas de notification e
 
 ```sh
 systemctl daemon-reload
-systemctl enable --now dnf-automatic.timer workoutbuddy-audit.timer
-systemctl restart dnf-automatic.timer
-systemctl list-timers dnf-automatic.timer workoutbuddy-audit.timer
+systemctl enable --now workoutbuddy-maintenance.timer workoutbuddy-audit.timer
+systemctl restart workoutbuddy-maintenance.timer
+systemctl list-timers workoutbuddy-maintenance.timer workoutbuddy-audit.timer
 /usr/local/sbin/workoutbuddy-maintenance --check
-journalctl -u dnf-automatic -u workoutbuddy-audit --since '7 days ago'
+journalctl -u workoutbuddy-maintenance -u workoutbuddy-audit --since '7 days ago'
 
 # Suspendre la maintenance nocturne si nécessaire :
-systemctl disable --now dnf-automatic.timer
+systemctl disable --now workoutbuddy-maintenance.timer
 ```
 
 ### Mises à jour manuelles
 
 Pas de `npm update` ou `npm audit fix` automatique : mettre le lockfile à jour dans le dépôt, tester
-puis installer avec `npm ci --omit=dev`. Le binaire Authelia est hors RPM : vérifier ses releases
+puis installer avec `npm ci --omit=dev`. Le binaire Authelia est installé hors gestionnaire de paquets : vérifier ses releases
 officielles, sa configuration et les migrations, sauvegarder puis tester avant remplacement. Il
 n’est pas mis à jour sans validation.

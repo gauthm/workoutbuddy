@@ -26,7 +26,9 @@ import urllib.request
 os.umask(0o077)
 os.environ['PATH']=os.environ.get('PATH',os.defpath)+os.pathsep+'/usr/local/bin'
 template=Path(__file__).with_name('authelia.yml.template')
-for binary in ['authelia','caddy','redis-server','node']:
+store_binary=shutil.which('redis-server') or shutil.which('valkey-server')
+if not store_binary:raise SystemExit('Missing test binary: redis-server or valkey-server')
+for binary in ['authelia','caddy','node']:
     if not shutil.which(binary):raise SystemExit('Missing test binary: '+binary)
 
 def port():
@@ -85,7 +87,7 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
         wait(lambda:urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{appport}/api/v1/settings',headers={'Host':f'{domain}:{tlsport}'}),timeout=2).status==200)
         redisconfig=root/'redis.conf'
         redisconfig.write_text(f'port 0\nunixsocket {socketpath}\nunixsocketperm 600\nrequirepass {redis_password}\ndir {root}\nsave ""\nappendonly yes\nappendfsync everysec\n')
-        redis=spawn('redis',['redis-server',str(redisconfig)]);wait(lambda:(redis_ready() or True))
+        redis=spawn('redis',[store_binary,str(redisconfig)]);wait(lambda:(redis_ready() or True))
         output=subprocess.run(['authelia','crypto','hash','generate','argon2','--random'],capture_output=True,text=True,check=True).stdout
         password=re.search(r'Password:\s*(\S+)',output)[1];digest=re.search(r'Digest:\s*(\S+)',output)[1]
         users=root/'users.yml';users.write_text('users:\n  synthetic:\n    displayname: Synthetic\n    password: '+json.dumps(digest)+'\n    email: synthetic@example.invalid\n')
@@ -189,7 +191,7 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
         stop(authelia);authelia=spawn('authelia',['authelia','--config',str(config)])
         wait(lambda:urllib.request.urlopen(f'http://127.0.0.1:{authport}/api/health',timeout=2).status==200)
         check('Remembered login survives Authelia restart',request(base+'/')[0]==200)
-        stop(redis);redis=spawn('redis',['redis-server',str(redisconfig)]);wait(lambda:(redis_ready() or True))
+        stop(redis);redis=spawn('redis',[store_binary,str(redisconfig)]);wait(lambda:(redis_ready() or True))
         wait(lambda:request(base+'/')[0]==200)
         check('Remembered login survives persistent Redis restart',True)
         copied=http.cookiejar.CookieJar()

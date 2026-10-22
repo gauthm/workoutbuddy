@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+"""Nightly system maintenance. --check is read-only; --apply changes the host."""
+import argparse
+import fcntl
+import os
+import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from pathlib import Path
+import subprocess
+
+PARIS = ZoneInfo('Europe/Paris')
+SERVICES = {'workoutbuddy.service', 'caddy.service', 'authelia.service', 'workoutbuddy-sessions.service'}
+PACKAGE_SERVICES = {'nodejs': 'workoutbuddy.service', 'caddy': 'caddy.service',
+                    'redis': 'workoutbuddy-sessions.service', 'redis-server': 'workoutbuddy-sessions.service',
+                    'valkey': 'workoutbuddy-sessions.service', 'valkey-server': 'workoutbuddy-sessions.service'}
+
+
+def in_window(now=None):
+    return 4 <= (now or datetime.now(PARIS)).hour < 6
+
+
+def run(*args, capture=False, check=True):
+    return subprocess.run(args, check=check, text=True,
+                          env={**os.environ, 'LC_ALL': 'C', 'DEBIAN_FRONTEND': 'noninteractive', 'NEEDRESTART_MODE': 'l'},
+                          stdout=subprocess.PIPE if capture else None)
+
+
+def versions():
+    output = run('/usr/bin/dpkg-query', '-W', '-f=${binary:Package} ${Version}\n', capture=True).stdout
+    return {name.split(':')[0]: version for name, version in
+            (line.split(' ', 1) for line in output.splitlines() if ' ' in line)}
+
+
+def upgrade():
+    run('/usr/bin/apt-get', 'update')
+    # Keep the release and dependencies in place; never use dist-upgrade here.
+    run('/usr/bin/apt-get', '-y', '-o', 'Dpkg::Options::=--force-confdef',
+        '-o', 'Dpkg::Options::=--force-confold', 'upgrade')
+
+
+def restart_report():
+    # Batch/list mode reports stale processes without restarting anything.
+    return run('/usr/sbin/needrestart', '-b', '-r', 'l', capture=True).stdout
+
+
+def reboot_needed():
+    if Path('/run/reboot-required').exists():
+        return True
+    # Debian need not create Ubuntu's reboot-required marker: also inspect the kernel.
+    statuses = re.findall(r'^NEEDRESTART-KSTA: ([0-3])$', restart_report(), re.M)
+    if not statuses:
+        raise RuntimeError('needrestart did not report kernel status; refusing an unverified update result')
+    # 0 means unknown (e.g. an LXC host kernel); never invent a reboot hint.
+    return any(status in ('2', '3') for status in statuses)
+
+
+def restart_services():
+    return set(re.findall(r'^NEEDRESTART-SVC: (\S+)$', restart_report(), re.M))
+
+
+def apply():
+    if not in_window():
+        print('Outside 04:00–06:00 Europe/Paris; maintenance deferred.', flush=True)
+        return
+    lock = Path('/run/workoutbuddy-maintenance.lock').open('w')
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    run('/usr/bin/systemctl', 'start', 'workoutbuddy-backup.service')
+    before = versions()
+    upgrade()
+    after = versions()
+    if reboot_needed():
+        # A long package transaction must never cause a daytime reboot.
+        if in_window():
+            print('Updates require a reboot; rebooting within the night window.', flush=True)
+            run('/usr/bin/systemctl', 'reboot')
+            return
+        print('Reboot required but night window elapsed; deferred until next night.', flush=True)
+    affected = restart_services() & SERVICES
+    for package, service in PACKAGE_SERVICES.items():
+        if before.get(package) != after.get(package):
+            affected.add(service)
+    for service in sorted(affected):
+        print('Restarting updated service: ' + service, flush=True)
+        run('/usr/bin/systemctl', 'restart', service)
+        run('/usr/bin/systemctl', 'is-active', '--quiet', service)
+    print('Maintenance complete.', flush=True)
+
+
+def main():
+    os.umask(0o077)
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--check', action='store_true')
+    mode.add_argument('--apply', action='store_true')
+    args = parser.parse_args()
+    if args.check:
+        print('Night window open: ' + str(in_window()))
+        print('Reboot currently needed: ' + str(reboot_needed()))
+        print('Check only: no package changes, restarts or reboot.')
+    else:
+        if os.geteuid() != 0:
+            parser.error('--apply requires root')
+        apply()
+
+
+if __name__ == '__main__':
+    main()

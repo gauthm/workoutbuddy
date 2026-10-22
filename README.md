@@ -32,7 +32,7 @@ Voir le [guide d’installation](docs/INSTALLATION.md) pour les détails.
 | Régler l’application et le Coach IA | [Réglages et Coach](docs/REGLAGES_COACH.md) |
 | Utiliser un téléphone, installer l’application, recevoir les mises à jour | [Accès mobile](docs/MOBILE.md) |
 | Sauvegarder, importer, exporter ou réinitialiser | [Données](docs/DONNEES.md) |
-| Configurer le serveur ou héberger l’application | [Configuration](docs/CONFIGURATION.md) · [Déploiement Rocky](docs/DEPLOYMENT_ROCKY.md) |
+| Configurer le serveur ou héberger l’application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) |
 | Développer et tester | [Développement](docs/DEVELOPPEMENT.md) · [Index du code](docs/CODEBASE.md) · [Consignes](docs/AGENT.md) |
 
 Toute la documentation, les audits et le suivi des tâches sont regroupés dans
