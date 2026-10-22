@@ -4,7 +4,7 @@
 
 ## Périmètre
 
-Modèles : `deploy/redhat-based/`. Cette variante vise les distributions maintenues de la famille
+Modèles : `deploy/linux/redhat-based/`. Cette variante vise les distributions maintenues de la famille
 RHEL/Fedora (Red Hat Enterprise Linux, Rocky, AlmaLinux, CentOS Stream, Oracle Linux, Fedora
 et dérivées fournissant les prérequis). Elle utilise DNF 4 ou DNF 5 et RPM.
 
@@ -51,7 +51,7 @@ Versions historiquement validées sur Rocky : Node 24.21, Caddy 2.11.7, Authelia
 Suivre l’[installation commune](DEPLOYMENT_LINUX.md) avec :
 
 ```sh
-WB_DEPLOY_DIR=deploy/redhat-based
+WB_DEPLOY_DIR=deploy/linux/redhat-based
 ```
 
 Les chemins installés et les données existantes sont conservés ; le renommage dans Git

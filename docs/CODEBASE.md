@@ -7,7 +7,7 @@
 - [Logique métier — `src/services/`](#logique-métier--srcservices)
 - [Interface — `public/`](#interface--public)
 - [Tests et documentation](#tests-et-documentation)
-Installation, fonctionnement et tests : [README.md](../README.md). Règles de développement : [AGENT.md](AGENT.md). Suivi : [TASKS.md](TASKS.md).
+Installation, fonctionnement et tests : [README.md](../README.md). Règles de développement : [AGENTS.md](../AGENTS.md). Suivi : [TASKS.md](TASKS.md).
 
 ## Serveur et données
 
@@ -114,14 +114,15 @@ tests. Les chemins de code ci-dessous partent de la racine du dépôt.
 | Emplacement | Contenu |
 | --- | --- |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
-| `docs/DEPLOYMENT_LINUX.md`, `docs/DEPLOYMENT_REDHAT.md`, `deploy/redhat-based/` | Configuration Linux commune et variante Red Hat avec DNF 4/5 |
-| `docs/DEPLOYMENT_DEBIAN.md`, `deploy/debian-based/` | Variante Debian/Ubuntu avec APT et needrestart |
-| `deploy/test-deployment.py`, `deploy/*/check-platform.py` | Contrôle des prérequis, rendu privé des configurations et parité des fichiers communs |
-| `deploy/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Sauvegarde avant mises à jour DNF/APT, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
-| `deploy/*/workoutbuddy-audit.*`, `test-maintenance.py` | Audit npm hebdomadaire et tests simulés de la maintenance, sans toucher au serveur |
-| `deploy/*/workoutbuddy-deploy-assets` | Contrôle des photos obligatoires, publication atomique de l’interface et conservation de la version précédente |
-| `deploy/*/workoutbuddy-sessions.*`, `authelia-sessions.conf`, `valkey-sessions.conf` | Stockage Redis/Valkey privé et persistant des sessions Authelia, par socket Unix |
-| `deploy/*/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |
+| `deploy/docker/`, `docs/DEPLOYMENT_DOCKER.md`, `.dockerignore` | Image Node 24, Compose local/production, volume SQLite, santé, sauvegarde/restauration et test isolé |
+| `docs/DEPLOYMENT_LINUX.md`, `docs/DEPLOYMENT_REDHAT.md`, `deploy/linux/redhat-based/` | Configuration Linux commune et variante Red Hat avec DNF 4/5 |
+| `docs/DEPLOYMENT_DEBIAN.md`, `deploy/linux/debian-based/` | Variante Debian/Ubuntu avec APT et needrestart |
+| `deploy/linux/test-deployment.py`, `deploy/linux/*/check-platform.py` | Contrôle des prérequis, rendu privé des configurations et parité des fichiers communs |
+| `deploy/linux/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Sauvegarde avant mises à jour DNF/APT, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
+| `deploy/linux/*/workoutbuddy-audit.*`, `test-maintenance.py` | Audit npm hebdomadaire et tests simulés de la maintenance, sans toucher au serveur |
+| `deploy/linux/*/workoutbuddy-deploy-assets` | Contrôle des photos obligatoires, publication atomique de l’interface et conservation de la version précédente |
+| `deploy/linux/*/workoutbuddy-sessions.*`, `authelia-sessions.conf`, `valkey-sessions.conf` | Stockage Redis/Valkey privé et persistant des sessions Authelia, par socket Unix |
+| `deploy/linux/*/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |
 
 Sécurité des contenus et de l’historique Git :
 [docs/REPOSITORY_SECURITY.md](REPOSITORY_SECURITY.md).

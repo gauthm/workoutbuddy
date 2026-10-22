@@ -4,16 +4,18 @@
 
 Architecture gratuite : **Caddy → Authelia (mot de passe + TOTP) → Node 24 / SQLite**. Les sessions
 Authelia sont conservées dans une instance Redis privée et persistante. Les modèles sont dans
-`deploy/redhat-based/` et `deploy/debian-based/`. Exécuter les opérations système comme root.
+`deploy/linux/redhat-based/` et `deploy/linux/debian-based/`. Exécuter les opérations système comme root.
+
+Pour une installation conteneurisée, utiliser le [guide Docker](DEPLOYMENT_DOCKER.md).
 
 Choisir d’abord les paquets et protections du guide [Red Hat](DEPLOYMENT_REDHAT.md) ou
 [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md), puis suivre cette procédure commune.
-Définir `WB_DEPLOY_DIR=deploy/redhat-based` ou `WB_DEPLOY_DIR=deploy/debian-based`
+Définir `WB_DEPLOY_DIR=deploy/linux/redhat-based` ou `WB_DEPLOY_DIR=deploy/linux/debian-based`
 dans le terminal utilisé pour les commandes.
 
 ## Préparation
 
-- Lire `docs/AGENT.md`, `README.md`, `package.json`, `.env.example`. Examiner
+- Lire `AGENTS.md`, `README.md`, `package.json`, `.env.example`. Examiner
   `systemd-detect-virt`, `free -m`, `df -h /`, `ss -lntup`,
   `sshd -t`, `sshd -T` et le pare-feu de la distribution. Garder une session SSH ouverte.
 - Conserver SELinux enforcing si le noyau le fournit. Dans certains LXC, il est
@@ -127,9 +129,9 @@ Références : [en-têtes Caddy](https://caddyserver.com/docs/caddyfile/directiv
 ## Vérifications des variantes
 
 ```sh
-python3 deploy/redhat-based/test-maintenance.py
-python3 deploy/debian-based/test-maintenance.py
-python3 deploy/test-deployment.py
+python3 deploy/linux/redhat-based/test-maintenance.py
+python3 deploy/linux/debian-based/test-maintenance.py
+python3 deploy/linux/test-deployment.py
 ```
 
 Les tests de maintenance simulent les transactions, erreurs de sauvegarde, redémarrages

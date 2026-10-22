@@ -1,0 +1,38 @@
+name: workoutbuddy
+services:
+  workoutbuddy:
+    image: workoutbuddy:${WB_IMAGE_TAG:-local}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    restart: unless-stopped
+    init: true
+    # HTTP on localhost for local use. The production override requires an HTTPS origin.
+    environment:
+      NODE_ENV: development
+      TZ: ${WB_TIMEZONE:-Europe/Paris}
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DB_PATH: /app/data/workoutbuddy.db
+      TRUST_PROXY: ""
+    ports:
+      - "127.0.0.1:${WB_PORT:-3000}:3000"
+    volumes:
+      - data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 35s
+    pids_limit: 128
+    mem_limit: 768m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  data:

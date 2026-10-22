@@ -32,7 +32,7 @@ test('la version seule du cache ne relance pas tous les parcours',()=>{
  assert.deepEqual(filterReleaseBump(['public/sw.js'],()=>{throw Error('missing')},()=>old),['public/sw.js'])
 })
 test('sélection Node : documentation, interface, imports transitifs et fichier explicite',()=>{
- assert.deepEqual(selectNodeTests(['docs/AGENT.md','tests/e2e/coach.spec.js']),[])
+ assert.deepEqual(selectNodeTests(['AGENTS.md','tests/e2e/coach.spec.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/views/DashboardView.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/components/coach/CoachView.js']),['tests/integration/apiExports.test.js'])
  assert.deepEqual(selectNodeTests(['tests/unit/date.test.js']),['tests/unit/date.test.js'])

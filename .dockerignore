@@ -1,0 +1,31 @@
+# Allow only build inputs: credentials, databases and local assets never enter the context.
+**
+!package.json
+!package-lock.json
+!server.js
+!LICENSE
+!src/
+!src/**
+!public/
+!public/**
+public/vendor/
+public/exercises/images/
+!scripts/
+!scripts/download-vendors.js
+!scripts/download-exercise-images.js
+!deploy/
+!deploy/docker/
+!deploy/docker/Dockerfile
+!deploy/docker/healthcheck.mjs
+!deploy/docker/backup.mjs
+!deploy/docker/restore.mjs
+# Keep these exclusions last, including for any future source directory additions.
+**/.env
+**/.env.*
+**/*.db
+**/*.db-*
+**/*.sqlite*
+**/*.pem
+**/*.key
+**/*.log
+**/node_modules/

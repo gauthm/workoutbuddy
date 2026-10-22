@@ -17,7 +17,7 @@ try {
     const cookies=JSON.parse(readFileSync(cookieFile,'utf8'))
     if(cookies.some(c=>c.domain.replace(/^\./,'')!==new URL(base).hostname))throw new Error('Disposable cookie domain required')
     await context.addCookies(cookies)
-    const labels=JSON.parse(readFileSync(new URL('../../public/locales/fr.json',import.meta.url),'utf8'))
+    const labels=JSON.parse(readFileSync(new URL('../../../public/locales/fr.json',import.meta.url),'utf8'))
     await page.goto(base+'/#/exercises/dumbbell_bench_press')
     await page.waitForFunction(()=>{
       const images=[...document.querySelectorAll('.exercise-motion__frame')]

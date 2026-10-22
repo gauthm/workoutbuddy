@@ -1,0 +1,8 @@
+services:
+  workoutbuddy:
+    environment:
+      NODE_ENV: production
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN to the exact public HTTPS origin}
+      # A host proxy reaches Docker through its bridge, not container loopback.
+      # Do not enable loopback trust for this topology.
+      TRUST_PROXY: ""

@@ -1,6 +1,6 @@
-# AGENT.md
+# AGENTS.md
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Accueil de la documentation](docs/INDEX.md) · [README](README.md)
 
 - [1. Projet](#1-projet)
 - [2. Stack — versions figées](#2-stack--versions-figées)
@@ -10,7 +10,8 @@
 - [6. Checklist avant de soumettre](#6-checklist-avant-de-soumettre)
 - [7. Parcours navigateur isolés](#7-parcours-navigateur-isolés)
 - [8. Déploiement après validation](#8-déploiement-après-validation)
-Lis ce fichier en entier avant toute action. Il prime sur toute instruction ad hoc.
+- [9. Déployer sur un nouvel hôte](#9-déployer-sur-un-nouvel-hôte)
+Lire ces consignes avant de travailler. Les instructions explicites de l’utilisateur priment sur les conventions du dépôt.
 
 ---
 
@@ -34,6 +35,10 @@ Lis ce fichier en entier avant toute action. Il prime sur toute instruction ad h
 | Tests unit | node:test + assert | built-in |
 
 **Ne jamais ajouter de paquet npm.** Implémenter à la main ou poser la question.
+
+Le script natif de `better-sqlite3` est autorisé pour sa version verrouillée via
+`package.json#allowScripts`. Lors d’une mise à jour de cette dépendance, réviser aussi
+cette autorisation ; ne pas autoriser globalement tous les scripts d’installation.
 
 ---
 
@@ -75,11 +80,11 @@ template.
 
 ## 5. Comment trouver l'information
 
-- [INDEX.md](INDEX.md) : guides par thème ; [README.md](../README.md) : démarrage rapide.
-- [INSTALLATION.md](INSTALLATION.md), [DEVELOPPEMENT.md](DEVELOPPEMENT.md) : installation et commandes de test.
-- [CODEBASE.md](CODEBASE.md) : index pour trouver les fichiers concernés.
-- [TASKS.md](TASKS.md) : travail en cours ou restant à faire.
-- [Tests navigateur](TESTS_E2E.md) et [Parcours métier](TESTS_JOURNEYS.md) : guides des tests.
+- [INDEX.md](docs/INDEX.md) : guides par thème ; [README.md](README.md) : démarrage rapide.
+- [INSTALLATION.md](docs/INSTALLATION.md), [DEVELOPPEMENT.md](docs/DEVELOPPEMENT.md) : installation et commandes de test.
+- [CODEBASE.md](docs/CODEBASE.md) : index pour trouver les fichiers concernés.
+- [TASKS.md](docs/TASKS.md) : travail en cours ou restant à faire.
+- [Tests navigateur](docs/TESTS_E2E.md) et [Parcours métier](docs/TESTS_JOURNEYS.md) : guides des tests.
 
 Pour chaque demande : lire les tâches en cours, identifier les fichiers concernés dans l’index, puis
 charger seulement les sources utiles. Implémenter, exécuter les contrôles adaptés et retirer les
@@ -91,10 +96,10 @@ L’historique des changements et anciennes tâches se trouve dans Git. Chercher
 manquantes dans les guides puis les sources avant de poser une question.
 
 Tous les chemins de code et commandes de cette documentation se lisent depuis la racine du dépôt.
-Les liens Markdown sont relatifs au document. Conserver les guides Markdown dans `docs/` ; seuls le
-README principal et la licence restent à la racine.
+Les liens Markdown sont relatifs au document. Conserver les guides Markdown dans `docs/`. Le README, la licence et ce fichier
+`AGENTS.md` restent à la racine pour rendre les consignes du dépôt découvrables.
 
-**Taille cible par session :** `docs/AGENT.md` + tâche en cours + fichiers source concernés = **< 30
+**Taille cible par session :** `AGENTS.md` + tâche en cours + fichiers source concernés = **< 30
 k tokens**. Si un fichier source dépasse 500 lignes, copier seulement les sections pertinentes.
 
 ---
@@ -147,8 +152,97 @@ Après chaque changement applicatif :
 1. Terminer le développement et relire le diff.
 2. Exécuter les tests ciblés du code modifié et vérifier les comportements de l’interface touchés, sur ordinateur et mobile si concernés, selon le §7. Corriger les échecs avant livraison.
 3. Actualiser la documentation concernée, committer et pousser sur `main`.
-4. Déployer directement la version validée selon les guides `docs/DEPLOYMENT_LINUX.md` et de la famille du serveur (`docs/DEPLOYMENT_REDHAT.md` ou `docs/DEPLOYMENT_DEBIAN.md`). Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
+4. Déployer directement la version validée selon les guides `docs/DEPLOYMENT_LINUX.md` et de la famille du serveur (`docs/DEPLOYMENT_REDHAT.md` ou `docs/DEPLOYMENT_DEBIAN.md`), ou `docs/DEPLOYMENT_DOCKER.md` pour une installation Docker. Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
 5. Vérifier les fichiers ou la version réellement servis en production et l’état du service. Indiquer explicitement dans la réponse finale que le déploiement a été effectué, ou expliquer le blocage si la livraison n’a pas abouti.
 
 Une modification purement documentaire ne nécessite ni tests applicatifs ni redéploiement de
 l’application.
+
+## 9. Déployer sur un nouvel hôte
+
+### Source des fichiers et choix de la variante
+
+**Toujours partir du contenu versionné de `deploy/` dans ce dépôt Git.** Le dossier de travail
+voisin contient des rendus, sauvegardes de configuration et rapports propres à l’hôte ; il ne
+remplace jamais les modèles du dépôt. Ne pas réutiliser les secrets d’un autre serveur.
+
+1. Inspecter l’hôte : `uname -s`, `uname -m`, `/etc/os-release`, gestionnaire de paquets,
+   services déjà présents et mode d’hébergement existant. Une application déjà installée
+   conserve son mode natif ou Docker ; ne pas la migrer implicitement.
+2. Pour une installation Linux native, choisir d’après `ID` et `ID_LIKE` : famille RHEL/Fedora
+   → `deploy/linux/redhat-based/` ; Debian/Ubuntu → `deploy/linux/debian-based/`.
+   Vérifier les prérequis et paquets dans le guide de cette famille, puis exécuter son
+   `check-platform.py`. Ne pas forcer une variante pour un OS incompatible.
+3. Pour Docker, partir de `deploy/docker/` et du guide `docs/DEPLOYMENT_DOCKER.md`.
+   Ne pas installer les unités systemd de l’application dans les conteneurs. Sur macOS/Windows,
+   utiliser Docker ou l’installation locale documentée ; les scripts Linux natifs n’y sont pas applicables.
+
+### Emplacement Linux et permissions
+
+La disposition native de référence est la suivante :
+
+| Emplacement | Rôle | Propriétaire et droits |
+| --- | --- | --- |
+| `/usr/local/src/workoutbuddy` | Clone Git, développement, tests et construction | Administrateur du déploiement ; `0700` sur ce serveur mono-administrateur |
+| `/usr/local/src/workoutbuddy-deploy` | Travail privé de déploiement, voisin du clone | Même administrateur, `0700` ; jamais versionné ni servi en HTTP |
+| `/usr/local/lib/workoutbuddy` | Copie exécutée du code validé | `root:root`, dossiers `0755`, fichiers ordinaires `0644`, exécutables seuls `0755` ; aucun droit d’écriture pour le service |
+| `/var/lib/workoutbuddy` | SQLite, journaux et sauvegardes internes | `workoutbuddy:workoutbuddy`, dossiers `0700`, bases et journaux `0600` |
+| `/etc/workoutbuddy` | Configuration de l’instance | Dossier `root:workoutbuddy` `0750` ; environnement `root:root` `0600`, lu par systemd |
+| `/var/backups/workoutbuddy` | Instantanés privés des bases et configurations | `root:root`, dossier `0700`, fichiers privés `0600` |
+
+`/usr/local/src` convient aux sources locales : conserver ce chemin sur un Linux natif neuf.
+Si le clone est ailleurs, vérifier ses usages et déplacer le clone dans ce répertoire avant
+la première installation, puis corriger les chemins dépendants. Ne pas déplacer un clone déjà
+correctement placé. Le dossier `workoutbuddy-deploy` doit **toujours être créé dans le même parent
+que le clone** ; sur ce serveur les deux restent donc sous `/usr/local/src`.
+
+Sur le serveur actuel, les deux dossiers appartiennent à root et leurs entrées sont limitées à
+`0700` ; `.git/` est également `0700`. Les fichiers sources peuvent garder leurs modes Git : la
+restriction sur le dossier parent protège tout l’arbre, y compris les fichiers locaux ignorés.
+Conserver les bits d’exécution des scripts ; ne pas appliquer un `chmod -R 644` ou `chmod -R 777`.
+Ne pas modifier les droits globaux de `/usr/local/src`, ni ceux de l’installation active par
+une commande récursive appliquée au clone. Pour un autre administrateur, utiliser son compte
+pour le clone et le travail privé, et sudo seulement pour les opérations système.
+
+Exemple **pour un nouvel hôte administré en root**, sans écraser un clone existant :
+
+```sh
+umask 077
+install -d -o root -g root -m 0700 /usr/local/src/workoutbuddy
+git clone https://github.com/gauthm/workoutbuddy.git /usr/local/src/workoutbuddy
+cd /usr/local/src/workoutbuddy
+WB_REPO="$(pwd -P)"
+WB_WORK="$(dirname "$WB_REPO")/workoutbuddy-deploy"
+install -d -o root -g root -m 0700 "$WB_WORK"
+```
+
+Ne jamais faire pointer un site web vers le clone ou le dossier de travail. Les secrets générés,
+archives privées, `.env`, exports et bases restent hors Git. Répertoire de travail `0700`, rendus
+privés `0600`, `umask 077` pour leur création ; aucun secret dans les journaux de validation.
+
+### Première installation native et livraisons suivantes
+
+1. Installer les prérequis de la famille et les binaires vérifiés. Suivre ensuite
+   `docs/DEPLOYMENT_LINUX.md` pour créer les comptes dédiés, répertoires, règles réseau,
+   configurations et unités. Les guides de famille et le guide commun font partie du dépôt :
+   ils donnent les paquets, commandes et destinations à suivre, sans dépendre d’une conversation.
+2. Définir `WB_DEPLOY_DIR` sur la variante choisie. Pour une instance neuve uniquement,
+   rendre ses modèles dans un sous-dossier privé de `WB_WORK`, puis installer chaque rendu
+   avec les propriétaires et droits indiqués. Ne jamais régénérer les clés d’une instance existante.
+3. Copier le code validé dans `/usr/local/lib/workoutbuddy` en excluant `.git`, `.env`,
+   données locales, résultats de tests et dépendances de développement. Installer les dépendances
+   verrouillées et ressources dans cette copie, puis imposer les droits de code ci-dessus.
+   La base personnelle reste dans `/var/lib/workoutbuddy`, séparée du clone et du code exécuté.
+4. Valider Caddy/Authelia et les unités, démarrer les services, configurer le compte/MFA depuis
+   le terminal privé et vérifier l’accès HTTPS authentifié. Activer les sauvegardes et un seul
+   planificateur de maintenance selon `docs/DEPLOYMENT_OPERATIONS.md`.
+5. Pour les changements ultérieurs : tests ciblés du code et de l’UI modifiés, documentation,
+   commit/push, puis déploiement direct autorisé (§8). Pour l’interface seule, utiliser le
+   `workoutbuddy-deploy-assets` de la variante choisie pour publier le `public/` validé.
+   Installer les outils système depuis ces sources versionnées ; ne pas inventer une autre procédure
+   à partir d’anciens fichiers de `WB_WORK`. Pour le backend ou une migration, créer d’abord une
+   sauvegarde SQLite cohérente hors rétention, garder le code précédent et contrôler le service
+   après livraison. Vérifier la version réellement servie et conserver un retour arrière exploitable.
+
+Références de placement : [FHS, hiérarchie locale](https://specifications.freedesktop.org/fhs/latest-single/).
+Convention des consignes à la racine : [documentation officielle OpenAI](https://developers.openai.com/blog/custom-code-review-rules-for-codex).

@@ -1,4 +1,8 @@
-# WorkoutBuddy
+<p align="center">
+  <img src="public/icons/workoutbuddy.svg" alt="Logo WorkoutBuddy" width="96" height="96">
+</p>
+
+<h1 align="center">WorkoutBuddy</h1>
 
 Application locale de musculation pour un utilisateur, avec programmes personnalisés, suivi des séances et progression par exercice. Les algorithmes créent les programmes et calculent leur progression ; un Coach IA facultatif apporte des conseils.
 
@@ -32,10 +36,10 @@ Voir le [guide d’installation](docs/INSTALLATION.md) pour les détails.
 | Régler l’application et le Coach IA | [Réglages et Coach](docs/REGLAGES_COACH.md) |
 | Utiliser un téléphone, installer l’application, recevoir les mises à jour | [Accès mobile](docs/MOBILE.md) |
 | Sauvegarder, importer, exporter ou réinitialiser | [Données](docs/DONNEES.md) |
-| Configurer le serveur ou héberger l’application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) |
-| Développer et tester | [Développement](docs/DEVELOPPEMENT.md) · [Index du code](docs/CODEBASE.md) · [Consignes](docs/AGENT.md) |
+| Configurer le serveur ou héberger l’application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
+| Développer et tester | [Développement](docs/DEVELOPPEMENT.md) · [Index du code](docs/CODEBASE.md) · [Consignes](AGENTS.md) |
 
-Toute la documentation, les audits et le suivi des tâches sont regroupés dans
+Les guides, les audits et le suivi des tâches sont regroupés dans
 [docs/INDEX.md](docs/INDEX.md).
 
 L’application n’a pas d’authentification intégrée : utiliser un réseau de confiance

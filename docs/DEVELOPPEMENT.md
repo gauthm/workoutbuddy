@@ -70,7 +70,7 @@ Toute modification de `public/` doit mettre à jour le cache du service worker.
 
 ## Navigation dans le dépôt
 
-Pour naviguer dans le dépôt : [CODEBASE.md](CODEBASE.md) est l’index du code, [AGENT.md](AGENT.md)
+Pour naviguer dans le dépôt : [CODEBASE.md](CODEBASE.md) est l’index du code, [AGENTS.md](../AGENTS.md)
 contient les règles de développement et [TASKS.md](TASKS.md) suit les tâches. Le [dernier audit de
 fiabilité](RELIABILITY_AUDIT.md) précise la couverture et ses limites. Les tâches terminées et
 anciens plans restent consultables dans l’historique Git.

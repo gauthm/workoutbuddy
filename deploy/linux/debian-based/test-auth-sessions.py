@@ -82,7 +82,7 @@ with tempfile.TemporaryDirectory(prefix='workoutbuddy-auth-test-') as directory:
             time.sleep(.1)
         raise RuntimeError('Isolated service startup failed; private logs in temporary test directory')
     try:
-        project=template.parents[2]
+        project=template.parents[3]
         spawn('app',['node',str(project/'server.js')],env={'NODE_ENV':'production','HOST':'127.0.0.1','PORT':str(appport),'DB_PATH':str(root/'app.db'),'PUBLIC_ORIGIN':base,'TRUST_PROXY':'loopback'},cwd=project)
         wait(lambda:urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{appport}/api/v1/settings',headers={'Host':f'{domain}:{tlsport}'}),timeout=2).status==200)
         redisconfig=root/'redis.conf'

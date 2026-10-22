@@ -63,7 +63,7 @@ l'application et le MFA. Aucun essai destructif sur la base personnelle.
 
 ### Installer la maintenance de la famille choisie
 
-Définir `WB_DEPLOY_DIR=deploy/redhat-based` ou `WB_DEPLOY_DIR=deploy/debian-based`.
+Définir `WB_DEPLOY_DIR=deploy/linux/redhat-based` ou `WB_DEPLOY_DIR=deploy/linux/debian-based`.
 Installer les fichiers `workoutbuddy-maintenance`, `workoutbuddy-maintenance.service`
 et `workoutbuddy-maintenance.timer` de cette variante :
 
@@ -117,9 +117,9 @@ Les scripts internes des paquets peuvent aussi relancer leurs propres services.
 Tester les deux variantes sans modifier le serveur :
 
 ```sh
-python3 deploy/redhat-based/test-maintenance.py
-python3 deploy/debian-based/test-maintenance.py
-python3 deploy/test-deployment.py
+python3 deploy/linux/redhat-based/test-maintenance.py
+python3 deploy/linux/debian-based/test-maintenance.py
+python3 deploy/linux/test-deployment.py
 ```
 
 ### Audit des dépendances

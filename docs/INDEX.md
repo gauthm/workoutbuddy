@@ -21,6 +21,7 @@ conservent les détails du fonctionnement et de l’exploitation.
 
 | Guide | Contenu |
 | --- | --- |
+| [Docker](DEPLOYMENT_DOCKER.md) | Image, Compose, volume persistant, proxy HTTPS, sauvegarde et restauration |
 | [Configuration du serveur](CONFIGURATION.md) | Variables d’environnement, protections HTTP et limites |
 | [Famille Red Hat](DEPLOYMENT_REDHAT.md) | DNF 4/5, RPM, SELinux et firewalld |
 | [Debian et Ubuntu](DEPLOYMENT_DEBIAN.md) | APT, dpkg, needrestart et pare-feu |
@@ -35,7 +36,7 @@ conservent les détails du fonctionnement et de l’exploitation.
 | --- | --- |
 | [Développement](DEVELOPPEMENT.md) | Commandes, architecture et choix des tests |
 | [Index du code](CODEBASE.md) | Fichiers par domaine, services, interface et tests |
-| [Consignes de travail](AGENT.md) | Conventions, validation ciblée et déploiement après tests |
+| [Consignes de travail](../AGENTS.md) | Conventions, validation ciblée et déploiement après tests |
 | [Tests navigateur](TESTS_E2E.md) | Playwright, domaines, isolation, rapports et limites |
 | [Parcours métier](TESTS_JOURNEYS.md) | Sept parcours API, base en mémoire et couverture |
 | [Tâches en cours](TASKS.md) | Travail restant ; historique des tâches terminées dans Git |

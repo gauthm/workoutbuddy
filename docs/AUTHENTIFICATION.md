@@ -49,8 +49,8 @@ reconnexion.
 
 ### Tests isolés de l’authentification
 
-Le test `python3 deploy/redhat-based/test-auth-sessions.py` (ou son équivalent
-`deploy/debian-based/test-auth-sessions.py`) utilise des services, secrets, utilisateurs,
+Le test `python3 deploy/linux/redhat-based/test-auth-sessions.py` (ou son équivalent
+`deploy/linux/debian-based/test-auth-sessions.py`) utilise des services, secrets, utilisateurs,
 TOTP et bases intégralement jetables, sur loopback ; il exige les binaires Node, Caddy, Redis et
 Authelia, et ne touche pas aux comptes réels.
 

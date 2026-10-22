@@ -145,8 +145,8 @@ calendrier ; valeurs des séries validées lisibles.
 
 `authProxy.js` fournit un proxy HTTP jetable commun aux réglages et aux mises à jour. Il reproduit
 les redirections et expirations ; la révocation d’une véritable session Authelia est vérifiée
-séparément avec `deploy/redhat-based/test-auth-sessions.py` ou
-`deploy/debian-based/test-auth-sessions.py`, jamais avec une identité personnelle.
+séparément avec `deploy/linux/redhat-based/test-auth-sessions.py` ou
+`deploy/linux/debian-based/test-auth-sessions.py`, jamais avec une identité personnelle.
 
 ### Sélection des tests concernés
 
@@ -187,7 +187,7 @@ Playwright. Une nouvelle branche ou une référence distante indisponible décle
 Pour le développement courant, lancer le domaine touché ou `test:e2e:affected`, avec seulement les
 tests Node concernés (`npm run test:affected`, aperçu `-- --list`, ou fichiers `.test.js`
 explicites). Éviter les suites complètes à chaque modification et les répétitions sans changement
-nouveau ; voir `docs/AGENT.md`. Les changements de tests se vérifient aussi en exécutant le fichier
+nouveau ; voir `AGENTS.md`. Les changements de tests se vérifient aussi en exécutant le fichier
 concerné.
 
 ## Résultats et diagnostic

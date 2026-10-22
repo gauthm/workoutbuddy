@@ -4,7 +4,7 @@
 
 ## Périmètre
 
-Modèles : `deploy/debian-based/`. Prérequis : distribution Debian/Ubuntu maintenue,
+Modèles : `deploy/linux/debian-based/`. Prérequis : distribution Debian/Ubuntu maintenue,
 **systemd 247+, Python 3.9+, Node 24**, APT/dpkg, Caddy, Authelia et Redis ou Valkey.
 Les dérivées doivent déclarer leur filiation via `ID`/`ID_LIKE` dans `/etc/os-release`
 et fournir ces mêmes outils. Les systèmes sans systemd ne sont pas couverts.
@@ -39,7 +39,7 @@ puis utiliser le drop-in `valkey-sessions.conf` décrit dans le guide commun.
 Suivre l’[installation commune](DEPLOYMENT_LINUX.md) avec :
 
 ```sh
-WB_DEPLOY_DIR=deploy/debian-based
+WB_DEPLOY_DIR=deploy/linux/debian-based
 ```
 
 Les comptes, chemins et unités privés WorkoutBuddy sont les mêmes que pour Red Hat.
@@ -78,7 +78,7 @@ Voir le [format batch de needrestart](https://sources.debian.org/src/needrestart
 Installer la politique APT fournie après avoir choisi ce planificateur :
 
 ```sh
-install -o root -g root -m 0644 deploy/debian-based/apt-periodic.conf /etc/apt/apt.conf.d/99workoutbuddy-maintenance
+install -o root -g root -m 0644 deploy/linux/debian-based/apt-periodic.conf /etc/apt/apt.conf.d/99workoutbuddy-maintenance
 ```
 
 Elle désactive l’exécution périodique APT et le reboot autonome d’unattended-upgrades.
