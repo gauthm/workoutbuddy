@@ -1,4 +1,4 @@
-const CACHE_NAME = 'workoutbuddy-v83'
+const CACHE_NAME = 'workoutbuddy-v84'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).

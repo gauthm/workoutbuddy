@@ -73,6 +73,8 @@ Pendant une séance, saisir la charge et les répétitions des séries proposée
 
 Le bouton Terminer propose **Continuer la séance**, **Quitter sans enregistrer** et **Terminer et enregistrer**. Quitter sans enregistrer efface les séries de cet essai et remet la même séance en planifiée, à sa date prévue d’origine. Terminer enregistre les séries validées et met à jour la progression. Depuis la fiche d’une séance terminée dans l’historique, **Réinitialiser la séance** efface ses résultats et la remet en planifiée ; les records et les acquis sont recalculés sur les séances restantes. Une confirmation et une sauvegarde précèdent la réinitialisation. Les anciennes requêtes de saisie de séries sont rejetées pour empêcher leur réapparition après remise à zéro.
 
+L’aide d’un exercice en séance sépare les instructions numérotées, la charge à saisir, les conseils pour trouver sa charge de départ et le tableau RM lorsqu’il est disponible. Les conseils invitent à commencer léger, garder 2 à 3 répétitions en réserve et ajuster par petits paliers ; sans matériel, commencer sans lest et choisir une variante plus facile si nécessaire.
+
 La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages avancés.
 
 La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une semaine allégée. Le Coach IA ne décide pas de ces changements. La fin de séance et l’enregistrement des progrès forment une seule transaction : en cas d’échec du calcul, la séance reste en cours et peut être terminée à nouveau.

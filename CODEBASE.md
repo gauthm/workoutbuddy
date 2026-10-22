@@ -98,4 +98,4 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 
 Sécurité des contenus et de l’historique Git : [docs/REPOSITORY_SECURITY.md](docs/REPOSITORY_SECURITY.md).
 
-Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en séance dans `motion.spec.js`.
+Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Dans `public/js/components/session/ExerciseHelp.js`, la note de saisie est séparée des instructions (`exerciseInstructions(exercise, false)`), suivie de conseils concis sur la charge de départ avant le tableau RM. Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en séance dans `motion.spec.js`.

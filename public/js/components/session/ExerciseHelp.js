@@ -19,7 +19,15 @@ export default {
       ? estimate1RM(props.lastWeight, props.lastReps, props.formula)
       : 0
     const table = rm > 0 ? rmTable(rm, props.formula).filter(r => r.reps <= 12) : []
-    return { rm, table, t, exerciseName, exerciseInstructions, dialogRef: useDialog(() => emit('close')) }
+    const equipment = props.exercise.equipment_required || []
+    const bodyweight = equipment.length === 0
+    const weightEntryKey = equipment.some(category => category.startsWith('dumbbell'))
+      ? 'session.weight_entry_dumbbell'
+      : bodyweight ? 'session.weight_entry_bodyweight' : 'session.weight_entry_general'
+    const startingTips = bodyweight
+      ? ['session.starting_bodyweight', 'session.starting_reps', 'session.starting_margin', 'session.starting_variant']
+      : ['session.starting_light', 'session.starting_reps', 'session.starting_margin', 'session.starting_increase', 'session.starting_reduce']
+    return { rm, table, t, exerciseName, exerciseInstructions, weightEntryKey, startingTips, dialogRef: useDialog(() => emit('close')) }
   },
 
   template: `
@@ -34,14 +42,29 @@ export default {
         <ExerciseMotion v-if="exercise.image_paths?.length" :paths="exercise.image_paths" :name="exerciseName(exercise)" :max-height="180" />
 
         <!-- Instructions -->
-        <div v-if="exerciseInstructions(exercise)?.length" class="detail-section">
+        <div v-if="exerciseInstructions(exercise, false)?.length" class="detail-section">
           <h3 class="detail-section__title">{{ t('exercises.instructions') }}</h3>
           <ol style="padding-left:1.25rem">
-            <li v-for="(step,i) in exerciseInstructions(exercise)" :key="i"
+            <li v-for="(step,i) in exerciseInstructions(exercise, false)" :key="i"
               style="margin-bottom:0.4rem;font-size:0.9rem;line-height:1.5">
               {{ step }}
             </li>
           </ol>
+        </div>
+
+        <!-- Charge à saisir -->
+        <div class="detail-section exercise-help__weight-entry">
+          <h3 class="detail-section__title">{{ t('session.weight_entry') }}</h3>
+          <p style="font-size:0.9rem;line-height:1.5">{{ t(weightEntryKey) }}</p>
+        </div>
+
+        <!-- Charge de départ -->
+        <div class="detail-section exercise-help__starting-load">
+          <h3 class="detail-section__title">{{ t('session.starting_load') }}</h3>
+          <ul style="padding-left:1.25rem">
+            <li v-for="key in startingTips" :key="key"
+              style="margin-bottom:0.4rem;font-size:0.9rem;line-height:1.5">{{ t(key) }}</li>
+          </ul>
         </div>
 
         <!-- Tableau RM -->

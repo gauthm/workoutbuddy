@@ -1,5 +1,5 @@
 import {test,expect} from './fixtures.js'
-import {L,planned,startThroughUI} from './helpers.js'
+import {L,planned,startThroughUI,call,get,params} from './helpers.js'
 const frame=page=>page.locator('.exercise-motion__frame--visible')
 async function ready(page){
  await expect(page.locator('.exercise-motion__frame')).toHaveCount(2)
@@ -35,7 +35,20 @@ test('la même animation est disponible dans l’aide de l’exercice pendant un
  const p=await planned(request);await startThroughUI(page,p)
  await page.locator('.exercise-block--active').getByRole('button',{name:L('session.help'),exact:true}).click()
  await ready(page)
- await expect(page.getByRole('dialog').locator('ol li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
+ const dialog=page.getByRole('dialog')
+ await expect(dialog.locator('ol')).not.toContainText(L('exercises.dumbbell_weight_entry'))
+ await expect(dialog.locator('.exercise-help__weight-entry p')).toHaveText(L('session.weight_entry_dumbbell'))
+ await expect(dialog.locator('.exercise-help__starting-load li')).toHaveCount(5)
+ await expect(dialog.locator('.detail-section__title')).toHaveText([
+  L('exercises.instructions'),L('session.weight_entry'),L('session.starting_load'),/Tableau RM/
+ ])
+ await page.evaluate(async()=>{const {i18n}=await import('/js/i18n.js');await i18n.setLocale('en')})
+ await expect(dialog.getByRole('heading',{name:'Weight to enter',exact:true})).toHaveCount(1)
+ await expect(dialog.locator('.exercise-help__weight-entry p')).toContainText('enter 8 kg')
+ await expect(dialog.locator('.exercise-help__starting-load li')).toContainText([
+  'Start light','planned number','2 to 3','smallest available','Reduce the weight'
+ ])
+ await page.evaluate(async()=>{const {i18n}=await import('/js/i18n.js');await i18n.setLocale('fr')})
  await expect(page.getByRole('dialog').getByRole('button',{name:L('exercises.motion_pause'),exact:true})).toBeVisible()
  await page.getByRole('dialog').getByRole('button',{name:L('common.close'),exact:true}).click()
  await expect(page.locator('.exercise-motion')).toHaveCount(0)
@@ -57,4 +70,17 @@ test('le défilement s’arrête hors écran et reprend quand les photos redevie
  await expect(page.locator('.exercise-motion')).toHaveAttribute('data-animating','true')
  await page.clock.runFor(1200)
  await expect(frame(page)).not.toHaveAttribute('src',hidden)
+})
+
+test('l’aide sans matériel propose de commencer sans lest',async({page,request})=>{
+ const result=await call(request,'post','/programs/generate',params,201)
+ await call(request,'post',`/programs/${result.id}/activate`)
+ await startThroughUI(page,await get(request,`/programs/${result.id}`))
+ await page.locator('.exercise-block--active').getByRole('button',{name:L('session.help'),exact:true}).click()
+ const dialog=page.getByRole('dialog')
+ await expect(dialog.locator('.exercise-help__weight-entry p')).toHaveText(L('session.weight_entry_bodyweight'))
+ await expect(dialog.locator('.exercise-help__starting-load li')).toHaveText([
+  L('session.starting_bodyweight'),L('session.starting_reps'),L('session.starting_margin'),L('session.starting_variant')
+ ])
+ await expect(dialog.getByRole('heading',{name:/Tableau RM/})).toHaveCount(0)
 })
