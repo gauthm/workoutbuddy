@@ -27,6 +27,11 @@ On mobile, pinch and double tap no longer zoom the page; touch scrolling remains
 compact fields use at least 16 px to prevent Safari input zoom. Browser or system accessibility
 settings can still override these rules.
 
+When the on-screen keyboard opens, bottom navigation and the floating rest timer stay hidden
+through scrolling on every page. They return when the keyboard closes. The AI Coach fits the
+visible viewport so its message field remains directly above the keyboard, including when Safari
+pans the page. Focusing a field with a hardware keyboard leaves navigation visible.
+
 ## Updates and reconnection
 
 Over HTTPS, Safari and the home-screen app check for new versions on opening, on returning to the

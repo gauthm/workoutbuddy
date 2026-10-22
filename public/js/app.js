@@ -7,6 +7,7 @@ import { migratePainPreferences } from './utils/pain.js'
 import AppShell from './components/layout/AppShell.js'
 import { startAppUpdates } from './appUpdates.js'
 import { createScreenWakeLock } from './utils/screenWakeLock.js'
+import { trackMobileKeyboard } from './utils/mobileKeyboard.js'
 
 async function init() {
   // Load settings from the server
@@ -36,6 +37,7 @@ async function init() {
   app.provide('t', t)
 
   router.init()
+  trackMobileKeyboard()
   app.mount('#app')
   return true
 }

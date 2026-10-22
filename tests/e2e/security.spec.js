@@ -192,3 +192,53 @@ for(const locale of ['fr-FR','en-US']){
   }finally{await context.close()}
  })
 }
+
+test('keyboard viewport: navigation stays hidden through scrolling and chat keeps its composer visible',async({page},info)=>{
+ // Desktop automation has no OS keyboard: reproduce its visual-viewport events explicitly.
+ await page.addInitScript(()=>{
+  const viewport=window.visualViewport
+  let height=null,top=0
+  Object.defineProperties(viewport,{
+   height:{get:()=>height??innerHeight},offsetTop:{get:()=>top},
+  })
+  window.setKeyboardViewport=(nextHeight,nextTop=0)=>{
+   height=nextHeight;top=nextTop
+   viewport.dispatchEvent(new Event('resize'))
+   viewport.dispatchEvent(new Event('scroll'))
+  }
+ })
+ const mobile=info.project.name==='mobile'
+ for(const route of ['/exercises','/exercises/material','/session/history','/coach']){
+  await page.goto('/#'+route)
+  const nav=page.locator('.bottom-nav')
+  await expect(nav).toBeVisible()
+  const input=page.locator('input:not([type="checkbox"]):visible, textarea:visible').first()
+  await expect(input).toBeEnabled()
+  await input.focus()
+  // Focus alone (hardware keyboard) and browser chrome must leave navigation available.
+  await expect(nav).toBeVisible()
+  await page.evaluate(()=>window.setKeyboardViewport(innerHeight-60))
+  await expect(nav).toBeVisible()
+  await page.evaluate(()=>window.setKeyboardViewport(innerHeight-320))
+  if(!mobile){await expect(nav).toBeVisible();continue}
+  await expect(nav).toBeHidden()
+  await page.evaluate(()=>{window.scrollTo(0,500);window.setKeyboardViewport(innerHeight-320,80)})
+  await expect(nav).toBeHidden()
+  if(route==='/coach'){
+   const box=await page.locator('.coach-view__input-area').boundingBox()
+   expect(Math.round(box.y+box.height)).toBe(page.viewportSize().height-320+80)
+   await expect(input).toBeVisible()
+   await input.fill('Keyboard test')
+   await page.screenshot({path:info.outputPath('coach-keyboard.png')})
+  }
+  // Blurring during dismissal must not briefly reveal the nav above a closing keyboard.
+  await input.evaluate(el=>el.blur())
+  await expect(nav).toBeHidden()
+  await page.evaluate(()=>window.setKeyboardViewport(innerHeight))
+  await expect(nav).toBeVisible()
+  if(route==='/coach'){
+   const composer=await page.locator('.coach-view__input-area').boundingBox()
+   expect(Math.round(composer.y+composer.height)).toBe(Math.round((await nav.boundingBox()).y))
+  }
+ }
+})

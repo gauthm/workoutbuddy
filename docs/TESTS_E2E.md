@@ -203,6 +203,8 @@ to find actions, screenshots and requests for a failure.
 
 This suite covers functional journeys in Chrome with an emulated mobile viewport. It
 does not validate Safari/Firefox, physical phones, load performance or every possible error.
+Keyboard regression cases simulate visual-viewport resize/pan events to check navigation visibility
+and Coach composer placement on desktop and mobile; they do not open a real system keyboard.
 The service worker is blocked by default so tests query the tested version's files and server.
 
 Security and update cases explicitly allow it: installation, reload under CSP, publication

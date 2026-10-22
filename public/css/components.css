@@ -82,6 +82,11 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* A mobile keyboard covers navigation; it must never float above the keys. */
+.keyboard-open { --nav-space: 0px; }
+.keyboard-open .bottom-nav,
+.keyboard-open .session-rest-dock { visibility: hidden; pointer-events: none; }
+
 .bottom-nav__tab {
   display: flex;
   flex-direction: column;
@@ -937,6 +942,17 @@
 .advice-card__btn     { flex: 1; padding: 0.4rem 0.5rem; font-size: 0.82rem; }
 
 .coach-view { display: flex; flex-direction: column; height: 100dvh; min-height: 0; padding-bottom: var(--nav-space); }
+/* Safari pans the visual viewport independently of the page when focusing fields. */
+.keyboard-open .coach-view {
+  position: fixed;
+  top: var(--keyboard-viewport-top);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 600px;
+  height: var(--keyboard-viewport-height);
+  padding-bottom: 0;
+}
 .coach-view__content { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 1rem; }
 .coach-view__advice-section { margin-bottom: 0.25rem; }
 .coach-view__messages { padding: 0.5rem 0; }

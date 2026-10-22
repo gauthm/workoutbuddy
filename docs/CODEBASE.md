@@ -82,6 +82,7 @@ All files below are in `src/routes/`.
 | Single Authelia logout button with confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, Caddy `/auth/logout` route |
 | RM, warm-up, pain, dates, dialogs | `js/utils/` |
 | Styles, translations, libraries, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
+| Mobile keyboard hides shared navigation and rest dock; Coach follows the visual viewport | `js/utils/mobileKeyboard.js`, `js/app.js`, `css/components.css`; `tests/unit/mobileKeyboard.test.js`, `tests/e2e/security.spec.js` |
 | Touch zoom disabled, native scrolling and mobile fields without focus zoom | viewport in `index.html`, `css/main.css`, `css/components.css`; journeys in `tests/e2e/security.spec.js` |
 | Tab and home-screen logo | `icons/workoutbuddy.svg`, `favicon.ico`, `apple-touch-icon.png`, `icons/icon-*.png`, `manifest.json`, generation through `scripts/generate-icons.js` |
 
