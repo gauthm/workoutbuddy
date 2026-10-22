@@ -17,8 +17,10 @@ Lire ces consignes avant de travailler. Les instructions explicites de l’utili
 
 ## 1. Projet
 
-**WorkoutBuddy** — SPA de musculation, locale, mono-utilisateur, macOS. Express + SQLite + Vue 3,
-**aucun build frontend**, `npm start` = tout.
+**WorkoutBuddy** — SPA de musculation mono-utilisateur, utilisable en local ou auto-hébergée
+(Linux natif ou Docker), accessible depuis un navigateur sur ordinateur ou mobile.
+Express + SQLite + Vue 3, **aucun build frontend** ; après installation des dépendances et des
+ressources, `npm start` lance l’application.
 
 ---
 
