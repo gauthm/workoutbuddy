@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (DB fichier partagée sinon → course avec les autres fichiers de tests)
+// Isolated DB (otherwise shared file DB → race with other test files)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t74-')), 'test.db')
 
 const { migrate } = await import('../../src/db/migrate.js')
@@ -16,10 +16,10 @@ seedExercises(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T7.4 — Historique, suppression, reset stats', () => {
+describe('T7.4 — History, deletion, stats reset', () => {
 
   // ── GET /sessions ──────────────────────────────────────────
-  it('GET /sessions retourne la liste triée par date DESC', async () => {
+  it('GET /sessions returns the list sorted by date DESC', async () => {
     await request(app).post('/api/v1/sessions')
       .send({ name: 'A', scheduled_date: '2025-07-01' })
     await request(app).post('/api/v1/sessions')
@@ -47,7 +47,7 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
 
   it('DELETE /sessions/:id (completed) → 204', async () => {
     const s = await request(app).post('/api/v1/sessions')
-      .send({ name: 'Complétée', scheduled_date: '2025-07-05' })
+      .send({ name: 'Completed', scheduled_date: '2025-07-05' })
     await request(app).post(`/api/v1/sessions/${s.body.id}/start`)
     await request(app).post(`/api/v1/sessions/${s.body.id}/complete`)
     const res = await request(app).delete(`/api/v1/sessions/${s.body.id}`)
@@ -70,7 +70,7 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
   })
 
   // ── POST /reset-stats ──────────────────────────────────────
-  it('POST /reset-stats efface séances et body_weight', async () => {
+  it('POST /reset-stats clears workouts and body_weight', async () => {
     await request(app).post('/api/v1/sessions')
       .send({ name: 'Test reset', scheduled_date: '2025-06-01' })
     await request(app).post('/api/v1/bodyweight')
@@ -87,7 +87,7 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
     assert.equal(bwRes.body.entries.length, 0)
   })
 
-  it('POST /reset-stats fonctionne quand un personal_record référence un set_log', async () => {
+  it('POST /reset-stats works when a personal_record references a set_log', async () => {
     const db = getDb()
     const ex = db.prepare('SELECT id FROM exercise LIMIT 1').get()
     const s = db.prepare(
@@ -111,7 +111,7 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
     assert.equal(db.prepare('SELECT COUNT(*) c FROM session').get().c, 0)
   })
 
-  it('POST /reset-stats conserve les programmes et exercices', async () => {
+  it('POST /reset-stats preserves programs and exercises', async () => {
     const db = getDb()
     db.prepare(
       "INSERT INTO program (name, goal, level, days_per_week) VALUES ('PPL', 'strength', 'beginner', 3)"
@@ -125,10 +125,10 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
     assert.ok(exRes.body.exercises.length > 0)
   })
 
-  it('POST /reset-stats remet progression_state à 0', async () => {
+  it('POST /reset-stats resets progression_state to 0', async () => {
     const db = getDb()
 
-    // S'assurer qu'au moins un état de progression existe
+    // Ensure at least one progression state exists
     let row = db.prepare('SELECT id FROM progression_state LIMIT 1').get()
     if (!row) {
       const prog = db.prepare(
@@ -153,6 +153,6 @@ describe('T7.4 — Historique, suppression, reset stats', () => {
     const states = db.prepare(
       'SELECT current_weight_kg FROM progression_state WHERE current_weight_kg > 0'
     ).all()
-    assert.equal(states.length, 0, 'Tous les progression_state doivent être à 0')
+    assert.equal(states.length, 0, 'All progression_state values must be 0')
   })
 })

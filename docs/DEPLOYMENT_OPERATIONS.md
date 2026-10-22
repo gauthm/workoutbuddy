@@ -1,22 +1,22 @@
-# Exploitation et maintenance Linux
+# Linux operations and maintenance
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-## Sauvegardes et administration
+## Backups and administration
 
-### Sauvegardes nocturnes
+### Nightly backups
 
-Le timer crée chaque nuit des sauvegardes SQLite cohérentes des deux bases, contrôle
-`integrity_check`, archive leur configuration et garde **7 instantanés** dans
-`/var/backups/workoutbuddy`, root uniquement. Les sauvegardes internes de l'application sont
-distinctes et limitées à sept fichiers. Les archives contiennent des données privées et les clés
-nécessaires au déchiffrement : les protéger.
+Each night, the timer creates consistent SQLite backups of both databases, checks
+`integrity_check`, archives their configuration, and retains **7 snapshots** in
+`/var/backups/workoutbuddy`, accessible only to root. The application's internal backups are
+separate and limited to seven files. Archives contain private data and the keys needed
+for decryption: protect them.
 
-Les copies sur le même VPS ne couvrent pas sa perte ou sa compromission.
+Copies on the same VPS do not cover its loss or compromise.
 
-### Transférer une archive
+### Transfer an archive
 
-Depuis votre ordinateur, adapter l'utilisateur et le port SSH :
+From your computer, adjust the user and SSH port:
 
 ```sh
 umask 077
@@ -24,48 +24,48 @@ ssh -t ADMIN@VPS 'umask 077; sudo tar -C /var/backups -czf - workoutbuddy > "$HO
 scp ADMIN@VPS:workoutbuddy-backups.tar.gz .
 ```
 
-### Restaurer et contrôler
+### Restore and check
 
-La première commande demande le mot de passe sudo dans le terminal et prépare une archive privée
-dans le home du compte SSH ; supprimer cette copie serveur après transfert vérifié. Garder l'archive
-locale sur un disque chiffré.
+The first command requests the sudo password in the terminal and prepares a private archive
+in the SSH account's home directory; delete this server copy after verifying the transfer.
+Keep the local archive on an encrypted disk.
 
-Pour restaurer : sauvegarder l'état courant, arrêter Node et Authelia, extraire un instantané **dans
-un répertoire isolé**, contrôler les deux bases avec `sqlite3 COPIE 'PRAGMA integrity_check;'`,
-démarrer une instance isolée (`DB_PATH` vers la copie, loopback et autre port). Restaurer ensuite
-bases et configuration correspondante, avec propriétaires et modes initiaux.
+To restore: back up the current state, stop Node and Authelia, extract a snapshot **into an
+isolated directory**, check both databases with `sqlite3 COPY 'PRAGMA integrity_check;'`,
+and start an isolated instance (`DB_PATH` pointing to the copy, loopback, and another port).
+Then restore the databases and corresponding configuration, with their original owners and modes.
 
-Déplacer l'ancien ensemble SQLite, WAL/SHM compris, avant remplacement. Redémarrer et vérifier
-l'application et le MFA. Aucun essai destructif sur la base personnelle.
+Move the previous SQLite file set, including WAL/SHM, before replacement. Restart and check
+the application and MFA. Never run a destructive trial on the personal database.
 
-### Commandes et protections du serveur
+### Server commands and protections
 
-- État : `systemctl status workoutbuddy authelia workoutbuddy-sessions caddy` ; vérifier aussi le pare-feu et fail2ban s’ils sont installés.
-- Journaux : `journalctl -u workoutbuddy -u authelia -u caddy --since today`.
-- Redémarrage : `systemctl restart workoutbuddy` ; drainage HTTP, limite 25 s
-  pour les flux persistants, fermeture SQLite ; systemd attend 35 s.
-- Sauvegarde immédiate : `systemctl start workoutbuddy-backup.service`.
-- Timers/ressources : `systemctl list-timers`, `free -m`, `df -h /`,
+- Status: `systemctl status workoutbuddy authelia workoutbuddy-sessions caddy`; also check the firewall and fail2ban if installed.
+- Logs: `journalctl -u workoutbuddy -u authelia -u caddy --since today`.
+- Restart: `systemctl restart workoutbuddy`; HTTP draining, 25 s limit
+  for persistent streams, SQLite closure; systemd waits 35 s.
+- Immediate backup: `systemctl start workoutbuddy-backup.service`.
+- Timers/resources: `systemctl list-timers`, `free -m`, `df -h /`,
   `systemctl show workoutbuddy authelia caddy -p MemoryCurrent`.
-- Installer `journald-limits.conf` dans `/etc/systemd/journald.conf.d/` et recharger
-  journald : limites 128 Mo persistants / 32 Mo volatils, 14 jours. Caddy tourne
-  ses accès à 5 Mo, trois archives, sept jours. Ne pas activer `log_credentials`.
-- Authelia : bannissement après trois échecs en deux minutes, pendant quinze minutes.
-  Si SSH accepte les mots de passe, installer `fail2ban-server` (Red Hat) ou `fail2ban` (Debian/Ubuntu) et le modèle
-  `sshd-jail.local` dans `/etc/fail2ban/jail.d/` ; adapter le port, valider avec
-  `fail2ban-client -t`, activer le service. Tester le filtre sur une ligne synthétique
-  puis bannir/débannir `192.0.2.123` en vérifiant la règle firewalld.
-- En LXC, l'hôte gère l'horloge : pas de contournement d'`adjtimex`. Chrony peut
-  rester absent ; vérifier l'écart NTP sans modifier l'heure et faire intervenir
-  l'hébergeur en cas de dérive, car le TOTP en dépend.
+- Install `journald-limits.conf` in `/etc/systemd/journald.conf.d/` and reload
+  journald: limits of 128 MB persistent / 32 MB volatile, 14 days. Caddy rotates
+  access logs at 5 MB, three archives, seven days. Do not enable `log_credentials`.
+- Authelia: ban after three failures within two minutes, lasting fifteen minutes.
+  If SSH accepts passwords, install `fail2ban-server` (Red Hat) or `fail2ban` (Debian/Ubuntu) and the
+  `sshd-jail.local` template in `/etc/fail2ban/jail.d/`; adjust the port, validate with
+  `fail2ban-client -t`, and enable the service. Test the filter on a synthetic line,
+  then ban/unban `192.0.2.123` while checking the firewalld rule.
+- In LXC, the host manages the clock: do not bypass `adjtimex`. Chrony may remain
+  absent; check the NTP offset without changing the time and contact the provider
+  in case of drift, because TOTP depends on it.
 
-## Mises à jour nocturnes
+## Nightly updates
 
-### Installer la maintenance de la famille choisie
+### Install maintenance for the chosen family
 
-Définir `WB_DEPLOY_DIR=deploy/linux/redhat-based` ou `WB_DEPLOY_DIR=deploy/linux/debian-based`.
-Installer les fichiers `workoutbuddy-maintenance`, `workoutbuddy-maintenance.service`
-et `workoutbuddy-maintenance.timer` de cette variante :
+Set `WB_DEPLOY_DIR=deploy/linux/redhat-based` or `WB_DEPLOY_DIR=deploy/linux/debian-based`.
+Install the `workoutbuddy-maintenance`, `workoutbuddy-maintenance.service`,
+and `workoutbuddy-maintenance.timer` files from that variant:
 
 ```sh
 install -o root -g root -m 0750 "$WB_DEPLOY_DIR/workoutbuddy-maintenance" /usr/local/sbin/workoutbuddy-maintenance
@@ -73,48 +73,47 @@ install -o root -g root -m 0644 "$WB_DEPLOY_DIR/workoutbuddy-maintenance.service
 install -o root -g root -m 0644 "$WB_DEPLOY_DIR/workoutbuddy-maintenance.timer" /etc/systemd/system/workoutbuddy-maintenance.timer
 ```
 
-La sauvegarde doit réussir avant la première transaction. La variante Red Hat utilise
-DNF 4/5 et son plugin `needs-restarting`. La variante Debian utilise APT et `needrestart`
-en mode batch/liste. Elles suivent les dépôts configurés, sans changer de release Linux.
-Conserver Node sur la branche 24 via la politique du dépôt ou un verrouillage du paquet ;
-aucun script ne garantit la branche majeure d’un dépôt tiers qui change sa politique.
-Ne pas activer de dépôt non fiable.
+The backup must succeed before the first transaction. The Red Hat variant uses
+DNF 4/5 and its `needs-restarting` plugin. The Debian variant uses APT and `needrestart`
+in batch/list mode. They follow configured repositories without changing Linux releases.
+Keep Node on branch 24 through repository policy or package pinning;
+no script guarantees the major branch of a third-party repository that changes its policy.
+Do not enable untrusted repositories.
 
-Désactiver les planificateurs concurrents sur une installation dédiée :
+Disable competing schedulers on a dedicated installation:
 
-- Red Hat : `dnf-automatic.timer`, `dnf-automatic-install.timer` ou le timer DNF 5,
-  selon les unités réellement installées. Les anciens drop-ins `dnf-automatic*.conf`
-  sont conservés dans le dépôt pour les installations DNF 4 existantes ; leur wrapper
-  continue de fonctionner, mais un seul timer doit lancer la maintenance.
-- Debian/Ubuntu : `apt-daily.timer` et `apt-daily-upgrade.timer`. Si `unattended-upgrades`
-  reste installé, désactiver son exécution périodique dans la configuration APT et
-  conserver `Unattended-Upgrade::Automatic-Reboot "false";`. Désactiver aussi tout
-  planificateur d’un outil tiers qui installerait les mises à jour en parallèle.
+- Red Hat: `dnf-automatic.timer`, `dnf-automatic-install.timer`, or the DNF 5 timer,
+  according to the units actually installed. The old `dnf-automatic*.conf` drop-ins
+  remain in the repository for existing DNF 4 installations; their wrapper still
+  works, but only one timer must start maintenance.
+- Debian/Ubuntu: `apt-daily.timer` and `apt-daily-upgrade.timer`. If `unattended-upgrades`
+  remains installed, disable periodic execution in the APT configuration and
+  retain `Unattended-Upgrade::Automatic-Reboot "false";`. Also disable any third-party
+  scheduler that would install updates in parallel.
 
-Ne pas interrompre une transaction de paquets en cours lors de la migration.
-Contrôler les unités actives avant de changer de planificateur.
+Do not interrupt a package transaction in progress during migration.
+Check active units before changing schedulers.
 
-### Horaires et redémarrages
+### Schedule and restarts
 
-Le timer démarre entre **04:00 et 04:15, Europe/Paris**, y compris lors des changements d’heure. Un
-redémarrage nécessaire est autorisé uniquement entre **04:00 et 06:00**. Un traitement long reporte
-le redémarrage à la nuit suivante ; l’indicateur est recontrôlé même sans nouveaux RPM. Un timer
-manqué ne se rattrape pas en journée.
+The timer starts between **04:00 and 04:15, Europe/Paris**, including daylight saving changes.
+A required reboot is allowed only between **04:00 and 06:00**. Long processing postpones
+reboot until the following night; the indicator is checked again even without new RPMs.
+A missed timer does not catch up during the day.
 
-Sans redémarrage complet, les services applicatifs utilisant un binaire ou une bibliothèque mise à
-jour sont redémarrés ; Node nouvellement installé est ainsi effectivement utilisé. En LXC, ce
-redémarrage concerne le conteneur : le noyau et l’horloge de l’hôte restent sous la responsabilité
-de l’hébergeur.
+Without a full reboot, application services using an updated binary or library are restarted;
+a newly installed Node is therefore actually used. In LXC, this reboot applies to the
+container: the host's kernel and clock remain the provider's responsibility.
 
-### Vérifier sans modifier le serveur
+### Check without changing the server
 
-`workoutbuddy-maintenance --check` vérifie l’état sans installer de paquet,
-redémarrer de service ou rebooter. `--apply` commence seulement entre 04 h et 06 h.
-Après une transaction longue, les services concernés peuvent être relancés même si la
-fenêtre vient de se fermer ; seul le reboot est reporté à la nuit suivante.
-Les scripts internes des paquets peuvent aussi relancer leurs propres services.
+`workoutbuddy-maintenance --check` checks state without installing packages,
+restarting services, or rebooting. `--apply` starts only between 04:00 and 06:00.
+After a long transaction, affected services may restart even if the window has just
+closed; only the reboot is postponed until the next night.
+Internal package scripts may also restart their own services.
 
-Tester les deux variantes sans modifier le serveur :
+Test both variants without changing the server:
 
 ```sh
 python3 deploy/linux/redhat-based/test-maintenance.py
@@ -122,18 +121,18 @@ python3 deploy/linux/debian-based/test-maintenance.py
 python3 deploy/linux/test-deployment.py
 ```
 
-### Audit des dépendances
+### Dependency audit
 
-Créer `workoutbuddy-audit` avec `useradd --system --shell /sbin/nologin --home-dir
-/var/cache/workoutbuddy-audit workoutbuddy-audit`, installer `workoutbuddy-audit.*` dans
-`/etc/systemd/system/`, puis `service-hardening.conf` dans son drop-in `zzz-lxc-service.conf`. Il
-peut lire le code, sans accès aux bases ni aux secrets.
+Create `workoutbuddy-audit` with `useradd --system --shell /sbin/nologin --home-dir
+/var/cache/workoutbuddy-audit workoutbuddy-audit`, install `workoutbuddy-audit.*` in
+`/etc/systemd/system/`, then `service-hardening.conf` in its `zzz-lxc-service.conf` drop-in.
+It can read code, without access to databases or secrets.
 
-L’audit npm hebdomadaire lit le lockfile de production le dimanche vers 05:30 ; une vulnérabilité
-modérée ou supérieure fait échouer le service et apparaît dans le journal. Une indisponibilité du
-registre fait également échouer le contrôle. Il n’y a pas de notification externe configurée.
+The weekly npm audit reads the production lockfile on Sundays around 05:30; a moderate
+or higher vulnerability fails the service and appears in the journal. Registry
+unavailability also fails the check. No external notification is configured.
 
-### Activer et surveiller les timers
+### Enable and monitor timers
 
 ```sh
 systemctl daemon-reload
@@ -143,13 +142,13 @@ systemctl list-timers workoutbuddy-maintenance.timer workoutbuddy-audit.timer
 /usr/local/sbin/workoutbuddy-maintenance --check
 journalctl -u workoutbuddy-maintenance -u workoutbuddy-audit --since '7 days ago'
 
-# Suspendre la maintenance nocturne si nécessaire :
+# Suspend nightly maintenance if necessary:
 systemctl disable --now workoutbuddy-maintenance.timer
 ```
 
-### Mises à jour manuelles
+### Manual updates
 
-Pas de `npm update` ou `npm audit fix` automatique : mettre le lockfile à jour dans le dépôt, tester
-puis installer avec `npm ci --omit=dev`. Le binaire Authelia est installé hors gestionnaire de paquets : vérifier ses releases
-officielles, sa configuration et les migrations, sauvegarder puis tester avant remplacement. Il
-n’est pas mis à jour sans validation.
+No automatic `npm update` or `npm audit fix`: update the lockfile in the repository, test,
+then install with `npm ci --omit=dev`. The Authelia binary is installed outside the package
+manager: check its official releases, configuration, and migrations, back up, and test before
+replacement. It is not updated without validation.

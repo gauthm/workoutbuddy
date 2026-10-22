@@ -39,8 +39,8 @@ export function createPlannedProgram(db, params) {
       })
     })
     db.prepare('INSERT INTO program_plan (program_id,parameters,warnings) VALUES (?,?,?)').run(id,JSON.stringify(params),JSON.stringify(draft.warnings))
-    // Le poids de référence reste dans les paramètres du programme, indépendamment
-    // de la mesure supprimable dans le suivi. Ne pas écraser une mesure du jour.
+    // The reference weight stays in the program parameters, independently
+    // of the removable tracking measurement. Do not overwrite today's measurement.
     if (params.weight_kg != null) db.prepare(`INSERT INTO body_weight (date,weight_kg) VALUES (?,?)
       ON CONFLICT(date) DO NOTHING`).run(localIsoDate(),params.weight_kg)
     return { id, ...draft }

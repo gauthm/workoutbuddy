@@ -124,7 +124,7 @@ router.delete('/sets/:id', (req, res) => {
   }
 })
 
-// ── POST /session-exercises (ajouter un exercice à une séance) ─
+// ── POST /session-exercises (add an exercise to a session) ─
 router.post('/session-exercises', (req, res) => {
   try {
     const { session_id, exercise_id, order_index, template_exercise_id } = req.body

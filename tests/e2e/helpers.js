@@ -10,8 +10,8 @@ export async function call(request,method,path,data,status=200){
 }
 export const get=(r,path)=>call(r,'get',path)
 export async function homeGym(request){
-  for(const item of[{category:'dumbbell_adjustable',name:'Paire test',count:2,weight_min_kg:2,weight_max_kg:30,weight_step_kg:1},
-    {category:'bench_adjustable',name:'Banc test',count:1}])await call(request,'post','/equipment',item,201)
+  for(const item of[{category:'dumbbell_adjustable',name:'Test pair',count:2,weight_min_kg:2,weight_max_kg:30,weight_step_kg:1},
+    {category:'bench_adjustable',name:'Test bench',count:1}])await call(request,'post','/equipment',item,201)
 }
 export async function planned(request,overrides={}){
   await homeGym(request)

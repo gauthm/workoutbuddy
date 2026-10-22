@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { isFiniteNumber, isIsoDate } from '../services/validation.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
@@ -6,7 +7,7 @@ const router = express.Router()
 const db     = getDb()
 
 // ── GET /bodyweight ───────────────────────────────────────────
-// Query: days=90 (défaut : setting bodyweight_display_days)
+// Query: days=90 (default: bodyweight_display_days setting)
 router.get('/', (req, res) => {
   try {
     const settingRow = db.prepare(
@@ -37,15 +38,15 @@ router.post('/', (req, res) => {
       return res.status(400).json({ error: 'INVALID_WEIGHT' })
     }
 
-    // Vérifier la date (format YYYY-MM-DD)
+    // Validate the date (YYYY-MM-DD format)
     if (!isIsoDate(date)) {
       return res.status(400).json({ error: 'INVALID_DATE_FORMAT' })
     }
 
-    // Vérifier doublon
+    // Check for duplicates
     const existing = db.prepare('SELECT id FROM body_weight WHERE date = ?').get(date)
     if (existing) {
-      return res.status(409).json({ error: 'BODYWEIGHT_DATE_EXISTS', detail: `Une entrée existe déjà pour le ${date}.` })
+      return res.status(409).json({ error: 'BODYWEIGHT_DATE_EXISTS', detail: message('validation.bodyweight_date_exists', { date: date }) })
     }
 
     const result = db.prepare(

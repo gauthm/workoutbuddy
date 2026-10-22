@@ -18,7 +18,7 @@ export default {
       resetting:         false,
       showImportConfirm: false,
       showResetConfirm:  false,
-      pendingFile:       null,   // File object en attente de confirmation d'import
+      pendingFile:       null,   // File object awaiting import confirmation
     })
 
     // ── Export JSON ──────────────────────────────────────────
@@ -56,7 +56,7 @@ export default {
       if (!file) return
       state.pendingFile       = file
       state.showImportConfirm = true
-      // Réinitialiser l'input pour permettre de re-sélectionner le même fichier
+      // Reset the input so the same file can be selected again
       event.target.value = ''
     }
 
@@ -70,12 +70,12 @@ export default {
         const payload = JSON.parse(text)
         await api.importJson(payload)
         store.showToast(t('settings.import_success'), 'success')
-        // Recharger la page pour que les nouveaux settings s'appliquent
+        // Reload the page to apply the new settings
         setTimeout(() => window.location.reload(), 1000)
       } catch (err) {
         const msg = err.message === 'UNSUPPORTED_CUSTOM_EXERCISE'
           ? t('settings.import_custom_unsupported')
-          : err.message || 'Format invalide'
+          : err.message || t('settings.import_invalid_format')
         store.showToast(t('settings.import_error', { error: msg }), 'error')
       } finally {
         state.importing   = false
@@ -83,7 +83,7 @@ export default {
       }
     }
 
-    // ── Backup manuel ─────────────────────────────────────────
+    // ── Manual backup ─────────────────────────────────────────
     async function backupNow() {
       state.backingUp = true
       try {
@@ -99,7 +99,7 @@ export default {
       }
     }
 
-    // ── Réinitialisation ──────────────────────────────────────
+    // ── Reset ──────────────────────────────────────
     async function confirmReset() {
       if (state.resetting) return
       state.showResetConfirm = false
@@ -113,11 +113,11 @@ export default {
       } finally { state.resetting = false }
     }
 
-    // ── Réinitialisation stats/historique ─────────────────────
+    // ── Stats/history reset ─────────────────────
     const resetStatsState = reactive({ show: false, confirmText: '', resetting: false })
 
     async function confirmResetStats() {
-      // Double confirmation : l'utilisateur doit taper "RESET"
+      // Double confirmation: the user must type "RESET"
       if (resetStatsState.confirmText !== 'RESET') {
         store.showToast(t('settings.reset_stats_type_reset'), 'error')
         return
@@ -137,7 +137,7 @@ export default {
       }
     }
 
-    // ── Helper téléchargement ─────────────────────────────────
+    // ── Download helper ─────────────────────────────────
     function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob)
       const a   = document.createElement('a')
@@ -170,7 +170,7 @@ export default {
         </button>
       </div>
 
-      <!-- Export CSV séances -->
+      <!-- Sessions CSV export -->
       <div class="export-import__row">
         <div>
           <div class="export-import__label">{{ t('settings.export_csv') }}</div>
@@ -182,7 +182,7 @@ export default {
         </button>
       </div>
 
-      <!-- Export CSV séries -->
+      <!-- Sets CSV export -->
       <div class="export-import__row">
         <div>
           <div class="export-import__label">{{ t('settings.export_csv_sets') }}</div>
@@ -210,7 +210,7 @@ export default {
         </label>
       </div>
 
-      <!-- Backup manuel -->
+      <!-- Manual backup -->
       <div class="export-import__row">
         <div>
           <div class="export-import__label">{{ t('settings.backup_now') }}</div>
@@ -223,7 +223,7 @@ export default {
         </button>
       </div>
 
-      <!-- Réinitialiser stats uniquement -->
+      <!-- Reset stats only -->
       <div class="export-import__row export-import__row--danger">
         <div>
           <div class="export-import__label" style="color:var(--color-warning)">
@@ -240,7 +240,7 @@ export default {
         </button>
       </div>
 
-      <!-- Réinitialiser -->
+      <!-- Reset -->
       <div class="export-import__row export-import__row--danger">
         <div>
           <div class="export-import__label" style="color:var(--color-danger)">
@@ -256,7 +256,7 @@ export default {
         </button>
       </div>
 
-      <!-- Confirmation import -->
+      <!-- Import confirmation -->
       <ConfirmModal
         v-if="state.showImportConfirm"
         :title="t('settings.import_json')"
@@ -267,7 +267,7 @@ export default {
         @cancel="state.showImportConfirm = false; state.pendingFile = null"
       />
 
-      <!-- Confirmation reset -->
+      <!-- Reset confirmation -->
       <ConfirmModal
         v-if="state.showResetConfirm"
         :title="t('settings.reset')"
@@ -278,7 +278,7 @@ export default {
         @cancel="state.showResetConfirm = false"
       />
 
-      <!-- Modale de double confirmation stats -->
+      <!-- Stats double-confirmation dialog -->
       <ModalDialog v-if="resetStatsState.show" :title="t('settings.reset_stats')" @close="resetStatsState.show = false; resetStatsState.confirmText = ''">
           <p class="settings-reset-stats__desc">
             {{ t('settings.reset_stats_desc') }}

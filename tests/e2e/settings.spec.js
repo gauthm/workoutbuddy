@@ -8,7 +8,7 @@ async function edit(page){
  await page.getByText(L('settings.section_profile'),{exact:true}).click()
  await page.getByLabel(L('settings.profile_display_name'),{exact:true}).fill('Camille test')
 }
-test('sauvegarde groupée du profil et des préférences persistante après redémarrage',async({page,request,app})=>{
+test('batch profile and preference save persists after restart',async({page,request,app})=>{
  await edit(page)
  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
  await expect(pending(page)).toHaveCount(0)
@@ -20,7 +20,7 @@ test('sauvegarde groupée du profil et des préférences persistante après red�
  await expect(page.locator('html')).toHaveAttribute('data-theme','light')
 })
 
-test('écran allumé : préférence enregistrée, conservée en navigation et libérée après désactivation',async({page,request})=>{
+test('screen awake: preference saved, retained during navigation and released after disabling',async({page,request})=>{
  await page.addInitScript(()=>{
   window.__screenLock={requests:0,releases:0}
   Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{request:async()=>{
@@ -62,7 +62,7 @@ test('écran allumé : préférence enregistrée, conservée en navigation et li
 })
 
 for(const mode of ['unsupported','denied']) {
- test(`écran allumé : navigateur ${mode}, indication claire et réglages utilisables`,async({page})=>{
+ test(`screen awake: browser ${mode}, clear indication and usable settings`,async({page})=>{
   await page.addInitScript(mode=>{
    Object.defineProperty(navigator,'wakeLock',{configurable:true,value:mode==='unsupported'?undefined:{request:async()=>{throw new DOMException('Unavailable','NotAllowedError')}}})
   },mode)
@@ -75,7 +75,7 @@ for(const mode of ['unsupported','denied']) {
   expect(await page.evaluate(()=>window.__store.screenWakeLock.active)).toBe(false)
  })
 }
-test('échec réseau à la sauvegarde → brouillon intact → nouvelle tentative réussie',async({page,request})=>{
+test('network failure while saving → intact draft → successful retry',async({page,request})=>{
  const before=await get(request,'/settings')
  await edit(page)
  await page.route('**/api/v1/settings/save',route=>route.abort('connectionfailed'),{times:1})
@@ -89,13 +89,13 @@ test('échec réseau à la sauvegarde → brouillon intact → nouvelle tentativ
  expect((await get(request,'/user-profile')).display_name).toBe('Camille test')
 })
 
-test('la déconnexion reste masquée pour une installation locale sans authentification',async({page})=>{
+test('logout remains hidden for local installation without authentication',async({page})=>{
  await page.goto('/#/settings')
  await expect(page.locator('.settings-section')).toHaveCount(5)
  await expect(page.getByRole('button',{name:L('settings.logout'),exact:true})).toHaveCount(0)
 })
 
-test('déconnexion : confirmation des brouillons, annulation puis retour au portail sans modifier les données',async({page,app,request})=>{
+test('logout: draft confirmation, cancel then return to portal without changing data',async({page,app,request})=>{
  const proxy=await authenticationProxy(app)
  try {
   const before=await get(request,'/user-profile')

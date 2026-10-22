@@ -1,55 +1,54 @@
-# Sauvegarde, export et réinitialisation
+# Backup, export, and reset
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Actions disponibles](#actions-disponibles)
-- [Permissions des fichiers](#permissions-des-fichiers)
-- [Stockage personnalisé et confidentialité](#stockage-personnalisé-et-confidentialité)
-- [Copier et restaurer SQLite](#copier-et-restaurer-sqlite)
-- [Fichiers personnels et Git](#fichiers-personnels-et-git)
+- [Available actions](#available-actions)
+- [File permissions](#file-permissions)
+- [Custom storage and privacy](#custom-storage-and-privacy)
+- [Copy and restore SQLite](#copy-and-restore-sqlite)
+- [Personal files and Git](#personal-files-and-git)
 
-## Actions disponibles
+## Available actions
 
-Ces fonctions se trouvent dans **Réglages → Réglages avancés → Données**.
+These features are under **Settings → Advanced settings → Data**.
 
-| Action | Contenu ou effet |
+| Action | Contents or effect |
 | --- | --- |
-| Export JSON | Programmes, séances types, séances, créneaux supprimés, séries, poids corporel, records, progressions, contexte de calcul, bilans, inventaire, exclusions d’exercices, profil, conversations et réglages ; clé API exclue |
-| CSV résumé des séances | Une ligne par séance, avec ses informations et totaux |
-| CSV détail des séries | Une ligne par série, avec exercice, charge, répétitions et autres mesures |
-| Import JSON | Restaure les données d’un export en remplaçant les données couvertes ; sauvegarde préalable et restauration transactionnelle. Les doublons historiques reconnus sont fusionnés avec le catalogue ; un exercice custom sans équivalent reconnu bloque l’import avant toute modification |
-| Sauvegarde locale | Copie cohérente de SQLite dans `data/backups/`, ou le dossier `backups/` voisin de la base configurée |
-| Réinitialiser stats et historique | Efface séances, séries, records, poids corporel, acquis et bilans ; conserve programmes, inventaire, profil, réglages et douleurs |
-| Réinitialisation générale | Efface les données utilisateur et les douleurs ; conserve le catalogue intégré et les paramètres de l’application |
+| JSON export | Programs, session templates, sessions, deleted slots, sets, body weight, records, progressions, calculation context, reviews, inventory, exercise exclusions, profile, conversations, and settings; API key excluded |
+| Session summary CSV | One row per session, with its information and totals |
+| Set details CSV | One row per set, with exercise, load, repetitions, and other measurements |
+| JSON import | Restores exported data, replacing covered data; backup beforehand and transactional restore. Recognized historical duplicates are merged with the catalog; a custom exercise without a recognized equivalent blocks import before any changes |
+| Local backup | Consistent SQLite copy in `data/backups/`, or the `backups/` directory beside the configured database |
+| Reset stats and history | Deletes sessions, sets, records, body weight, retained progress, and reviews; keeps programs, inventory, profile, settings, and pain areas |
+| Full reset | Deletes user data and pain areas; keeps the built-in catalog and application settings |
 
-## Permissions des fichiers
+## File permissions
 
-La base et ses journaux `-wal`/`-shm`/`-journal` ainsi que les sauvegardes SQLite reçoivent les
-permissions POSIX `0600` (lecture/écriture du propriétaire seulement). Le dossier `data/` du projet,
-les nouveaux dossiers de stockage et le dossier `backups/` reçoivent `0700`. Le démarrage corrige
-aussi les fichiers existants ; la création d’une sauvegarde restreint les anciennes copies avant de
-poursuivre.
+The database, its `-wal`/`-shm`/`-journal` files, and SQLite backups receive POSIX `0600`
+permissions (owner read/write only). The project's `data/` directory, new storage directories, and
+the `backups/` directory receive `0700`. Startup also corrects existing files; creating a backup
+restricts older copies before continuing.
 
-Un lien symbolique utilisé comme fichier sensible ou dossier final est refusé.
+A symbolic link used as a sensitive file or final directory is rejected.
 
-## Stockage personnalisé et confidentialité
+## Custom storage and privacy
 
-Avec un `DB_PATH` personnalisé, les permissions d’un dossier parent déjà existant ne sont pas
-modifiées : utiliser un dossier dédié, appartenant au compte du service. Un parent personnalisé
-modifiable par le groupe ou les autres utilisateurs est refusé. Ces permissions ne chiffrent pas les
-données et ne protègent pas contre root ou un processus exécuté sous le même compte.
+With a custom `DB_PATH`, permissions on an existing parent directory are not changed: use a
+dedicated directory owned by the service account. A custom parent writable by the group or other
+users is rejected. These permissions do not encrypt data or protect against root or a process
+running under the same account.
 
-La clé API reste dans SQLite et ses sauvegardes ; les exports téléchargés sont soumis aux
-permissions de l’appareil qui les reçoit.
+The API key remains in SQLite and its backups; downloaded exports are subject to the receiving
+device's permissions.
 
-## Copier et restaurer SQLite
+## Copy and restore SQLite
 
-La base utilise le journal SQLite WAL. Pour une copie manuelle, arrêter le serveur avant de copier
-la base et ses éventuels fichiers `-wal`/`-shm`. Le bouton de sauvegarde crée un fichier cohérent
-même si le serveur tourne. Pour restaurer une sauvegarde SQLite, arrêter le serveur puis remplacer
-la base en évitant de conserver les anciens journaux du fichier remplacé.
+The database uses SQLite WAL journaling. For a manual copy, stop the server before copying the
+database and any `-wal`/`-shm` files. The backup button creates a consistent file even while the
+server runs. To restore a SQLite backup, stop the server, then replace the database without keeping
+old journal files from the replaced database.
 
-## Fichiers personnels et Git
+## Personal files and Git
 
-L’export JSON et la sauvegarde locale contiennent des données personnelles ; les conserver dans un
-emplacement approprié. La base, les sauvegardes, `.env` et les exports locaux sont exclus de Git.
+JSON exports and local backups contain personal data; store them appropriately. The database,
+backups, `.env`, and local exports are excluded from Git.

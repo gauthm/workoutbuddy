@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
 import { calculateAchievableLoads } from '../services/equipmentCalc.js'
@@ -65,7 +66,7 @@ router.put('/inventory', (req,res) => {
   } catch (error) { console.error('[PUT /equipment/inventory]',error.message);res.status(500).json({error:'INTERNAL_ERROR'}) }
 })
 
-// Déclaré AVANT les routes paramétrées : sinon 'achievable-loads' serait pris comme :id
+// Declared BEFORE parameterized routes: otherwise 'achievable-loads' would match :id
 router.get('/achievable-loads', (req, res) => {
   try {
     const exerciseId = req.query.exercise_id
@@ -110,39 +111,39 @@ router.post('/', (req, res) => {
       resistance_min_kg, resistance_max_kg, notes
     } = req.body
 
-    // Validation catégorie
+    // Validate category
     if (!VALID_CATEGORIES.includes(category)) {
       return res.status(400).json({
         error:  'INVALID_CATEGORY',
-        detail: `Catégories valides : ${VALID_CATEGORIES.join(', ')}`,
+        detail: message('validation.valid_categories', { categories: VALID_CATEGORIES.join(', ') }),
       })
     }
 
-    // Validation nom
+    // Validate name
     if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'MISSING_NAME' })
     }
 
-    // Validation count pair pour plate et dumbbell_plate
+    // Validate even count for plate and dumbbell_plate
     if (category === 'plate') {
       const n = parseInt(count) || 1
       if (n < 2 || n % 2 !== 0) {
         return res.status(400).json({
           error:  'PLATE_COUNT_MUST_BE_EVEN',
-          detail: 'Les disques doivent être en quantité paire (minimum 2).',
+          detail: message('validation.even_plate_count'),
         })
       }
     }
 
-    // La quantité représente le nombre réel de poignées ou d'haltères.
+    // Count represents the actual number of handles or dumbbells.
     const effectiveCount = count ?? (category === 'dumbbell_loadable' ? 2 : 1)
 
-    // Validation champs haltères réglables
+    // Validate adjustable dumbbell fields
     if (category === 'dumbbell_adjustable') {
       if (!weight_min_kg || !weight_max_kg || !weight_step_kg) {
         return res.status(400).json({
           error:  'MISSING_ADJUSTABLE_FIELDS',
-          detail: 'weight_min_kg, weight_max_kg et weight_step_kg sont requis pour dumbbell_adjustable.',
+          detail: message('validation.adjustable_dumbbell_fields'),
         })
       }
       if (parseFloat(weight_min_kg) >= parseFloat(weight_max_kg)) {

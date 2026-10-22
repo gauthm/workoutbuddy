@@ -1,7 +1,7 @@
 import {test,expect} from './fixtures.js'
 import {readFile} from 'node:fs/promises'
 import {L,get,planned,trainThroughUI,dataSettings} from './helpers.js'
-test('export téléchargé → reset des stats → import du fichier → historique et progression restaurés',async({page,request,app})=>{
+test('downloaded export → stats reset → file import → history and progression restored',async({page,request,app})=>{
  const p=await planned(request);await trainThroughUI(page,request,p)
  await dataSettings(page)
  const event=page.waitForEvent('download')
@@ -23,7 +23,7 @@ test('export téléchargé → reset des stats → import du fichier → histori
  for(const key of ['set_logs','exercise_progressions','personal_records','user_profile'])expect(after[key]).toEqual(backup.data[key])
  await expect(page.locator('.history-row').first()).toBeVisible()
 })
-test('un fichier importé contenant une référence inconnue est rejeté sans perdre les données',async({page,request})=>{
+test('an imported file with an unknown reference is rejected without data loss',async({page,request})=>{
  await planned(request)
  const backup=await get(request,'/export'),before=backup.data
  const invalid=structuredClone(backup)

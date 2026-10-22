@@ -1,23 +1,23 @@
 import { programDates } from './programLifecycle.js'
 import { localIsoDate } from './date.js'
 /**
- * Génère les séances planifiées pour la semaine courante + la semaine suivante.
+ * Generate planned sessions for the current and following week.
  *
- * Règles :
- * - Ne crée PAS de séance si une séance 'planned' ou 'in_progress' existe déjà
- *   pour ce template sur ce jour ou cette semaine.
- * - Ne crée PAS de séance dans le passé (avant aujourd'hui).
- * - Distribue les séances sur la semaine selon days_per_week et les templates.
- * - Respecte l'ordre des templates (A → B → C → A → ...).
- * - Séances au format : status='planned', scheduled_date=YYYY-MM-DD.
+ * Rules:
+ * - Do NOT create a session if a 'planned' or 'in_progress' session already exists
+ *   for this template on that day or week.
+ * - Do NOT create sessions in the past (before today).
+ * - Distribute sessions across the week according to days_per_week and templates.
+ * - Respect template order (A → B → C → A → ...).
+ * - Session format: status='planned', scheduled_date=YYYY-MM-DD.
  *
- * @param {object} db       - instance better-sqlite3
- * @param {number} programId - ID du programme actif (optionnel : lit l'actif si absent)
- * @returns {number} nombre de séances créées
+ * @param {object} db       - better-sqlite3 instance
+ * @param {number} programId - Active program ID (optional: look up the active program when omitted)
+ * @returns {number} number of sessions created
  */
 export function scheduleWeeks(db, programId = null, { throwOnError = false } = {}) {
   try {
-    // Trouver le programme actif
+    // Find the active program
     const program = programId
       ? db.prepare('SELECT * FROM program WHERE id = ? AND is_active = 1').get(programId)
       : db.prepare('SELECT * FROM program WHERE is_active = 1 LIMIT 1').get()
@@ -34,9 +34,9 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
     if (templates.length === 0) return 0
 
     const today       = todayIso()
-    const endOfRange  = endOfWeek(addWeeks(today, 1))  // fin de la semaine suivante
+    const endOfRange  = endOfWeek(addWeeks(today, 1))  // end of the following week
 
-    // Séances déjà planifiées dans la plage
+    // Sessions already planned within the range
     const existing = db.prepare(`
       SELECT scheduled_date, original_scheduled_date, workout_template_id
       FROM session
@@ -50,7 +50,7 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
 
     for (const row of db.prepare('SELECT scheduled_date FROM session_schedule_exclusion WHERE program_id=? AND scheduled_date BETWEEN ? AND ?').all(program.id,today,endOfRange)) existingDates.add(row.scheduled_date)
 
-    // Déterminer quel template utiliser en premier
+    // Determine which template to use first
     const lastCompleted = db.prepare(`
       SELECT workout_template_id FROM session
       WHERE program_id = ? AND status = 'completed'
@@ -63,10 +63,10 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
       if (idx !== -1) nextTemplateIdx = (idx + 1) % templates.length
     }
 
-    // Calculer les jours disponibles dans la plage
+    // Calculate available days within the range
     const daysInRange = getDaysInRange(today, endOfRange)
 
-    // Distribuer les séances : days_per_week réparties sur chaque semaine
+    // Distribute sessions: spread days_per_week across each week
     const plan = db.prepare('SELECT parameters FROM program_plan WHERE program_id = ?').get(program.id)
     const trainingDays = plan ? JSON.parse(plan.parameters).training_days : null
     const chosenDays = Array.isArray(trainingDays) && trainingDays.length === program.days_per_week && new Set(trainingDays).size === trainingDays.length && trainingDays.every(day => Number.isInteger(day) && day >= 0 && day <= 6) ? [...trainingDays].sort((a,b)=>a-b) : null
@@ -91,35 +91,35 @@ export function scheduleWeeks(db, programId = null, { throwOnError = false } = {
 
   } catch (err) {
     if (throwOnError) throw err
-    console.warn('[sessionScheduler] Erreur :', err.message)
-    return 0  // Non bloquant
+    console.warn('[sessionScheduler] Error:', err.message)
+    return 0  // Non-blocking
   }
 }
 
-// ── Helpers date ──────────────────────────────────────────────
+// ── Date helpers ──────────────────────────────────────────────
 
-/** YYYY-MM-DD d'aujourd'hui */
+/** Today's YYYY-MM-DD */
 function todayIso() {
   return localIsoDate()
 }
 
-/** Ajoute N semaines à une date ISO */
+/** Add N weeks to an ISO date */
 function addWeeks(dateIso, n) {
   const d = new Date(dateIso + 'T12:00:00Z')
   d.setUTCDate(d.getUTCDate() + n * 7)
   return d.toISOString().slice(0, 10)
 }
 
-/** Dernier jour (dimanche) de la semaine contenant dateIso */
+/** Last day (Sunday) of the week containing dateIso */
 function endOfWeek(dateIso) {
   const d   = new Date(dateIso + 'T12:00:00Z')
-  const dow = d.getUTCDay()  // 0=dimanche
+  const dow = d.getUTCDay()  // 0=Sunday
   const diff = dow === 0 ? 0 : 7 - dow
   d.setUTCDate(d.getUTCDate() + diff)
   return d.toISOString().slice(0, 10)
 }
 
-/** Liste tous les jours YYYY-MM-DD entre start et end (inclus) */
+/** List all YYYY-MM-DD days between start and end (inclusive) */
 function getDaysInRange(start, end) {
   const days = []
   const current = new Date(start + 'T12:00:00Z')
@@ -132,37 +132,37 @@ function getDaysInRange(start, end) {
 }
 
 /**
- * Choisit les jours où planifier des séances.
+ * Choose the days on which to schedule sessions.
  *
- * Stratégie : répartir les jours de façon uniforme sur chaque semaine.
- * - Pour days_per_week = 3 : Lun, Mer, Ven (indices 0, 2, 4 de la semaine)
- * - Pour days_per_week = 4 : Lun, Mar, Jeu, Ven
- * - Pour days_per_week = 5 : Lun, Mar, Mer, Jeu, Ven
- * - Pour days_per_week = 6 : Lun, Mar, Mer, Jeu, Ven, Sam
- * - Pour days_per_week = 2 : Lun, Jeu
+ * Strategy: distribute days evenly across each week.
+ * - For days_per_week = 3 : Mon, Wed, Fri (week indices 0, 2, 4)
+ * - For days_per_week = 4 : Mon, Tue, Thu, Fri
+ * - For days_per_week = 5 : Mon, Tue, Wed, Thu, Fri
+ * - For days_per_week = 6 : Mon, Tue, Wed, Thu, Fri, Sat
+ * - For days_per_week = 2 : Mon, Thu
  *
- * Ignorer les jours déjà dans existingDates.
+ * Skip days already in existingDates.
  *
- * @param {string[]} daysInRange   - tous les jours de la plage
- * @param {number}   daysPerWeek   - séances par semaine (2–6)
- * @param {Set}      existingDates - jours déjà planifiés (à ignorer)
- * @returns {string[]} dates des séances à créer
+ * @param {string[]} daysInRange   - all days within the range
+ * @param {number}   daysPerWeek   - sessions per week (2–6)
+ * @param {Set}      existingDates - already planned days (to skip)
+ * @returns {string[]} dates of sessions to create
  */
 function distributeSlots(daysInRange, daysPerWeek, existingDates, chosenDays = null) {
-  // Indices de jours de semaine (0=Lun, 6=Dim) selon days_per_week
+  // Weekday indices (0=Mon, 6=Sun) according to days_per_week
   const PREFERRED_DAYS = {
-    2: [0, 3],           // Lun, Jeu
-    3: [0, 2, 4],        // Lun, Mer, Ven
-    4: [0, 1, 3, 4],     // Lun, Mar, Jeu, Ven
-    5: [0, 1, 2, 3, 4],  // Lun au Ven
-    6: [0, 1, 2, 3, 4, 5], // Lun au Sam
+    2: [0, 3],           // Mon, Thu
+    3: [0, 2, 4],        // Mon, Wed, Fri
+    4: [0, 1, 3, 4],     // Mon, Tue, Thu, Fri
+    5: [0, 1, 2, 3, 4],  // Mon to Fri
+    6: [0, 1, 2, 3, 4, 5], // Mon to Sat
     7: [0, 1, 2, 3, 4, 5, 6],
   }
 
   const preferred = chosenDays || PREFERRED_DAYS[daysPerWeek] || PREFERRED_DAYS[3]
   const slots     = []
 
-  // Regrouper les jours par semaine ISO
+  // Group days by ISO week
   const byWeek = {}
   for (const day of daysInRange) {
     const weekKey = isoWeekKey(day)
@@ -170,13 +170,13 @@ function distributeSlots(daysInRange, daysPerWeek, existingDates, chosenDays = n
     byWeek[weekKey].push(day)
   }
 
-  // Pour chaque semaine, sélectionner les jours préférés non encore planifiés
+  // For each week, select preferred days that are not already planned
   for (const [, days] of Object.entries(byWeek).sort()) {
     let addedThisWeek = 0
     for (const day of days) {
       if (addedThisWeek >= daysPerWeek) break
       const d   = new Date(day + 'T12:00:00Z')
-      const dow = (d.getUTCDay() + 6) % 7  // 0=Lun, 6=Dim
+      const dow = (d.getUTCDay() + 6) % 7  // 0=Mon, 6=Sun
       if (existingDates.has(day)) {
         if (!chosenDays || preferred.includes(dow)) addedThisWeek++
         continue
@@ -184,7 +184,7 @@ function distributeSlots(daysInRange, daysPerWeek, existingDates, chosenDays = n
 
       if (preferred.includes(dow)) {
         slots.push(day)
-        existingDates.add(day)  // éviter les doublons
+        existingDates.add(day)  // avoid duplicates
         addedThisWeek++
       }
     }
@@ -193,7 +193,7 @@ function distributeSlots(daysInRange, daysPerWeek, existingDates, chosenDays = n
   return slots
 }
 
-/** Retourne "YYYY-Www" pour une date ISO */
+/** Return "YYYY-Www" for an ISO date */
 function isoWeekKey(dateIso) {
   const d = new Date(dateIso + 'T12:00:00Z')
   d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7))

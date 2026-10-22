@@ -26,7 +26,7 @@ describe('isoWeek', () => {
   it('2025-01-01 = W01', () => {
     assert.equal(isoWeek('2025-01-01'), '2025-W01')
   })
-  it('2024-12-30 appartient à 2025-W01', () => {
+  it('2024-12-30 belongs to 2025-W01', () => {
     assert.equal(isoWeek('2024-12-30'), '2025-W01')
   })
 })
@@ -35,7 +35,7 @@ describe('previousIsoWeek', () => {
   it('2025-W05 → 2025-W04', () => {
     assert.equal(previousIsoWeek('2025-W05'), '2025-W04')
   })
-  it('2025-W01 → dernière semaine 2024', () => {
+  it('2025-W01 → final week of 2024', () => {
     const prev = previousIsoWeek('2025-W01')
     assert.ok(prev.startsWith('2024-W'), `Attendu 2024-Wxx, obtenu ${prev}`)
   })
@@ -48,7 +48,7 @@ describe('nextIsoWeek', () => {
 })
 
 describe('calculateStreaks', () => {
-  it('DB vide → tous à 0', () => {
+  it('empty DB → all 0', () => {
     const db = createDb()
     const r  = calculateStreaks(db)
     assert.equal(r.current_week_streak, 0)
@@ -57,7 +57,7 @@ describe('calculateStreaks', () => {
     assert.equal(r.total_weeks, 0)
   })
 
-  it('1 séance = 1 semaine', () => {
+  it('1 workout = 1 week', () => {
     const db = createDb()
     insertCompletedSession(db, '2025-06-02')
     const r = calculateStreaks(db)
@@ -65,7 +65,7 @@ describe('calculateStreaks', () => {
     assert.equal(r.total_weeks, 1)
   })
 
-  it('2 séances même semaine = 1 semaine distincte', () => {
+  it('2 workouts in the same week = 1 distinct week', () => {
     const db = createDb()
     insertCompletedSession(db, '2025-06-02')
     insertCompletedSession(db, '2025-06-04')
@@ -74,7 +74,7 @@ describe('calculateStreaks', () => {
     assert.equal(r.total_weeks, 1)
   })
 
-  it('longest_week_streak : 3 semaines consécutives', () => {
+  it('longest_week_streak: 3 consecutive weeks', () => {
     const db = createDb()
     insertCompletedSession(db, '2025-06-02')  // W23
     insertCompletedSession(db, '2025-06-09')  // W24
@@ -83,11 +83,11 @@ describe('calculateStreaks', () => {
     assert.equal(r.longest_week_streak, 3)
   })
 
-  it('gap dans les semaines réinitialise le streak', () => {
+  it('a gap between weeks resets the streak', () => {
     const db = createDb()
     insertCompletedSession(db, '2025-06-02')  // W23
     insertCompletedSession(db, '2025-06-09')  // W24
-    // gap : W25 manquante
+    // gap: W25 missing
     insertCompletedSession(db, '2025-06-23')  // W26
     const r = calculateStreaks(db)
     assert.equal(r.longest_week_streak, 2)

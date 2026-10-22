@@ -29,27 +29,27 @@ function createActiveProgram(db, daysPerWeek = 3) {
 }
 
 describe('sessionScheduler', () => {
-  it('pas de programme actif → retourne 0', () => {
+  it('no active program → returns 0', () => {
     const db = createDb()
     assert.equal(scheduleWeeks(db), 0)
   })
 
-  it('crée des séances pour 2 semaines', () => {
+  it('creates workouts for 2 weeks', () => {
     const db  = createDb()
     const pid = createActiveProgram(db, 3)
     const n   = scheduleWeeks(db, pid)
     assert.ok(n >= 1 && n <= 6, `Attendu 1-6, obtenu ${n}`)
   })
 
-  it('idempotent : 2e appel ne crée rien', () => {
+  it('idempotent: second call creates nothing', () => {
     const db  = createDb()
     const pid = createActiveProgram(db, 3)
     scheduleWeeks(db, pid)
     const n2 = scheduleWeeks(db, pid)
-    assert.equal(n2, 0, 'Le 2e appel ne doit créer aucune séance')
+    assert.equal(n2, 0, 'The second call must create no workout')
   })
 
-  it('les séances créées sont toutes status=planned', () => {
+  it('all created workouts have status=planned', () => {
     const db  = createDb()
     const pid = createActiveProgram(db, 3)
     scheduleWeeks(db, pid)
@@ -59,7 +59,7 @@ describe('sessionScheduler', () => {
     assert.equal(notPlanned.n, 0)
   })
 
-  it('les dates créées sont >= aujourd\'hui', () => {
+  it('created dates are >= today', () => {
     const db    = createDb()
     const pid   = createActiveProgram(db, 3)
     scheduleWeeks(db, pid)
@@ -70,7 +70,7 @@ describe('sessionScheduler', () => {
     assert.equal(pastSessions.n, 0)
   })
 
-  it('les templates alternent dans l\'ordre', () => {
+  it('templates alternate in order', () => {
     const db  = createDb()
     const pid = createActiveProgram(db, 3)
     scheduleWeeks(db, pid)
@@ -81,7 +81,7 @@ describe('sessionScheduler', () => {
     assert.deepEqual(names, ['Push', 'Pull', 'Legs'])
   })
 
-  it('programme 4j/sem crée jusqu\'à 8 séances sur 2 semaines', () => {
+  it('4-day/week program creates up to 8 workouts over 2 weeks', () => {
     const db  = createDb()
     const pid = createActiveProgram(db, 4)
     const n   = scheduleWeeks(db, pid)

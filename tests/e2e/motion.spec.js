@@ -5,7 +5,7 @@ async function ready(page){
  await expect(page.locator('.exercise-motion__frame')).toHaveCount(2)
  await expect.poll(()=>page.locator('.exercise-motion__frame').evaluateAll(images=>images.every(i=>i.complete&&i.naturalWidth>0))).toBe(true)
 }
-test('les deux vraies photos alternent, pause/reprise fonctionnent et les flèches ont disparu',async({page})=>{
+test('both real photos alternate, pause/resume work and arrows are removed',async({page})=>{
  const photos=[];page.on('request',request=>{if(request.url().includes('/exercises/images/dumbbell_bench_press/'))photos.push(request.url())})
  await page.emulateMedia({reducedMotion:'no-preference'});await page.clock.install()
  await page.goto('/#/exercises/dumbbell_bench_press');await ready(page)
@@ -23,7 +23,7 @@ test('les deux vraies photos alternent, pause/reprise fonctionnent et les flèch
  await expect(page.getByRole('button',{name:L('exercises.image_next'),exact:true})).toHaveCount(0)
  expect(photos).toHaveLength(2)
 })
-test('la préférence de réduction des animations garde les images en pause au départ',async({page})=>{
+test('reduced-motion preference keeps images initially paused',async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});await page.clock.install()
  await page.goto('/#/exercises/dumbbell_bench_press');await ready(page)
  await expect(page.getByRole('button',{name:L('exercises.motion_play'),exact:true})).toBeVisible()
@@ -31,7 +31,7 @@ test('la préférence de réduction des animations garde les images en pause au 
  await page.clock.runFor(3300)
  await expect(frame(page)).toHaveAttribute('src',src)
 })
-test('la même animation est disponible dans l’aide de l’exercice pendant une séance',async({page,request})=>{
+test('the same animation is available in exercise help during a workout',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  await page.locator('.exercise-block--active').getByRole('button',{name:L('session.help'),exact:true}).click()
  await ready(page)
@@ -54,7 +54,7 @@ test('la même animation est disponible dans l’aide de l’exercice pendant un
  await expect(page.locator('.exercise-motion')).toHaveCount(0)
 })
 
-test('le défilement s’arrête hors écran et reprend quand les photos redeviennent visibles',async({page})=>{
+test('animation stops off-screen and resumes when photos become visible again',async({page})=>{
  await page.setViewportSize({width:390,height:350})
  await page.emulateMedia({reducedMotion:'no-preference'});await page.clock.install()
  await page.goto('/#/exercises/dumbbell_bench_press');await ready(page)
@@ -72,7 +72,7 @@ test('le défilement s’arrête hors écran et reprend quand les photos redevie
  await expect(frame(page)).not.toHaveAttribute('src',hidden)
 })
 
-test('l’aide sans matériel propose de commencer sans lest',async({page,request})=>{
+test('help without equipment suggests starting without added weight',async({page,request})=>{
  const result=await call(request,'post','/programs/generate',params,201)
  await call(request,'post',`/programs/${result.id}/activate`)
  await startThroughUI(page,await get(request,`/programs/${result.id}`))

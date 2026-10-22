@@ -1,4 +1,5 @@
-// ── Helper : arrondir vers le bas à la charge atteignable la plus proche ──
+import { message } from '../utils/messages.js'
+// ── Helper: round down to the nearest achievable load ──
 export function roundDownToAchievable(targetWeight, achievableLoads) {
   if (!achievableLoads || achievableLoads.length === 0) return 0
   const valid = achievableLoads.filter(l => l <= targetWeight + 0.001)
@@ -6,7 +7,7 @@ export function roundDownToAchievable(targetWeight, achievableLoads) {
   return valid[valid.length - 1]
 }
 
-// ── Résoudre le modèle effectif ──────────────────────────────────────────
+// ── Resolve the effective model ──────────────────────────────────────────
 export function resolveProgressionModel(templateExercise, program) {
   if (templateExercise.progression_model !== 'inherit') {
     return templateExercise.progression_model
@@ -15,14 +16,14 @@ export function resolveProgressionModel(templateExercise, program) {
 }
 
 /**
- * Calcule le prochain état de progression après une séance.
+ * Calculate the next progression state after a session.
  *
- * @param {object} state            - ProgressionState courant depuis la DB
- * @param {object[]} lastSessionSets - SetLog[] de la dernière séance
- *                                    (is_warmup=0, is_completed=1 uniquement)
+ * @param {object} state            - current ProgressionState from the database
+ * @param {object[]} lastSessionSets - SetLog[] from the last session
+ *                                    (is_warmup=0, is_completed=1 only)
  * @param {object} templateExercise  - TemplateExercise
- * @param {object} program           - Program (pour progression_model hérité)
- * @param {number[]} achievableLoads - Charges atteignables triées ASC
+ * @param {object} program           - Program (for inherited progression_model)
+ * @param {number[]} achievableLoads - Achievable loads sorted ASC
  * @param {object} settings          - { progression_failure_threshold,
  *                                       progression_weight_reduction_pct }
  * @returns {{ current_weight_kg, current_target_reps?, consecutive_failures, explanation }}
@@ -43,7 +44,7 @@ export function computeNextState(
       lastSessionSets.every(set=>set.reps >= templateExercise.target_reps_min) &&
       lastSessionSets.some(set=>(set.rpe != null && set.rpe >= 9.5) || (set.rir != null && set.rir <= 0))) {
     return {current_weight_kg:state.current_weight_kg,current_target_reps:state.current_target_reps ?? templateExercise.target_reps_min,
-      consecutive_failures:0,explanation:'Séries réalisées à la limite : conserver la charge et viser des répétitions maîtrisées avec de la réserve.'}
+      consecutive_failures:0,explanation:message('progression.hold_at_limit')}
   }
 
   switch (model) {
@@ -58,20 +59,20 @@ export function computeNextState(
   }
 }
 
-// ── Progression linéaire ─────────────────────────────────────────────────
+// ── Linear progression ─────────────────────────────────────────────────
 function linearProgression(state, sets, te, achievable, settings) {
   const threshold   = settings.progression_failure_threshold  || 2
   const reductionPct = settings.progression_weight_reduction_pct || 10
 
-  // Cible de reps : target_reps si défini, sinon target_reps_min
+  // Rep target: target_reps if defined, otherwise target_reps_min
   const targetReps = te.target_reps || te.target_reps_min
 
-  // Succès = toutes les séries prévues effectuées avec au moins targetReps reps
+  // Success = all planned sets completed with at least targetReps reps
   const allOk = sets.length >= te.target_sets &&
     sets.every(s => s.reps >= targetReps)
 
   if (allOk) {
-    // Déterminer l'incrément
+    // Determine the increment
     const increment = te.progression_weight_increment_kg
       || minIncrement(achievable)
       || 2.5
@@ -81,12 +82,12 @@ function linearProgression(state, sets, te, achievable, settings) {
       current_weight_kg:   newW,
       consecutive_failures: 0,
       explanation: newW > state.current_weight_kg
-        ? `Objectif atteint (${sets.length}×${targetReps} reps). Prochaine charge : ${newW} kg.`
-        : `Objectif atteint. Maintien à ${newW} kg : aucun incrément disponible suffisamment progressif.`,
+        ? message('progression.linear_increase', { sets: sets.length, targetReps: targetReps, weight: newW })
+        : message('progression.hold_without_increment', { weight: newW }),
     }
   }
 
-  // Échec
+  // Failure
   const fails = (state.consecutive_failures || 0) + 1
   if (fails >= threshold) {
     const newW = Math.min(state.current_weight_kg, roundDownToAchievable(
@@ -96,14 +97,14 @@ function linearProgression(state, sets, te, achievable, settings) {
     return {
       current_weight_kg:   newW,
       consecutive_failures: 0,
-      explanation: `${fails} échecs consécutifs. -${reductionPct}% → ${newW} kg.`,
+      explanation: message('progression.reduce_after_failures', { failures: fails, reductionPct: reductionPct, weight: newW }),
     }
   }
 
   return {
     current_weight_kg:   state.current_weight_kg,
     consecutive_failures: fails,
-    explanation: `Objectif non atteint (${fails}/${threshold}). Maintien ${state.current_weight_kg} kg.`,
+    explanation: message('progression.target_not_reached', { failures: fails, threshold: threshold, weight: state.current_weight_kg }),
   }
 }
 
@@ -120,7 +121,7 @@ function doubleProgression(state, sets, te, achievable, settings) {
     ? Math.min(...sets.map(s => s.reps))
     : 0
 
-  // Toutes les séries ≥ max_reps → augmenter le poids
+  // All sets ≥ max_reps → increase weight
   if (completedSets && minRepsDone >= maxR) {
     const increment = te.progression_weight_increment_kg
       || minIncrement(achievable)
@@ -128,28 +129,28 @@ function doubleProgression(state, sets, te, achievable, settings) {
     const newW = nextManageableLoad(state.current_weight_kg, increment, achievable)
     if (newW <= state.current_weight_kg + 0.001) {
       return { current_weight_kg:state.current_weight_kg,current_target_reps:maxR,consecutive_failures:0,
-        explanation:`Objectif atteint. Pas de hausse de charge progressive disponible : maintien à ${state.current_weight_kg} kg et ${maxR} reps.` }
+        explanation:message('progression.hold_at_rep_ceiling', { weight: state.current_weight_kg, maxReps: maxR }) }
     }
     return {
       current_weight_kg:    newW,
       current_target_reps:  minR,
       consecutive_failures: 0,
-      explanation: `Toutes séries ≥ ${maxR} reps. +${increment} kg → ${newW} kg. Retour à ${minR} reps.`,
+      explanation: message('progression.double_increase', { maxReps: maxR, increment: increment, weight: newW, minReps: minR }),
     }
   }
 
-  // Toutes les séries ≥ min_reps → augmenter les reps cibles
+  // All sets ≥ min_reps → increase target reps
   if (completedSets && minRepsDone >= minR) {
     const newReps = Math.min(curTargetReps + 1, maxR)
     return {
       current_weight_kg:    state.current_weight_kg,
       current_target_reps:  newReps,
       consecutive_failures: 0,
-      explanation: `Objectif atteint. Prochaine cible : ${newReps} reps à ${state.current_weight_kg} kg.`,
+      explanation: message('progression.increase_reps', { newReps: newReps, weight: state.current_weight_kg }),
     }
   }
 
-  // Échec
+  // Failure
   const fails = (state.consecutive_failures || 0) + 1
   if (fails >= threshold) {
     const newW = Math.min(state.current_weight_kg, roundDownToAchievable(
@@ -160,7 +161,7 @@ function doubleProgression(state, sets, te, achievable, settings) {
       current_weight_kg:    newW,
       current_target_reps:  minR,
       consecutive_failures: 0,
-      explanation: `${fails} échecs. Réduction à ${newW} kg, retour à ${minR} reps.`,
+      explanation: message('progression.reset_reps_after_failures', { failures: fails, weight: newW, minReps: minR }),
     }
   }
 
@@ -168,19 +169,19 @@ function doubleProgression(state, sets, te, achievable, settings) {
     current_weight_kg:    state.current_weight_kg,
     current_target_reps:  curTargetReps,
     consecutive_failures: fails,
-    explanation: `Objectif non atteint (${fails}/${threshold}). Maintien ${state.current_weight_kg} kg.`,
+    explanation: message('progression.target_not_reached', { failures: fails, threshold: threshold, weight: state.current_weight_kg }),
   }
 }
 
-// ── Progression RPE ──────────────────────────────────────────────────────
+// ── RPE progression ──────────────────────────────────────────────────────
 function rpeProgression(state, sets, te, achievable, settings) {
-  // Prendre le RPE de la dernière série complétée
+  // Use the RPE from the last completed set
   const completedSets = sets.filter(s => s.rpe !== null && s.rpe !== undefined)
   if (completedSets.length === 0) {
     return {
       current_weight_kg:    state.current_weight_kg,
       consecutive_failures: state.consecutive_failures,
-      explanation: 'RPE non renseigné. Pas de changement.',
+      explanation: message('progression.missing_rpe'),
     }
   }
 
@@ -188,37 +189,37 @@ function rpeProgression(state, sets, te, achievable, settings) {
   const targetRpe  = te.rpe_target || 8.0
   const diff       = lastRpe - targetRpe
 
-  // RPE très inférieur à la cible → augmenter le poids
+  // RPE well below target → increase weight
   if (diff <= -1.0 && sets.length >= te.target_sets && sets.every(set=>set.reps >= te.target_reps_min)) {
     const pct  = 0.025 * Math.abs(diff)
     const newW = nextManageableLoad(state.current_weight_kg, state.current_weight_kg*pct, achievable)
     return {
       current_weight_kg:    newW,
       consecutive_failures: 0,
-      explanation: `RPE ${lastRpe} < cible ${targetRpe}. +${(pct * 100).toFixed(1)}% → ${newW} kg.`,
+      explanation: message('progression.rpe_increase', { lastRpe: lastRpe, targetRpe: targetRpe, changePct: (pct * 100).toFixed(1), weight: newW }),
     }
   }
 
-  // RPE très supérieur → réduire le poids
+  // RPE well above target → reduce weight
   if (diff >= 1.0) {
     const pct  = 0.025 * Math.abs(diff)
     const newW = Math.min(state.current_weight_kg,roundDownToAchievable(state.current_weight_kg * (1 - pct), achievable))
     return {
       current_weight_kg:    newW,
       consecutive_failures: 0,
-      explanation: `RPE ${lastRpe} > cible ${targetRpe}. -${(pct * 100).toFixed(1)}% → ${newW} kg.`,
+      explanation: message('progression.rpe_decrease', { lastRpe: lastRpe, targetRpe: targetRpe, changePct: (pct * 100).toFixed(1), weight: newW }),
     }
   }
 
-  // RPE dans la cible ±1
+  // RPE within target ±1
   return {
     current_weight_kg:    state.current_weight_kg,
     consecutive_failures: 0,
-    explanation: `RPE ${lastRpe} ≈ cible ${targetRpe}. Maintien ${state.current_weight_kg} kg.`,
+    explanation: message('progression.rpe_hold', { lastRpe: lastRpe, targetRpe: targetRpe, weight: state.current_weight_kg }),
   }
 }
 
-// ── Helper : incrément minimal d'une liste de charges ────────────────────
+// ── Helper: minimum increment in a list of loads ────────────────────
 function minIncrement(loads) {
   if (!loads || loads.length <= 1) return 0
   let min = Infinity

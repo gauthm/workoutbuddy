@@ -11,7 +11,7 @@ function createDb() {
   return db
 }
 
-// Catalogue d'exercices contrôlé : un seul exercice, exigeant un équipement non possédé
+// Controlled exercise catalog: one exercise requiring unowned equipment
 function insertUnfeasibleExercise(db) {
   db.prepare(`
     INSERT INTO exercise (id, name_fr, name_en, category, movement_pattern,
@@ -30,30 +30,30 @@ const SETTINGS = {
 }
 
 describe('runAllSignalChecks', () => {
-  it('retourne 0 si pas de programme actif', () => {
+  it('returns 0 without an active program', () => {
     const db = createDb()
     assert.equal(runAllSignalChecks(db, SETTINGS), 0)
   })
 
-  it('signal no_exercise_available si aucun équipement', () => {
+  it('no_exercise_available signal when equipment is missing', () => {
     const db = createDb()
     insertUnfeasibleExercise(db)
     db.prepare("INSERT INTO program (name,goal,level,days_per_week,progression_model,is_active) VALUES ('T','strength','beginner',3,'linear',1)").run()
     const n = runAllSignalChecks(db, SETTINGS)
     const advice = db.prepare("SELECT * FROM equipment_advice WHERE signal_type='no_exercise_available'").all()
-    assert.ok(n > 0, 'Des conseils devraient être créés')
-    assert.ok(advice.length > 0, 'Des muscles sans exercice réalisable devraient générer un signal')
+    assert.ok(n > 0, 'Advice should be created')
+    assert.ok(advice.length > 0, 'Muscles without an achievable exercise should generate a signal')
   })
 
-  it('cooldown empêche les doublons', () => {
+  it('cooldown prevents duplicates', () => {
     const db = createDb()
     insertUnfeasibleExercise(db)
     db.prepare("INSERT INTO program (name,goal,level,days_per_week,progression_model,is_active) VALUES ('T','strength','beginner',3,'linear',1)").run()
     runAllSignalChecks(db, SETTINGS)
     const count1 = db.prepare('SELECT COUNT(*) as n FROM equipment_advice').get().n
-    assert.ok(count1 > 0, 'Le premier passage doit créer des conseils')
+    assert.ok(count1 > 0, 'The first pass must create advice')
     runAllSignalChecks(db, { ...SETTINGS, equipment_advice_cooldown_days: 30 })
     const count2 = db.prepare('SELECT COUNT(*) as n FROM equipment_advice').get().n
-    assert.equal(count1, count2, 'Pas de doublon avec cooldown actif')
+    assert.equal(count1, count2, 'No duplicate during active cooldown')
   })
 })

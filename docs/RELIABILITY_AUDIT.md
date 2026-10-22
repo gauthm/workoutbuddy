@@ -1,122 +1,122 @@
-# Audit de fiabilité — 15 octobre 2026
+# Reliability audit — October 15, 2026
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-Périmètre : séances et séries, progression par exercice, bilan hebdomadaire, historique et
-export/import. Aucun test ne vise la base personnelle : les tests API utilisent une base isolée et
-les parcours navigateur un vrai serveur avec un fichier SQLite temporaire par cas.
+Scope: workouts and sets, per-exercise progression, weekly review, history, and
+export/import. No test targets the personal database: API tests use an isolated database,
+and browser journeys use a real server with a temporary SQLite file per case.
 
-## Défauts corrigés
+## Fixed defects
 
-### Série envoyée deux fois
+### Set submitted twice
 
-**Risque observé dans le code ou reproduit :** Une réponse de création de série perdue permettait de
-créer deux fois le même numéro
+**Risk observed in code or reproduced:** A lost set-creation response allowed the same
+set number to be created twice.
 
-**Correction et vérification :** Transaction immédiate : un renvoi identique retourne la série
-existante ; des valeurs différentes produisent un conflit explicite, sans écrasement. Tests API
-simultanés et navigateur après écriture réelle puis réponse interrompue.
+**Fix and verification:** Immediate transaction: an identical retry returns the existing
+set; different values produce an explicit conflict, without overwriting. Concurrent API
+tests and browser tests after a real write followed by an interrupted response.
 
-### Correction d’une performance historique
+### Correction of a historical performance
 
-**Risque observé dans le code ou reproduit :** Une modification ou suppression de série historique
-actualisait les records mais conservait une progression devenue fausse
+**Risk observed in code or reproduced:** Editing or deleting a historical set updated
+records but retained progression that was no longer correct.
 
-**Correction et vérification :** Recalcul des acquis et des cibles des séances types dans la même
-transaction ; couvre modification, annulation/revalidation, suppression de série et suppression
-d’exercice.
+**Fix and verification:** Recalculate achieved progress and workout-template targets in
+the same transaction; covers editing, undoing/revalidating, set deletion, and
+exercise deletion.
 
-### Écriture après clôture
+### Write after completion
 
-**Risque observé dans le code ou reproduit :** Une nouvelle série arrivée après la clôture pouvait
-modifier le volume sans appliquer une nouvelle progression
+**Risk observed in code or reproduced:** A new set arriving after completion could
+change volume without applying new progression.
 
-**Correction et vérification :** Refus sur séance terminée ou sautée ; le bouton de fin attend aussi
-les sauvegardes de séries en cours.
+**Fix and verification:** Reject writes to completed or skipped workouts; the finish
+button also waits for ongoing set saves.
 
-### Bilan hebdomadaire périmé
+### Stale weekly review
 
-**Risque observé dans le code ou reproduit :** Un bilan hebdomadaire pouvait décrire des séances ou
-performances effacées
+**Risk observed in code or reproduced:** A weekly review could describe deleted
+workouts or performances.
 
-**Correction et vérification :** Invalidation après modification de l’historique, suppression et
-réinitialisation. Une semaine allégée déjà déclenchée reste conservée par prudence ; supprimer de
-l’historique ne doit pas accélérer automatiquement la reprise.
+**Fix and verification:** Invalidate after history edits, deletion, and reset.
+An already triggered deload week remains preserved as a precaution; deleting history
+must not automatically accelerate recovery.
 
-### Frontière de semaine locale
+### Local week boundary
 
-**Risque observé dans le code ou reproduit :** Le lundi local pouvait encore être traité comme
-dimanche UTC
+**Risk observed in code or reproduced:** Local Monday could still be treated as UTC Sunday.
 
-**Correction et vérification :** Bornes du bilan et appartenance des séances calculées selon la date
-locale. Sortie de semaine allégée après sept jours calendaires locaux.
+**Fix and verification:** Review boundaries and workout membership calculated by local
+date. Exit a deload week after seven local calendar days.
 
-### Validation des séances
+### Workout validation
 
-**Risque observé dans le code ou reproduit :** Certaines dates impossibles et valeurs mal typées
-étaient acceptées par les routes de séance
+**Risk observed in code or reproduced:** Workout routes accepted some impossible dates
+and incorrectly typed values.
 
-**Correction et vérification :** Validation avant écriture : création, date planifiée, nom et notes.
+**Fix and verification:** Validate before writing: creation, scheduled date, name, and notes.
 
-### Import incohérent
+### Inconsistent import
 
-**Risque observé dans le code ou reproduit :** Un import pouvait introduire des mesures/séries
-incohérentes ou plusieurs programmes/séances actifs
+**Risk observed in code or reproduced:** An import could introduce inconsistent
+measurements/sets or multiple active programs/workouts.
 
-**Correction et vérification :** Refus avant import des dates impossibles, poids négatifs,
-répétitions fractionnaires, efforts invalides et états actifs incompatibles. Les erreurs de
-référence gardent le rollback existant.
+**Fix and verification:** Reject impossible dates, negative weights, fractional
+repetitions, invalid effort values, and incompatible active states before import.
+Reference errors retain the existing rollback.
 
-### Réponse de clôture perdue
+### Lost completion response
 
-**Risque observé dans le code ou reproduit :** Une réponse perdue après clôture ou abandon laissait
-l’interface sur une opération déjà réussie
+**Risk observed in code or reproduced:** A response lost after completion or abandonment
+left the interface on an operation that had already succeeded.
 
-**Correction et vérification :** Lecture de l’état sauvegardé pour confirmer la réussite, puis
-navigation habituelle. Test avec vraie transaction et interruption de sa réponse.
+**Fix and verification:** Read saved state to confirm success, then navigate normally.
+Test with a real transaction and interruption of its response.
 
-## Couverture ajoutée
+## Added coverage
 
-`tests/integration/reliabilityStress.test.js` :
+`tests/integration/reliabilityStress.test.js`:
 
-- Douze semaines et vingt-quatre séances avec reprises, volumes, progression, clôtures répétées, bilans mis en cache, export/import intégral, suppression d’une séance puis suppression/recréation du programme.
-- Requêtes de démarrage, séries et fin répétées ; une seule séance active et un seul événement de progression.
-- Correction, annulation/revalidation et suppression dans l’historique, avec retour aux acquis de la dernière performance restante.
-- Erreur SQLite injectée pendant le recalcul : la série, les records et toutes les collections exportées restent identiques à leur état précédent.
-- Imports invalides : aucune modification des collections existantes.
-- Fatigue répétée, allègement sans perte des acquis et frontières locales de semaine, dont le passage à l’heure d’hiver.
+- Twelve weeks and twenty-four workouts with resumption, volumes, progression, repeated completions, cached reviews, full export/import, workout deletion, then program deletion/recreation.
+- Repeated start, set, and finish requests; only one active workout and one progression event.
+- Correction, undo/revalidation, and deletion in history, returning to the progress achieved by the latest remaining performance.
+- SQLite error injected during recalculation: the set, records, and all exported collections remain identical to their previous state.
+- Invalid imports: no changes to existing collections.
+- Repeated fatigue, deload without losing achieved progress, and local week boundaries, including the switch to winter time.
 
-### Simulation de durée
+### Duration simulation
 
-Dans la simulation de durée, seuls les horodatages historiques sont préparés en base et l’heure du
-bilan est injectée. Les créations, saisies, clôtures, suppressions, imports et calculs utilisent les
-vraies routes et services. Ce test ne représente pas douze semaines d’exécution continue.
+In the duration simulation, only historical timestamps are prepared in the database and
+the review time is injected. Creation, data entry, completion, deletion, import, and
+calculations use real routes and services. This test does not represent twelve weeks
+of continuous execution.
 
-### Parcours navigateur
+### Browser journeys
 
-`tests/e2e/sessions.spec.js`, sur ordinateur et mobile : interruption avant écriture, interruption
-après écriture, renvoi identique ou conflictuel, attente d’une sauvegarde avant fin, perte de
-réponse de clôture/abandon et arrêt brutal du processus avec récupération de la séance et de la
-série après redémarrage. Les réponses métier ne sont pas simulées.
+`tests/e2e/sessions.spec.js`, on desktop and mobile: interruption before a write,
+interruption after a write, identical or conflicting retry, waiting for a save before
+completion, lost completion/abandonment response, and abrupt process termination with
+workout and set recovery after restart. Business responses are not mocked.
 
-## Validation et limites
+## Validation and limitations
 
-463 tests métier/API et 66 parcours Playwright ordinateur/mobile réussis. Sauvegarde créée avant
-redémarrage du serveur personnel ; les 22 rubriques de son export ont été comparées par empreinte et
-sont restées identiques. Les contrôles du hook avant push exécutent également les suites métier et
-navigateur concernées.
+463 business/API tests and 66 desktop/mobile Playwright journeys passed. A backup was
+created before restarting the personal server; the 22 sections of its export were
+compared by hash and remained identical. Pre-push hook checks also run the affected
+business and browser suites.
 
-### Mode d’exécution Node
+### Node execution mode
 
-`npm test` utilise désormais le mode Express direct déjà présent pour éviter les ports TCP éphémères
-instables dans l’environnement de développement. Playwright conserve les tests du vrai réseau HTTP.
+`npm test` now uses the existing direct Express mode to avoid unstable ephemeral TCP
+ports in the development environment. Playwright retains tests over the real HTTP network.
 
-### Périmètre non couvert
+### Uncovered scope
 
-Aucun défaut reproduit n’est laissé ouvert dans ce périmètre. Ces résultats ne démontrent pas
-l’absence de tout bug : Safari/Firefox, appareils physiques, coupure électrique pendant une écriture
-disque, stockage défectueux, cache hors ligne du service worker et charge multi-utilisateur ne sont
-pas couverts. L’arrêt brutal testé intervient après confirmation de l’écriture.
+No reproduced defect remains open in this scope. These results do not demonstrate the
+absence of all bugs: Safari/Firefox, physical devices, power loss during a disk write,
+faulty storage, offline service worker caching, and multi-user load are not covered.
+The tested abrupt termination occurs after write confirmation.
 
-Les doublons historiques d’anciens exports ne sont pas fusionnés automatiquement ; la protection
-empêche d’en créer de nouveaux.
+Historical duplicates from old exports are not merged automatically; the protection
+prevents new duplicates.

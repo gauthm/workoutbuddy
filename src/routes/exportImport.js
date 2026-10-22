@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { isKnownCatalogueAlias, mergeCatalogueAliases } from '../services/catalogueCleanup.js'
 import { resetProfile } from './userProfile.js'
 import { createBackup } from '../db/backup.js'
@@ -10,10 +11,10 @@ import { getDb, getDbPath } from '../db/database.js'
 const router = express.Router()
 const db     = getDb()
 
-// ── Helper : autoBackup (identique à sessions.js — duplication assumée) ─
+// ── Helper: autoBackup (same as sessions.js — intentional duplication) ─
 export function autoBackup() {
   try { return createBackup(db, getDbPath()) }
-  catch (err) { console.warn('[backup] Erreur :', err.message) }
+  catch (err) { console.warn('[backup] Error:', err.message) }
 }
 
 // ── GET /export ───────────────────────────────────────────────
@@ -26,7 +27,7 @@ router.get('/export', (req, res) => {
       'SELECT * FROM exercise WHERE is_custom = 1'
     ).all().map(deserializeExercise)
 
-    // Toutes les autres tables
+    // All other tables
     const equipment_items    = db.prepare('SELECT * FROM equipment_item').all()
     const session_schedule_exclusions=db.prepare('SELECT * FROM session_schedule_exclusion ORDER BY program_id,scheduled_date').all()
     const programs           = db.prepare('SELECT * FROM program').all()
@@ -49,7 +50,7 @@ router.get('/export', (req, res) => {
     const user_profile = { ...profile, secondary_goals: JSON.parse(profile.secondary_goals) }
     const exercise_exclusions = db.prepare('SELECT id, is_excluded, exclusion_reason FROM exercise WHERE is_excluded = 1').all()
 
-    // Settings (sans ai_api_key)
+    // Settings (without ai_api_key)
     const settingsRows = db.prepare(
       "SELECT key, value FROM settings WHERE key != 'ai_api_key'"
     ).all()
@@ -101,14 +102,14 @@ router.post('/import', (req, res) => {
   try {
     const payload = req.body
 
-    // Validation de base
+    // Basic validation
     if (!payload || typeof payload !== 'object') {
       return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Corps JSON manquant.' })
     }
     if (payload.version !== 1) {
       return res.status(400).json({
         error:  'INVALID_IMPORT_FORMAT',
-        detail: `Version ${payload.version} non supportée. Version attendue : 1.`,
+        detail: message('import.unsupported_version', { version: payload.version }),
       })
     }
     if (payload.app !== 'workoutbuddy') {
@@ -126,7 +127,7 @@ router.post('/import', (req, res) => {
       'template_exercises','progression_states','sessions','session_exercises',
       'set_logs','body_weights','personal_records','equipment_advice']
     if (required.some(key => !Array.isArray(d[key])) || !d.settings || typeof d.settings !== 'object' || Array.isArray(d.settings)) {
-      return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Export incomplet : tables ou paramètres manquants.' })
+      return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: message('import.incomplete_export') })
     }
     for (const key of ['coach_conversations','coach_messages','exercise_exclusions','session_schedule_exclusions']) {
       if (d[key] !== undefined && !Array.isArray(d[key])) return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT' })
@@ -144,24 +145,24 @@ router.post('/import', (req, res) => {
           s.rpe != null && !isFiniteNumber(s.rpe,{min:0,max:10}) ||
           s.rir != null && !isFiniteNumber(s.rir,{min:0}) ||
           s.is_completed !== undefined && !isBoolean(s.is_completed) || s.is_warmup !== undefined && !isBoolean(s.is_warmup))) {
-      return res.status(400).json({error:'INVALID_IMPORT_FORMAT',detail:'Dates, mesures, séries ou états actifs incohérents.'})
+      return res.status(400).json({error:'INVALID_IMPORT_FORMAT',detail:message('import.inconsistent_data')})
     }
     for (const exercise of d.exercises) {
       if (!exercise || typeof exercise.id !== 'string' || !exercise.id || customIds.has(exercise.id)
         || db.prepare('SELECT id FROM exercise WHERE id = ? AND is_custom = 0').get(exercise.id)) {
-        return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: 'Identifiant d’exercice personnalisé invalide ou dupliqué.' })
+        return res.status(400).json({ error: 'INVALID_IMPORT_FORMAT', detail: message('import.invalid_custom_exercise') })
       }
       if (!isKnownCatalogueAlias(db,exercise)) return res.status(400).json({ error:'UNSUPPORTED_CUSTOM_EXERCISE' })
       customIds.add(exercise.id)
     }
 
-    // Sauvegarder avant l'import (protection)
+    // Back up before importing for protection
     createBackup(db, getDbPath(), { force: true })
 
     const counts = {}
 
     db.transaction(() => {
-      // Vider dans l'ordre correct (FK-safe) : personal_record référence set_log
+      // Clear in the correct order (FK-safe): personal_record references set_log
       if (d.coach_conversations !== undefined) {
         db.prepare('DELETE FROM coach_message').run()
         db.prepare('DELETE FROM coach_conversation').run()
@@ -180,10 +181,10 @@ router.post('/import', (req, res) => {
       db.prepare('DELETE FROM session_schedule_exclusion').run()
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
-      // Supprimer uniquement les exercices custom (garder les built-in)
+      // Delete only custom exercises (keep built-ins)
       db.prepare('DELETE FROM exercise WHERE is_custom = 1').run()
 
-      // Réinsérer exercices custom
+      // Reinsert custom exercises
       if (Array.isArray(d.exercises)) {
         for (const ex of d.exercises) {
           db.prepare(`
@@ -214,7 +215,7 @@ router.post('/import', (req, res) => {
         db.prepare('UPDATE exercise SET is_excluded = 0, exclusion_reason = NULL').run()
         for (const ex of d.exercise_exclusions) {
           const result = db.prepare('UPDATE exercise SET is_excluded = 1, exclusion_reason = ? WHERE id = ?').run(ex.exclusion_reason ?? null, ex.id)
-          if (!result.changes) throw new Error('Exercice exclu inconnu.')
+          if (!result.changes) throw new Error(message('import.unknown_excluded_exercise'))
         }
       }
       if (d.user_profile !== undefined) {
@@ -439,7 +440,7 @@ router.post('/import', (req, res) => {
         counts.equipment_advice = d.equipment_advice.length
       }
 
-      // settings (sans ai_api_key)
+      // settings (without ai_api_key)
       if (d.settings && typeof d.settings === 'object') {
         const stmt = db.prepare(`
           INSERT INTO settings (key, value, updated_at)
@@ -447,7 +448,7 @@ router.post('/import', (req, res) => {
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
         `)
         for (const [key, value] of Object.entries(d.settings)) {
-          if (key === 'ai_api_key') continue  // ne jamais importer la clé API
+          if (key === 'ai_api_key') continue  // never import the API key
           stmt.run(key, JSON.stringify(value))
         }
         counts.settings = Object.keys(d.settings).length
@@ -459,10 +460,10 @@ router.post('/import', (req, res) => {
           VALUES (@id, @title, @is_active, @created_at, @updated_at)
         `)
         for (const c of d.coach_conversations) {
-          stmt.run({ is_active: 0, ...c })  // défauts si champ absent
+          stmt.run({ is_active: 0, ...c })  // defaults when a field is missing
           counts.coach_conversations = (counts.coach_conversations || 0) + 1
         }
-        // Garantir l'invariant : un seul actif
+        // Enforce the invariant: only one active conversation
         const actives = db.prepare('SELECT id FROM coach_conversation WHERE is_active = 1 ORDER BY id DESC').all()
         if (actives.length > 1) {
           db.prepare('UPDATE coach_conversation SET is_active = 0 WHERE id != ?').run(actives[0].id)
@@ -503,7 +504,7 @@ router.get('/export/csv/:table', (req, res) => {
   if (!ALLOWED[table]) {
     return res.status(400).json({
       error:  'INVALID_TABLE',
-      detail: `Table autorisée : ${Object.keys(ALLOWED).join(', ')}`,
+      detail: message('export.allowed_tables', { tables: Object.keys(ALLOWED).join(', ') }),
     })
   }
 
@@ -512,19 +513,19 @@ router.get('/export/csv/:table', (req, res) => {
     if (rows.length === 0) {
       return res.status(200)
         .setHeader('Content-Type', 'text/csv; charset=utf-8')
-        .send('\uFEFF')  // BOM UTF-8 uniquement
+        .send('\uFEFF')  // UTF-8 BOM only
     }
 
-    // Générer le CSV
+    // Generate the CSV
     const headers = Object.keys(rows[0])
     const csvLines = [
-      '\uFEFF' + headers.join(';'),  // BOM UTF-8 + en-têtes (séparateur ; pour Excel FR)
+      '\uFEFF' + headers.join(';'),  // UTF-8 BOM + headers (semicolon separator for French Excel)
       ...rows.map(row =>
         headers.map(h => {
           const val = row[h]
           if (val === null || val === undefined) return ''
           const str = String(val)
-          // Échapper les valeurs avec guillemets si nécessaire
+          // Escape values with quotes when needed
           if (str.includes(';') || str.includes('"') || str.includes('\n')) {
             return '"' + str.replace(/"/g, '""') + '"'
           }
@@ -544,16 +545,16 @@ router.get('/export/csv/:table', (req, res) => {
 })
 
 // ── POST /reset-stats ─────────────────────────────────────────
-// Efface uniquement les données d'activité (séances, séries, poids, records,
-// état de progression) sans toucher aux programmes, exercices, équipement,
-// paramètres.
+// Clear only activity data (sessions, sets, weight, records,
+// progression state), preserving programs, exercises, equipment,
+// settings.
 router.post('/reset-stats', (req, res) => {
   try {
-    // Sauvegarder avant d'effacer
+    // Back up before clearing
     createBackup(db, getDbPath(), { force: true })
 
     db.transaction(() => {
-      // Ordre FK-safe : personal_record référence set_log (NO ACTION)
+      // FK-safe order: personal_record references set_log (NO ACTION)
       db.prepare('DELETE FROM personal_record').run()
       db.prepare('DELETE FROM set_log').run()
       db.prepare('DELETE FROM session_exercise').run()
@@ -564,8 +565,8 @@ router.post('/reset-stats', (req, res) => {
       db.prepare('DELETE FROM body_weight').run()
       db.prepare('DELETE FROM equipment_advice').run()
 
-      // Remettre les états de progression à zéro
-      // (garder les lignes — elles sont liées aux template_exercises)
+      // Reset progression states
+      // (keep rows — they are linked to template_exercises)
       db.prepare(`
         UPDATE progression_state
         SET current_weight_kg    = 0,
@@ -575,7 +576,7 @@ router.post('/reset-stats', (req, res) => {
             last_updated         = datetime('now')
       `).run()
 
-      // Remettre la semaine courante des programmes à 1
+      // Reset the current program week to 1
       db.prepare(`
         UPDATE program
         SET current_week     = 1,
@@ -586,7 +587,7 @@ router.post('/reset-stats', (req, res) => {
     })()
 
     res.json({
-      message: 'Statistiques et historique réinitialisés.',
+      message: message('data.history_reset'),
       cleared: ['sessions', 'set_logs', 'body_weights',
                 'personal_records', 'equipment_advice',
                 'progression_states (reset to 0)'],
@@ -626,7 +627,7 @@ router.post('/backup', (req, res) => {
       ? fs.readdirSync(backupDir).filter(f => f.endsWith('.db')).sort().reverse()
       : []
     res.json({
-      message:      'Sauvegarde effectuée.',
+      message:      message('data.backup_completed'),
       backup_count: files.length,
       latest:       files[0] || null,
     })
@@ -639,7 +640,7 @@ router.post('/backup', (req, res) => {
 // ── Helpers ───────────────────────────────────────────────────
 function serializeJson(val) {
   if (!val) return '[]'
-  if (typeof val === 'string') return val  // déjà sérialisé
+  if (typeof val === 'string') return val  // already serialized
   return JSON.stringify(val)
 }
 

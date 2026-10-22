@@ -3,7 +3,7 @@ import path from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { privateCreation, privateFile, privateBackups } from './privateStorage.js'
 
-// VACUUM INTO lit aussi les transactions présentes dans le journal WAL.
+// VACUUM INTO also reads transactions in the WAL journal.
 export function createBackup(db, dbPath, { force = false } = {}) {
   if (dbPath === ':memory:') return null
   const directory = privateBackups(dbPath, {create: true})

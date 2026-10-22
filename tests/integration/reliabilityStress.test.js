@@ -26,7 +26,7 @@ async function start(){const s=await post(`/sessions/from-template/${tpl.id}`,{s
 async function train(weight){const run=await start();run.set=await post(`/session-exercises/${run.se.id}/sets`,{set_number:1,weight_kg:weight,reps:12,is_completed:true},201);await post(`/sessions/${run.session.id}/complete`);return run}
 const learned=()=>db.prepare('SELECT * FROM exercise_progression WHERE exercise_id=?').get(slot.exercise_id)
 
-test('répéter une série après réponse perdue ne crée pas de doublon, même avec deux requêtes',async()=>{
+test('retrying a set after a lost response creates no duplicate, even with two requests',async()=>{
  const {se}=await start(),body={set_number:1,weight_kg:10,reps:12,is_completed:true}
  const result=await Promise.all([post(`/session-exercises/${se.id}/sets`,body,201),post(`/session-exercises/${se.id}/sets`,body,201)])
  assert.equal(result[0].id,result[1].id)
@@ -34,7 +34,7 @@ test('répéter une série après réponse perdue ne crée pas de doublon, même
  await post(`/session-exercises/${se.id}/sets`,{...body,weight_kg:20},409)
 })
 
-test('corriger ou supprimer une série historique recalcule aussi la progression apprise',async()=>{
+test('editing or deleting a historical set also recalculates learned progression',async()=>{
  const one=await train(10),two=await train(20)
  assert.equal(learned().current_weight_kg,21)
  await call('put',`/sets/${two.set.id}`,{weight_kg:5})
@@ -45,13 +45,13 @@ test('corriger ou supprimer une série historique recalcule aussi la progression
  assert.equal(db.prepare('SELECT last_session_id FROM progression_state WHERE template_exercise_id=?').get(slot.id).last_session_id,one.session.id)
 })
 
-test('une séance terminée refuse une nouvelle série arrivée en retard',async()=>{
+test('a completed workout rejects a late new set',async()=>{
  const run=await train(10),before=learned()
  await post(`/session-exercises/${run.se.id}/sets`,{set_number:2,weight_kg:99,reps:12,is_completed:true},409)
  assert.deepEqual(learned(),before)
 })
 
-test('suppression historique : invalider le bilan de la semaine concernée',async()=>{
+test('historical deletion invalidates the affected weekly review',async()=>{
  const run=await train(10)
  db.prepare("UPDATE session SET completed_at='2026-10-15 12:00:00' WHERE id=?").run(run.session.id)
  const review=reviewProgramWeek(db,program.id,new Date('2026-10-19T12:00:00Z'))
@@ -60,7 +60,7 @@ test('suppression historique : invalider le bilan de la semaine concernée',asyn
  assert.equal(db.prepare('SELECT COUNT(*) n FROM program_weekly_review WHERE program_id=?').get(program.id).n,0)
 })
 
-test('le bilan change de semaine à minuit local, même lorsque la date UTC est encore dimanche',async()=>{
+test('review changes week at local midnight, even when the UTC date is still Sunday',async()=>{
  const run=await train(10)
  db.prepare("UPDATE session SET completed_at='2026-10-15 12:00:00' WHERE id=?").run(run.session.id)
  const review=reviewProgramWeek(db,program.id,new Date('2026-10-18T22:30:00Z'))
@@ -68,7 +68,7 @@ test('le bilan change de semaine à minuit local, même lorsque la date UTC est 
  assert.equal(review.week_start,'2026-10-12')
 })
 
-test('dates impossibles ou champs de séance mal typés sont refusés sans écriture',async()=>{
+test('impossible dates or wrongly typed workout fields are rejected without writes',async()=>{
  const before=db.prepare('SELECT COUNT(*) n FROM session').get().n
  for(const scheduled_date of ['2026-02-30','not-a-date',{},123])await post(`/sessions/from-template/${tpl.id}`,{scheduled_date},400)
  assert.equal(db.prepare('SELECT COUNT(*) n FROM session').get().n,before)
@@ -76,7 +76,7 @@ test('dates impossibles ou champs de séance mal typés sont refusés sans écri
  await call('put',`/sessions/${run.session.id}`,{name:42},400)
 })
 
-test('douze semaines : 24 séances, reprise, export/import, suppression et recréation gardent des acquis cohérents',async()=>{
+test('twelve weeks: 24 workouts, resumption, export/import, deletion and recreation retain consistent progress',async()=>{
  // The API and all calculations are real. Only historical timestamps are fixtures:
  // SQLite's wall clock cannot be advanced without altering the host machine.
  const {invalidateSessionReview}=await import('../../src/services/trainingHistory.js')
@@ -136,7 +136,7 @@ test('douze semaines : 24 séances, reprise, export/import, suppression et recr�
  assert.ok((await get(`/programs/${again.id}`)).templates.length===2)
 })
 
-test('une erreur pendant le recalcul historique annule aussi la modification de série et des records',async()=>{
+test('an error during historical recalculation also rolls back set and record changes',async()=>{
  const run=await train(10),before=(await get('/export')).data
  db.exec("CREATE TRIGGER fail_history_rebuild BEFORE INSERT ON exercise_progression BEGIN SELECT RAISE(ABORT,'TEST_HISTORY_REBUILD'); END")
  try{
@@ -145,7 +145,7 @@ test('une erreur pendant le recalcul historique annule aussi la modification de 
  }finally{db.exec('DROP TRIGGER fail_history_rebuild')}
 })
 
-test('les imports incohérents échouent sans altérer les données existantes',async()=>{
+test('inconsistent imports fail without altering existing data',async()=>{
  await train(10)
  const valid=await get('/export')
  const cases=[
@@ -160,7 +160,7 @@ test('les imports incohérents échouent sans altérer les données existantes',
 })
 
 
-test('doubles clics de démarrage et de fin : une seule séance active et un seul calcul de progression',async()=>{
+test('double start and finish clicks: one active workout and one progression calculation',async()=>{
  const planned=await post(`/sessions/from-template/${tpl.id}`,{scheduled_date:'2026-10-15'},201)
  const started=await Promise.all([post(`/sessions/${planned.id}/start`),post(`/sessions/${planned.id}/start`)])
  assert.equal(started[0].started_at,started[1].started_at)
@@ -173,7 +173,7 @@ test('doubles clics de démarrage et de fin : une seule séance active et un seu
  assert.equal(db.prepare('SELECT COUNT(*) n FROM exercise_progression_event').get().n,1)
 })
 
-test('annuler puis revalider une série historique, et supprimer son exercice, restaure les bons acquis',async()=>{
+test('undoing then revalidating a historical set, and deleting its exercise, restores correct progress',async()=>{
  const one=await train(10),two=await train(20)
  await call('put',`/sets/${two.set.id}`,{is_completed:false})
  assert.equal(learned().last_session_id,one.session.id)
@@ -185,7 +185,7 @@ test('annuler puis revalider une série historique, et supprimer son exercice, r
  assert.equal((await get(`/sessions/${two.session.id}`)).total_volume_kg,0)
 })
 
-test('fatigue répétée : semaine allégée sans effacer les acquis, puis sortie au septième jour local',async()=>{
+test('repeated fatigue: deload week without erasing progress, then exit on the seventh local day',async()=>{
  const {localIsoDate}=await import('../../src/services/date.js')
  const {expireProgramDeload}=await import('../../src/services/programReview.js')
  for(const date of ['2026-10-20','2026-10-23']){

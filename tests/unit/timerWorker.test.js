@@ -22,7 +22,7 @@ function createWorkerLogic() {
 }
 
 describe('T2.5 — Timer Worker Logic', () => {
-  it('START_REST émet REST_TICK avec la durée initiale', () => {
+  it('START_REST emits REST_TICK with initial duration', () => {
     const logic = createWorkerLogic()
     logic.handle({ data: { type: 'START_REST', payload: { duration_seconds: 90 } } })
     const msgs = logic.getMessages()
@@ -30,14 +30,14 @@ describe('T2.5 — Timer Worker Logic', () => {
     assert.equal(msgs[0].remaining, 90)
   })
 
-  it('SKIP_REST émet REST_COMPLETE', () => {
+  it('SKIP_REST emits REST_COMPLETE', () => {
     const logic = createWorkerLogic()
     logic.handle({ data: { type: 'START_REST', payload: { duration_seconds: 90 } } })
     logic.handle({ data: { type: 'SKIP_REST' } })
     const msgs = logic.getMessages()
     assert.equal(msgs[0].type, 'REST_COMPLETE')
   })
-  it('un tick retardé utilise le temps réellement écoulé',()=>{
+  it('a delayed tick uses actual elapsed time',()=>{
     const logic=createWorkerLogic()
     logic.handle({data:{type:'START_REST',payload:{duration_seconds:90}}})
     logic.advance(30000)
@@ -45,13 +45,13 @@ describe('T2.5 — Timer Worker Logic', () => {
     logic.advance(60000)
     assert.equal(logic.getMessages()[0].type,'REST_COMPLETE')
   })
-  it('le chronomètre de séance récupère les ticks manqués',()=>{
+  it('workout timer catches up on missed ticks',()=>{
     const logic=createWorkerLogic()
     logic.handle({data:{type:'START_SESSION',payload:{elapsed_seconds:60}}})
     logic.advance(120000)
     assert.equal(logic.getMessages()[0].elapsed,180)
   })
-  it('ajuster le repos conserve le temps déjà écoulé',()=>{
+  it('adjusting rest preserves elapsed time',()=>{
     const logic=createWorkerLogic()
     logic.handle({data:{type:'START_REST',payload:{duration_seconds:90}}})
     logic.advance(30000)
@@ -61,7 +61,7 @@ describe('T2.5 — Timer Worker Logic', () => {
     logic.handle({data:{type:'ADJUST_REST',payload:{seconds:-15}}})
     assert.equal(logic.getMessages()[0].remaining,50)
   })
-  it('retirer le reste du repos termine le compteur une seule fois',()=>{
+  it('removing remaining rest completes the timer once',()=>{
     const logic=createWorkerLogic()
     logic.handle({data:{type:'START_REST',payload:{duration_seconds:10}}})
     logic.handle({data:{type:'ADJUST_REST',payload:{seconds:-15}}})

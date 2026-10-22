@@ -1,57 +1,55 @@
-# Livrer une nouvelle version de l’interface
+# Release a new frontend version
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-## Cache, authentification et mises à jour
+## Cache, authentication, and updates
 
-Chaque changement de `public/` incrémente `CACHE_NAME` dans `sw.js`. Le service worker précharge les
-fichiers statiques après contrôle d’accès, jamais l’HTML protégé. La navigation reste native pour
-laisser le navigateur suivre Authelia ; un 401 API provoque aussi le retour au portail, tandis
-qu’une vraie panne réseau garde `OFFLINE`.
+Every change to `public/` increments `CACHE_NAME` in `sw.js`. The service worker precaches
+static files after access checks, never protected HTML. Navigation stays native to let
+the browser follow Authelia; an API 401 also returns to the portal, while a real network
+failure keeps `OFFLINE`.
 
-Le worker `/sw.js` est public pour pouvoir remplacer un ancien worker même après expiration ;
-`/auth/login` et `/auth/logout` sont des renvois publics au portail. Le manifeste et les seuls
-fichiers d’icônes explicitement listés dans le matcher `@public_assets` sont publics pour les
-navigateurs et l’installation iPhone sans cookie partagé. Ils ne contiennent aucune donnée
-utilisateur.
+The `/sw.js` worker is public so it can replace an older worker even after expiration;
+`/auth/login` and `/auth/logout` are public redirects to the portal. The manifest and only
+the icon files explicitly listed in the `@public_assets` matcher are public for browsers
+and iPhone installation without a shared cookie. They contain no user data.
 
-L’interface, les autres assets et toute l’API restent authentifiés ; ne pas ouvrir `icons/*` ou
-d’autres chemins par un joker. Un worker installé pendant une session expirée ne précharge aucun
-asset privé et répare les fenêtres visibles déjà en cache. Caddy interdit le cache HTTP du
-bootstrap, du worker et d’`offline.html`.
+The interface, other assets, and the entire API remain authenticated; do not open `icons/*` or
+other paths with a wildcard. A worker installed during an expired session precaches no private
+assets and repairs visible windows already cached. Caddy prevents HTTP caching of the
+bootstrap, worker, and `offline.html`.
 
-Au premier plan, l’application vérifie sa connexion et recherche une version au démarrage puis
-toutes les cinq minutes. Les écrans de consultation se rechargent automatiquement ; une saisie ou
-séance reporte ce rechargement et affiche un bouton avec confirmation.
+In the foreground, the application checks connectivity and looks for a version at startup,
+then every five minutes. Browsing screens reload automatically; data entry or a workout
+postpones reloading and displays a button with confirmation.
 
-### Publier les fichiers validés
+### Publish validated files
 
-Après les tests isolés, publier sans changer le code possédé par le compte de service : `sudo
-/usr/local/sbin/workoutbuddy-deploy-assets /CHEMIN/DEPOT/public`. Installer d’abord les ressources
-dans le clone avec `node scripts/download-vendors.js` et `node scripts/download-exercise-images.js`.
-Le script de publication refuse une version dont des photos du catalogue sont absentes ou invalides.
+After isolated tests, publish without changing code ownership to the service account: `sudo
+/usr/local/sbin/workoutbuddy-deploy-assets /PATH/TO/REPOSITORY/public`. First install assets
+in the clone with `node scripts/download-vendors.js` and `node scripts/download-exercise-images.js`.
+The publishing script rejects a version with missing or invalid catalog photos.
 
-Les JPEG restent servis localement et protégés par Authelia ; aucun chargement d’image vers GitHub
-n’est nécessaire depuis le navigateur. Ce script root échange atomiquement deux dossiers `public/`,
-garde l’ancienne copie dans `.public-release-*` pour retour arrière, et ne touche pas à SQLite.
-Conserver une seule copie précédente après validation.
+JPEGs remain served locally and protected by Authelia; the browser requires no image requests
+to GitHub. This root script atomically swaps two `public/` directories, keeps the old copy
+in `.public-release-*` for rollback, and does not touch SQLite.
+Keep only one previous copy after validation.
 
-Sous SELinux enforcing, vérifier les contextes du staging et de la destination avant publication. Ce
-script ne déploie que l’interface : les changements backend nécessitent une livraison du code
-validé.
+With SELinux enforcing, check staging and destination contexts before publishing. This script
+only deploys the frontend: backend changes require deploying validated code.
 
-### Migrer un ancien worker
+### Migrate an old worker
 
-Lors de la migration depuis l’ancien worker sans mécanisme de rechargement, fermer puis rouvrir une
-fois l’application peut être nécessaire ; ne pas effacer les données du site. Les versions suivantes
-utilisent la détection automatique.
+When migrating from the old worker without a reload mechanism, closing and reopening the
+application once may be necessary; do not clear site data. Subsequent versions use
+automatic detection.
 
-### Contrôles avant livraison
+### Pre-release checks
 
-Validation avant mise à jour : `npm ci && npm test` dans la copie source ; parcours isolés selon
-`docs/TESTS_E2E.md`. Vérifier TLS/HTTP 308, UI/API/export/IA protégés, worker public sans donnée
-privée, en-têtes forgés, Host alternatif et ports directs. Tester MFA, déconnexion, expiration,
-import/export/sauvegarde sur base jetable derrière le proxy, redémarrages et restauration.
+Pre-update validation: `npm ci && npm test` in the source copy; isolated journeys according to
+`docs/TESTS_E2E.md`. Check TLS/HTTP 308, protected UI/API/export/AI, public worker without private
+data, forged headers, alternate Host, and direct ports. Test MFA, logout, expiration,
+import/export/backup on a disposable database behind the proxy, restarts, and restore.
 
-Le Coach IA reste désactivé sans fournisseur gratuit explicitement choisi ; aucun appel réel ne peut
-être validé sans configuration.
+The AI Coach remains disabled without an explicitly selected free provider; no real call can
+be validated without configuration.

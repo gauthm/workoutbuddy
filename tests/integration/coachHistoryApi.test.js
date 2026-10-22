@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée
+// Isolated DB
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t81-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -16,35 +16,35 @@ seedExercises(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T8.1 — API conversations coach', () => {
+describe('T8.1 — Coach conversations API', () => {
 
-  it('POST /ai/conversations crée une conversation active', async () => {
+  it('POST /ai/conversations creates an active conversation', async () => {
     const res = await request(app).post('/api/v1/ai/conversations').send({ title: 'Fil test' })
     assert.equal(res.status, 201)
     assert.equal(res.body.title, 'Fil test')
     assert.equal(res.body.is_active, 1)
   })
 
-  it('POST sans titre → titre par défaut "Conversation"', async () => {
+  it('POST without title → default title "Conversation"', async () => {
     const res = await request(app).post('/api/v1/ai/conversations').send({})
     assert.equal(res.status, 201)
     assert.equal(res.body.title, 'Conversation')
   })
 
-  it('Créer une 2e conversation déactive la première', async () => {
+  it('Creating a second conversation deactivates the first', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const actives = list.body.conversations.filter(c => c.is_active === 1)
-    assert.equal(actives.length, 1, 'Exactement une conversation active')
+    assert.equal(actives.length, 1, 'Exactly one active conversation')
   })
 
-  it('GET /ai/conversations retourne message_count et last_message_at', async () => {
+  it('GET /ai/conversations returns message_count and last_message_at', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     assert.ok(Array.isArray(list.body.conversations))
     const c = list.body.conversations[0]
     assert.equal(typeof c.message_count, 'number')
   })
 
-  it('GET /ai/conversations/:id/messages → fil inconnu = 404', async () => {
+  it('GET /ai/conversations/:id/messages → unknown thread = 404', async () => {
     const res = await request(app).get('/api/v1/ai/conversations/99999/messages')
     assert.equal(res.status, 404)
     assert.equal(res.body.error, 'CONVERSATION_NOT_FOUND')
@@ -54,9 +54,9 @@ describe('T8.1 — API conversations coach', () => {
     const created = await request(app).post('/api/v1/ai/conversations').send({})
     const id = created.body.id
 
-    const ren = await request(app).patch(`/api/v1/ai/conversations/${id}`).send({ title: 'Renommé' })
+    const ren = await request(app).patch(`/api/v1/ai/conversations/${id}`).send({ title: 'Renamed' })
     assert.equal(ren.status, 200)
-    assert.equal(ren.body.title, 'Renommé')
+    assert.equal(ren.body.title, 'Renamed')
 
     const act = await request(app).patch(`/api/v1/ai/conversations/${id}`).send({ is_active: true })
     assert.equal(act.status, 200)
@@ -67,7 +67,7 @@ describe('T8.1 — API conversations coach', () => {
     assert.equal(actives[0].id, id)
   })
 
-  it('PATCH sans champ → 400', async () => {
+  it('PATCH without field → 400', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const id = list.body.conversations[0].id
     const res = await request(app).patch(`/api/v1/ai/conversations/${id}`).send({})
@@ -75,26 +75,26 @@ describe('T8.1 — API conversations coach', () => {
     assert.equal(res.body.error, 'NO_FIELDS_TO_UPDATE')
   })
 
-  it('DELETE + cascade : les messages suivent', async () => {
+  it('DELETE + cascade: messages follow', async () => {
     const db = getDb()
     const conv = await request(app).post('/api/v1/ai/conversations').send({ title: 'Avec messages' })
     const id = conv.body.id
     db.prepare("INSERT INTO coach_message (conversation_id, role, content) VALUES (?, 'user', 'salut')").run(id)
-    db.prepare("INSERT INTO coach_message (conversation_id, role, content) VALUES (?, 'assistant', 'bonjour')").run(id)
+    db.prepare("INSERT INTO coach_message (conversation_id, role, content) VALUES (?, 'assistant', 'hello')").run(id)
 
     const del = await request(app).delete(`/api/v1/ai/conversations/${id}`)
     assert.equal(del.status, 204)
 
     const msgs = db.prepare('SELECT COUNT(*) n FROM coach_message WHERE conversation_id = ?').get(id)
-    assert.equal(msgs.n, 0, 'Les messages doivent être supprimés en cascade')
+    assert.equal(msgs.n, 0, 'Messages must be cascade-deleted')
   })
 
-  it('DELETE conversation inconnue → 404', async () => {
+  it('DELETE unknown conversation → 404', async () => {
     const res = await request(app).delete('/api/v1/ai/conversations/99999')
     assert.equal(res.status, 404)
   })
 
-  it('Export → import round-trip conserve les conversations', async () => {
+  it('Export → import round-trip preserves conversations', async () => {
     await request(app).post('/api/v1/ai/conversations').send({ title: 'Round trip' })
 
     const exp = await request(app).get('/api/v1/export')
@@ -103,7 +103,7 @@ describe('T8.1 — API conversations coach', () => {
 
     const payload = exp.body
     payload.data.coach_conversations.push({
-      id: 90001, title: 'Injectée', is_active: 0,
+      id: 90001, title: 'Injected', is_active: 0,
       created_at: '2026-01-01 00:00:00', updated_at: '2026-01-01 00:00:00',
     })
     payload.data.coach_messages.push({

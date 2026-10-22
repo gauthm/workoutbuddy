@@ -15,7 +15,7 @@ export default {
     const state = reactive({
       base_url:    props.currentSettings.ai_base_url || '',
       model:       props.currentSettings.ai_model    || '',
-      api_key:     '',       // toujours vide en affichage
+      api_key:     '',       // always empty when displayed
       models:      [],
       testing:     false,
       testResult:  null,     // { ok: bool, message: string }
@@ -85,7 +85,7 @@ export default {
     function selectModel(modelId) {
       state.model  = modelId
       state.testResult = null
-      state.models = []   // refermer la liste déroulante après sélection
+      state.models = []   // close the dropdown after selection
     }
 
     return {
@@ -112,7 +112,7 @@ export default {
         </div>
       </div>
 
-      <!-- Modèle -->
+      <!-- Model -->
       <div class="form-group">
         <label class="form-label" for="ai-provider-model">{{ t('settings.ai_model') }}</label>
         <div style="display:flex;gap:0.5rem">
@@ -132,7 +132,7 @@ export default {
           </button>
         </div>
 
-        <!-- Liste des modèles disponibles -->
+        <!-- Available models -->
         <div v-if="state.models.length" class="ai-models-list">
           <button
             v-for="m in state.models" :key="m.id"
@@ -144,7 +144,7 @@ export default {
         </div>
       </div>
 
-      <!-- Clé API -->
+      <!-- API key -->
       <div class="form-group">
         <label class="form-label" for="ai-provider-key">{{ t('settings.ai_api_key') }}</label>
         <div style="display:flex;gap:0.5rem;align-items:center">
@@ -178,7 +178,7 @@ export default {
 
       <p v-if="dirty && !valid" class="settings-notice settings-notice--warning">{{ t('settings.ai_fields_required') }}</p>
 
-      <!-- Résultat du test -->
+      <!-- Test result -->
       <div v-if="state.testResult" class="ai-test-result"
         :class="state.testResult.ok ? 'ai-test-result--ok' : 'ai-test-result--fail'">
         {{ state.testResult.message }}

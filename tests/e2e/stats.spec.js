@@ -1,6 +1,6 @@
 import {test,expect} from './fixtures.js'
 import {L,get,planned,trainThroughUI} from './helpers.js'
-test('une séance terminée alimente les compteurs et le graphique, puis le regroupement musculaire',async({page,request})=>{
+test('a completed workout populates counters and chart, then muscle grouping',async({page,request})=>{
  const program=await planned(request);await trainThroughUI(page,request,program)
  await page.goto('/#/stats')
  const overview=await get(request,'/stats/overview')
@@ -11,7 +11,7 @@ test('une séance terminée alimente les compteurs et le graphique, puis le regr
  await page.reload()
  await expect(page.locator('.stats-metric').first().locator('strong')).toHaveText('1')
 })
-test('statistiques vierges : compteurs à zéro et état vide sans erreur de graphique',async({page})=>{
+test('empty statistics: zero counters and empty state without chart errors',async({page})=>{
  await page.goto('/#/stats')
  await expect(page.locator('.stats-metric').first().locator('strong')).toHaveText('0')
  await expect(page.getByText(L('stats.no_data'),{exact:true})).toBeVisible()
@@ -19,7 +19,7 @@ test('statistiques vierges : compteurs à zéro et état vide sans erreur de gra
  await expect(page.locator('.stats-dashboard')).not.toContainText('NaN')
 })
 
-test('le poids de création est visible puis supprimable sans perdre la référence du programme, même après redémarrage',async({page,request,app})=>{
+test('creation weight is visible then deletable without losing program reference, even after restart',async({page,request,app})=>{
  const program=await planned(request,{weight_kg:75,height_cm:175})
  await page.goto('/#/stats/bodyweight')
  await expect(page.locator('.bw-list-row')).toHaveCount(1)

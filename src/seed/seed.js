@@ -1,4 +1,4 @@
-// Seed des exercices — src/seed/exercises.json (issu de scripts/import-exercises.js)
+// Exercise seed — src/seed/exercises.json (from scripts/import-exercises.js)
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -10,7 +10,7 @@ function readFrenchTranslations() {
   try {
     return JSON.parse(fs.readFileSync(path.join(__dirname, 'exercises.fr.json'), 'utf8'))
   } catch (err) {
-    console.warn('[seed] Catalogue français indisponible :', err.message)
+    console.warn('[seed] French catalog unavailable:', err.message)
     return {}
   }
 }
@@ -22,8 +22,8 @@ export function translationSource(exercise) {
 export function readSeedCatalog() {
   const filePath = path.join(__dirname, 'exercises.json')
   if (!fs.existsSync(filePath)) {
-    console.warn('[seed] src/seed/exercises.json manquant.')
-    console.warn('[seed] Lancer : node scripts/import-exercises.js <path-to-free-exercise-db>')
+    console.warn('[seed] src/seed/exercises.json missing.')
+    console.warn('[seed] Run: node scripts/import-exercises.js <path-to-free-exercise-db>')
     return []
   }
   try {
@@ -31,17 +31,17 @@ export function readSeedCatalog() {
     const translations = readFrenchTranslations()
     return exercises.map(ex => {
       const fr = translations[ex.id]
-      // Une mise à jour de la source ne doit pas réutiliser une traduction périmée.
+      // A source update must not reuse an outdated translation.
       if (!fr || fr.source !== translationSource(ex)) return ex
       return { ...ex, name_fr: fr.name, instructions_fr: fr.instructions }
     })
   } catch (err) {
-    console.error('[seed] Erreur lecture exercises.json :', err.message)
+    console.error('[seed] Failed to read exercises.json:', err.message)
     return []
   }
 }
 
-// Données de référence uniquement : aucun identifiant, texte EN ou champ utilisateur modifié.
+// Reference data only: identifiers, English text and user fields remain unchanged.
 export function syncExerciseTranslations(db, exercises = readSeedCatalog()) {
   const translations = readFrenchTranslations()
   const update = db.prepare(`UPDATE exercise SET name_fr = @name_fr, instructions_fr = @instructions_fr
@@ -99,22 +99,22 @@ export function insertExercises(db, exercises) {
   return { source: exercises.length, inserted: insert(exercises) }
 }
 
-// Insérer au premier démarrage, puis synchroniser seulement les traductions du catalogue.
+// Insert on first startup, then synchronize only catalog translations.
 export function seedExercises(db) {
   const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
   if (count > 0) {
     const updated = syncExerciseTranslations(db)
-    console.log(`[seed] ${count} exercices présents, ${updated} traductions actualisées.`)
+    console.log(`[seed] ${count} exercises present, ${updated} translations updated.`)
     return
   }
 
   const exercises = readSeedCatalog()
   if (exercises.length === 0) {
-    console.warn('[seed] Aucun fichier seed trouvé.')
-    console.warn('[seed] Lancer : node scripts/import-exercises.js <path-to-free-exercise-db>')
+    console.warn('[seed] No seed file found.')
+    console.warn('[seed] Run: node scripts/import-exercises.js <path-to-free-exercise-db>')
     return
   }
 
   const { inserted } = insertExercises(db, exercises)
-  console.log(`[seed] ${inserted}/${exercises.length} exercices importés.`)
+  console.log(`[seed] ${inserted}/${exercises.length} exercises imported.`)
 }

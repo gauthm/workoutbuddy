@@ -45,7 +45,7 @@ export async function isolatedApp({snapshotAssets=false}={}) {
         const exit=code=>done(new Error(`Test server exited (${code})\n${logs}`))
         function done(error){clearTimeout(timer);child.off('exit',exit);child.off('error',done);error?no(error):yes()}
         child.once('exit',exit);child.once('error',done)
-        child.stdout.on('data',chunk=>{logs+=chunk;if(String(chunk).includes('WorkoutBuddy démarré'))done()})
+        child.stdout.on('data',chunk=>{logs+=chunk;if(String(chunk).includes('WorkoutBuddy started'))done()})
         child.stderr.on('data',chunk=>{logs+=chunk})
       })
       const health=await fetch(`http://127.0.0.1:${port}/api/v1/settings`)

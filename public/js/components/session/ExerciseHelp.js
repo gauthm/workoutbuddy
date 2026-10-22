@@ -52,13 +52,13 @@ export default {
           </ol>
         </div>
 
-        <!-- Charge à saisir -->
+        <!-- Load to enter -->
         <div class="detail-section exercise-help__weight-entry">
           <h3 class="detail-section__title">{{ t('session.weight_entry') }}</h3>
           <p style="font-size:0.9rem;line-height:1.5">{{ t(weightEntryKey) }}</p>
         </div>
 
-        <!-- Charge de départ -->
+        <!-- Starting load -->
         <div class="detail-section exercise-help__starting-load">
           <h3 class="detail-section__title">{{ t('session.starting_load') }}</h3>
           <ul style="padding-left:1.25rem">
@@ -67,7 +67,7 @@ export default {
           </ul>
         </div>
 
-        <!-- Tableau RM -->
+        <!-- RM table -->
         <div v-if="table.length" class="detail-section">
           <h3 class="detail-section__title">{{ t('session.rm_table') }} (RM ≈ {{ rm }} kg)</h3>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem">
@@ -79,7 +79,7 @@ export default {
           </div>
         </div>
 
-        <!-- Historique -->
+        <!-- History -->
         <div v-if="history.length" class="detail-section">
           <h3 class="detail-section__title">{{ t('exercises.history') }}</h3>
           <div v-for="s in history.slice(0,5)" :key="s.session_id"

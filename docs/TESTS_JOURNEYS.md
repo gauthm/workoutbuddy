@@ -1,48 +1,47 @@
-# Parcours de fiabilité
+# Reliability journeys
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-Cette suite exécute les parcours utilisateur avec l’application Express réelle : parseur JSON,
-validation, routes, SQLite et moteur de programme/progression. Les réponses API et le moteur ne sont
-pas simulés. Les scénarios créent et modifient leurs données exclusivement via les routes de
-l’application.
+This suite runs user journeys with the real Express application: JSON parser,
+validation, routes, SQLite and program/progression engine. API responses and the engine
+are not mocked. Scenarios create and modify their data exclusively through application
+routes.
 
-## Lancer
+## Running the suite
 
 ```sh
 npm test
 ```
 
-Inclut les tests unitaires, d’intégration et ces parcours. Pour lancer uniquement les sept parcours
-:
+This includes unit tests, integration tests and these journeys. To run only the seven journeys:
 
 ```sh
 npm run test:journeys
 ```
 
-Chaque processus utilise une base `:memory:`, configurée avant les imports et vérifiée
-explicitement. Chaque scénario réinitialise ses propres données et configure un inventaire de test.
-Aucun port n’est ouvert ; le serveur en cours, la base utilisateur et les sauvegardes utilisateur ne
-sont pas utilisés. Aucun service IA ni accès réseau n’est nécessaire.
+Each process uses a `:memory:` database, configured before imports and explicitly checked.
+Each scenario resets its own data and sets up a test inventory. No ports are opened;
+the running server, user database and user backups are not used. No AI service or network
+access is required.
 
-## Couverture
+## Coverage
 
-1. Questionnaire et aperçu sans écriture, création, activation, modification des jours et durée illimitée, calendrier cohérent ; modifications invalides sans changement de données.
-2. Séance réalisée, progression suivante et statistiques ; annulation/rétablissement d’une série, exclusion des séries non réalisées et d’échauffement du volume et des records ; refus d’une double complétion sans deuxième progression.
-3. Suppression du programme avec historique conservé, nouveau programme reprenant les acquis d’un exercice, suppression de la performance et remise à jour des statistiques et cibles.
-4. Export JSON complet, réinitialisation, import identique et reprise d’une séance avec progression conservée : séances, séries, poids corporel, records, progression par exercice, événements de calcul et réglages.
-5. Sauvegarde groupée des réglages et du profil : rejet atomique, correction, nouvelle sauvegarde, conservation de la clé API si omise et absence de cette clé dans les réponses/export.
-6. Remplacement d’un exercice avant la séance, prescription et historique préservés ; prochain entraînement sur le nouvel exercice ; remplacement refusé pendant la séance.
-7. Import invalide provoquant une erreur de clé étrangère après le début de la transaction : restauration de toutes les données initiales et séance suivante encore utilisable.
+1. Questionnaire and preview without writes, creation, activation, changes to days and unlimited duration, consistent calendar; invalid changes leave data unchanged.
+2. Completed workout, next progression and statistics; undo/redo of a set, exclusion of incomplete and warm-up sets from volume and records; duplicate completion rejected without a second progression.
+3. Program deletion with history preserved, a new program retaining an exercise's progress, performance deletion and recalculation of statistics and targets.
+4. Complete JSON export, reset, identical import and workout resumption with progression preserved: sessions, sets, bodyweight, records, per-exercise progression, calculation events and settings.
+5. Batch saving of settings and profile: atomic rejection, correction, saving again, API key preserved when omitted and absent from responses/export.
+6. Exercise replacement before a workout, prescription and history preserved; next workout uses the new exercise; replacement rejected during a workout.
+7. Invalid import causing a foreign-key error after the transaction begins: all original data restored and the next workout still usable.
 
-## Pendant le développement
+## During development
 
-Lancer `npm test` après les changements de logique ou de données. Ajouter un cas ciblé pour chaque
-bug corrigé et étendre ces parcours lorsqu’un changement affecte plusieurs fonctionnalités. Ne pas
-affaiblir une assertion pour masquer une régression ; adapter une attente uniquement lorsque le
-comportement attendu ou le contrat API a volontairement changé.
+Run `npm test` after logic or data changes. Add a targeted case for each fixed bug and extend
+these journeys when a change affects multiple features. Do not weaken an assertion to hide
+a regression; adapt an expectation only when intended behavior or the API contract has
+deliberately changed.
 
-Ces parcours couvrent l’API. Pour les clics, le rendu, les interruptions réseau et les redémarrages
-du vrai serveur, utiliser les parcours Playwright isolés de `tests/e2e/` : [guide](TESTS_E2E.md).
-Ils tournent en formats ordinateur et mobile et sont sélectionnés par domaine avec `npm run
+These journeys cover the API. For clicks, rendering, network interruptions and real server
+restarts, use the isolated Playwright journeys in `tests/e2e/`: [guide](TESTS_E2E.md).
+They run with desktop and mobile viewports and are selected by domain with `npm run
 test:e2e:affected`.

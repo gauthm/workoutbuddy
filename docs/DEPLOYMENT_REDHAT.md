@@ -1,92 +1,90 @@
-# Déploiement sur la famille Red Hat
+# Deployment on the Red Hat family
 
-[Documentation](INDEX.md) · [Installation commune](DEPLOYMENT_LINUX.md) · [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md)
+[Documentation](INDEX.md) · [Common installation](DEPLOYMENT_LINUX.md) · [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md)
 
-## Périmètre
+## Scope
 
-Modèles : `deploy/linux/redhat-based/`. Cette variante vise les distributions maintenues de la famille
-RHEL/Fedora (Red Hat Enterprise Linux, Rocky, AlmaLinux, CentOS Stream, Oracle Linux, Fedora
-et dérivées fournissant les prérequis). Elle utilise DNF 4 ou DNF 5 et RPM.
+Templates: `deploy/linux/redhat-based/`. This variant targets maintained RHEL/Fedora-family
+distributions (Red Hat Enterprise Linux, Rocky, AlmaLinux, CentOS Stream, Oracle Linux, Fedora,
+and derivatives providing the requirements). It uses DNF 4 or DNF 5 and RPM.
 
-Prérequis : **systemd 247+, Python 3.9+, Node 24**, Caddy, Authelia et Redis ou Valkey.
-Les systèmes anciens avec seulement YUM, les systèmes sans systemd et les distributions
-arrivées en fin de vie ne sont pas couverts. Le contrôle `check-platform.py` refuse
-les prérequis incompatibles : le nom de la distribution ne suffit pas à garantir le support.
+Requirements: **systemd 247+, Python 3.9+, Node 24**, Caddy, Authelia, and Redis or Valkey.
+Older systems with only YUM, systems without systemd, and distributions past end of life
+are not covered. The `check-platform.py` check rejects incompatible requirements:
+the distribution name alone does not guarantee support.
 
-Rocky Linux 9 est l’hôte historiquement validé. Les autres variantes ont des tests de scripts
-isolés ; elles nécessitent encore une validation complète sur leur propre VM avant usage.
-Les résultats historiques restent dans [Validation du déploiement](DEPLOYMENT_VALIDATION.md).
+Rocky Linux 9 is the historically validated host. Other variants have isolated script
+tests; they still require full validation on their own VM before use.
+Historical results remain in [Deployment validation](DEPLOYMENT_VALIDATION.md).
 
-## Paquets
+## Packages
 
 ```sh
 dnf install gcc-c++ make sqlite python3 tzdata curl ca-certificates
 ```
 
-Installer Node.js **24.x** et npm via le dépôt signé de la distribution ou un fournisseur
-compatible avec cette version. Sur une distribution proposant le module `nodejs:24`,
-il est possible d’utiliser `dnf module install nodejs:24` ; cette commande n’est pas
-universelle et n’est pas utilisée par les scripts. Vérifier `/usr/bin/node --version`
-et `/usr/bin/npm --version`. Maintenir la branche majeure 24 dans la configuration du
-dépôt/module ; si cette garantie n’est pas possible, exclure `nodejs*` des mises à jour
-DNF et mettre Node à jour séparément après tests.
+Install Node.js **24.x** and npm through the distribution's signed repository or a provider
+supporting this version. On a distribution offering the `nodejs:24` module,
+`dnf module install nodejs:24` can be used; this command is not universal and is not
+used by the scripts. Check `/usr/bin/node --version` and `/usr/bin/npm --version`.
+Keep major branch 24 in the repository/module configuration; if that cannot be
+guaranteed, exclude `nodejs*` from DNF updates and update Node separately after testing.
 
-Pour DNF 4, installer `dnf-plugins-core` ; pour DNF 5, installer `dnf5-plugins`.
-Vérifier `dnf needs-restarting --help` : le plugin doit fournir `-r` et `-s`.
-La maintenance accepte les codes de retour 0 et 1 de DNF 5 pour la liste des services.
-Voir les documentations [DNF 4](https://dnf-plugins-core.readthedocs.io/en/latest/needs_restarting.html)
-et [DNF 5](https://dnf5.readthedocs.io/en/latest/dnf5_plugins/needs_restarting.8.html).
+For DNF 4, install `dnf-plugins-core`; for DNF 5, install `dnf5-plugins`.
+Check `dnf needs-restarting --help`: the plugin must provide `-r` and `-s`.
+Maintenance accepts DNF 5 return codes 0 and 1 for the service list.
+See the [DNF 4](https://dnf-plugins-core.readthedocs.io/en/latest/needs_restarting.html)
+and [DNF 5](https://dnf5.readthedocs.io/en/latest/dnf5_plugins/needs_restarting.8.html) documentation.
 
-Installer `redis` ou `valkey` selon les dépôts disponibles. Installer Caddy depuis son
-[dépôt officiel pour la distribution](https://caddyserver.com/docs/install#fedora-redhat-centos),
-avec le plugin COPR de DNF adapté. L’activation de `@caddy/caddy` est une option fournie
-par Caddy ; certains dérivés nécessitent un autre dépôt signé compatible.
+Install `redis` or `valkey` according to the available repositories. Install Caddy from its
+[official repository for the distribution](https://caddyserver.com/docs/install#fedora-redhat-centos),
+with the appropriate DNF COPR plugin. Enabling `@caddy/caddy` is an option supplied by
+Caddy; some derivatives require another compatible signed repository.
 
-Installer le binaire Authelia adapté à l’architecture dans `/usr/local/bin/authelia`,
-root:root 0755, depuis ses releases officielles, après vérification de `checksums.sha256`.
-Versions historiquement validées sur Rocky : Node 24.21, Caddy 2.11.7, Authelia 4.39.28.
+Install the architecture-appropriate Authelia binary in `/usr/local/bin/authelia`,
+root:root 0755, from its official releases, after verifying `checksums.sha256`.
+Historically validated versions on Rocky: Node 24.21, Caddy 2.11.7, Authelia 4.39.28.
 
-## Configuration de l’application
+## Application configuration
 
-Suivre l’[installation commune](DEPLOYMENT_LINUX.md) avec :
+Follow the [common installation](DEPLOYMENT_LINUX.md) with:
 
 ```sh
 WB_DEPLOY_DIR=deploy/linux/redhat-based
 ```
 
-Les chemins installés et les données existantes sont conservés ; le renommage dans Git
-ne requiert pas de réinstallation d’une application déjà en production.
+Installed paths and existing data are preserved; the rename in Git does not require
+reinstalling an application already in production.
 
-## Isolation et SELinux
+## Isolation and SELinux
 
-Les drop-ins rétablissent des protections parfois remplacées par l'hébergeur. Vérifier les valeurs
-effectives avec `systemctl show`. Le drop-in d’isolation WorkoutBuddy protège aussi l’horloge, les
-journaux noyau, le nom d’hôte et `/proc`, interdit la création d’espaces de noms et filtre les
-appels système privilégiés. Il désactive les core dumps.
+The drop-ins restore protections sometimes overridden by the hosting provider. Check effective
+values with `systemctl show`. The WorkoutBuddy isolation drop-in also protects the clock,
+kernel logs, hostname, and `/proc`, prohibits namespace creation, and filters privileged
+system calls. It disables core dumps.
 
-Garder les mappings exécutables nécessaires au JIT de Node et le réseau sortant nécessaire au Coach
-IA. Tester les protections dans une instance à base jetable avant application sur un autre hôte.
-Sous SELinux enforcing, installer `selinux-policy-targeted`, appliquer `restorecon` aux chemins
-installés, vérifier `ps -eZ` et les AVC après les parcours. Le paquet Caddy fournit sa politique.
+Keep executable mappings needed by Node's JIT and outbound networking needed by the AI Coach.
+Test protections in an instance with a disposable database before applying them to another host.
+With SELinux enforcing, install `selinux-policy-targeted`, apply `restorecon` to installed paths,
+and check `ps -eZ` and AVCs after the journeys. The Caddy package provides its policy.
 
-N'ajouter que les permissions justifiées ; aucune politique générale `audit2allow`.
+Add only justified permissions; do not apply a broad `audit2allow` policy.
 
-## Pare-feu et accès SSH
+## Firewall and SSH access
 
-Avant d'activer firewalld : autoriser **le port SSH réellement utilisé**, HTTP/TCP et HTTPS/TCP dans
-la zone de l'interface ; retirer les autres ouvertures. Prévoir un retour automatique temporaire,
-vérifier SSH puis désarmer ce retour. Ne pas modifier SSH simultanément. Les modèles supposent le
-port 22 : l'adapter si besoin.
+Before enabling firewalld: allow **the actual SSH port**, HTTP/TCP, and HTTPS/TCP in the interface's
+zone; remove other openings. Set up a temporary automatic rollback, verify SSH, then disarm it.
+Do not change SSH at the same time. The templates assume port 22: adjust it if needed.
 
-Le modèle Fail2ban `sshd-jail.local` utilise `firewallcmd-rich-rules` : installer
-firewalld si ce modèle est retenu, ou adapter son action au pare-feu effectif.
+The Fail2ban `sshd-jail.local` template uses `firewallcmd-rich-rules`: install
+firewalld if using this template, or adapt its action to the actual firewall.
 
 ## Maintenance
 
-Utiliser les unités autonomes `workoutbuddy-maintenance.service` et
-`workoutbuddy-maintenance.timer`. La maintenance appelle `dnf -y upgrade --refresh` et
-`dnf needs-restarting` ; elle ne dépend ni des modules RHEL, ni de `dnf-automatic`.
+Use the standalone `workoutbuddy-maintenance.service` and
+`workoutbuddy-maintenance.timer` units. Maintenance calls `dnf -y upgrade --refresh` and
+`dnf needs-restarting`; it depends on neither RHEL modules nor `dnf-automatic`.
 
-Les anciens fichiers `dnf-automatic*.conf` restent disponibles pour une installation DNF 4
-existante. Ils ne sont pas requis sur Fedora/DNF 5. Ne pas activer deux planificateurs :
-la [procédure de maintenance](DEPLOYMENT_OPERATIONS.md) décrit la migration et les tests.
+The old `dnf-automatic*.conf` files remain available for an existing DNF 4 installation.
+They are not required on Fedora/DNF 5. Do not enable two schedulers:
+the [maintenance procedure](DEPLOYMENT_OPERATIONS.md) describes migration and testing.

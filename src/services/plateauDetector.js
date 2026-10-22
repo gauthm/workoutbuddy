@@ -1,14 +1,16 @@
+import { message } from '../utils/messages.js'
+
 /**
- * Détecte un plateau de progression sur un exercice.
+ * Detect a progression plateau for an exercise.
  *
- * Algorithme : comparer le RM estimé (Epley) de la session la plus récente
- * au RM de la session la plus ancienne dans la fenêtre de N sessions.
- * Si l'amélioration est ≤ 1%, c'est un plateau.
+ * Algorithm: compare the estimated RM (Epley) of the most recent session
+ * with the oldest session RM within the N-session window.
+ * An improvement of ≤ 1% indicates a plateau.
  *
- * @param {string}  exerciseId  - ID de l'exercice
- * @param {number}  programId   - ID du programme
- * @param {number}  n           - nombre de sessions à analyser (défaut 4)
- * @param {object}  db          - instance better-sqlite3
+ * @param {string}  exerciseId  - Exercise ID
+ * @param {number}  programId   - Program ID
+ * @param {number}  n           - number of sessions to analyze (default 4)
+ * @param {object}  db          - better-sqlite3 instance
  * @returns {{ is_plateau, sessions_checked, first_1rm?, current_1rm?, delta_pct?, reason }}
  */
 export function detectPlateau(exerciseId, programId, n = 4, db) {
@@ -36,21 +38,21 @@ export function detectPlateau(exerciseId, programId, n = 4, db) {
     return {
       is_plateau: false,
       sessions_checked: rows.length,
-      reason: `Pas assez de données (${rows.length}/${n} séances).`,
+      reason: message('plateau.insufficient_data', { sessions: rows.length, required: n }),
     }
   }
 
-  // rows[0] = plus récent, rows[n-1] = plus ancien
+  // rows[0] = newest, rows[n-1] = oldest
   const currentRm = rows[0].session_1rm
   const firstRm   = rows[n - 1].session_1rm
 
   if (firstRm <= 0) {
-    return { is_plateau: false, sessions_checked: n, reason: 'RM de référence nul.' }
+    return { is_plateau: false, sessions_checked: n, reason: message('plateau.zero_reference') }
   }
 
   const deltaPct = ((currentRm - firstRm) / firstRm) * 100
 
-  if (deltaPct <= 1.0) {  // tolérance 1% pour les arrondis de charge
+  if (deltaPct <= 1.0) {  // 1% tolerance for load rounding
     return {
       is_plateau:       true,
       sessions_checked: n,
@@ -70,12 +72,12 @@ export function detectPlateau(exerciseId, programId, n = 4, db) {
 }
 
 /**
- * Vérifie si au moins `minFraction` des exercices actifs d'un programme
- * sont en plateau.
+ * Check whether at least `minFraction` of a program's active exercises
+ * have plateaued.
  *
- * @param {number}  programId    - ID du programme
- * @param {number}  n            - fenêtre de sessions
- * @param {number}  minFraction  - fraction minimale (ex: 0.5 = 50%)
+ * @param {number}  programId    - Program ID
+ * @param {number}  n            - session window
+ * @param {number}  minFraction  - minimum fraction (e.g. 0.5 = 50%)
  * @param {object}  db
  * @returns {{ is_program_plateau, plateau_count, total_exercises }}
  */

@@ -2,14 +2,14 @@ import { reactive } from '/vendor/vue.esm-browser.prod.js'
 import { stopSessionTimers } from './timer-worker-singleton.js'
 
 export const store = reactive({
-  // ── État global ───────────────────────────────────────────
+  // ── Global state ───────────────────────────────────────────
   pendingRequests: 0,
-  settings:      null,       // objet settings chargé depuis GET /settings
+  settings:      null,       // settings object loaded from GET /settings
   screenWakeLock: { supported: false, active: false, unavailable: false },
   activeRest: null,
   activeRestExerciseId: null,
-  activeSession: null,       // session en cours (status='in_progress')
-  pendingAdjustments: [],    // ajustements du moteur retournés par POST /sessions/:id/start
+  activeSession: null,       // current session (status='in_progress')
+  pendingAdjustments: [],    // engine adjustments returned by POST /sessions/:id/start
   toast:         null,       // { id, message, type:'success'|'error'|'info'|'warning' }
   _toastTimer:   null,
 

@@ -138,7 +138,7 @@ export default {
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else-if="state.program">
-          <!-- Infos -->
+          <!-- Information -->
           <div class="detail-section">
             <div class="program-summary-tags">
               <span class="program-tag">{{ t('programs.goal_' + (state.program.goal === 'general_fitness' ? 'general' : state.program.goal)) }}</span>
@@ -195,7 +195,7 @@ export default {
             </div>
           </div>
 
-          <!-- Supprimer -->
+          <!-- Delete -->
           <button class="btn btn--danger btn--full" style="margin-top:2rem"
             @click="state.showDeleteConfirm = true">
             {{ t('common.delete') }}

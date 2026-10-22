@@ -2,7 +2,7 @@ import {test,expect} from './fixtures.js'
 import {L,call,get} from './helpers.js'
 import {createServer} from 'node:http'
 
-test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; Maj+Entrée et taille du champ',async({page},testInfo)=>{
+test('Coach input: Enter sends on desktop, newline on mobile; Shift+Enter and input size',async({page},testInfo)=>{
  const mobile=testInfo.project.name==='mobile'
  const sent=[]
  page.on('request',request=>{if(request.url().endsWith('/api/v1/ai/chat') && request.method()==='POST')sent.push(request)})
@@ -14,18 +14,18 @@ test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; M
  const metrics=()=>input.evaluate(element=>({height:element.getBoundingClientRect().height,client:element.clientHeight,scroll:element.scrollHeight,top:element.scrollTop,overflow:getComputedStyle(element).overflowY}))
  const initial=await metrics()
  expect(initial.overflow).toBe('hidden')
- await input.fill('Une ligne de test')
+ await input.fill('One test line')
  expect((await metrics()).scroll).toBeLessThanOrEqual((await metrics()).client)
  await input.press(mobile?'Enter':'Shift+Enter');await input.press('Shift+Enter')
- await input.pressSequentially('Troisième ligne')
- await expect(input).toHaveValue('Une ligne de test\n\nTroisième ligne')
+ await input.pressSequentially('Third line')
+ await expect(input).toHaveValue('One test line\n\nThird line')
  expect(sent).toHaveLength(0)
  const expanded=await metrics()
  expect(expanded.height).toBeGreaterThan(initial.height)
  expect(expanded.height).toBeLessThan(120)
  expect(expanded.scroll).toBeLessThanOrEqual(expanded.client)
  expect(expanded.overflow).toBe('hidden')
- await input.fill(Array.from({length:30},(_,i)=>`Ligne synthétique ${i+1} du message long`).join('\n'))
+ await input.fill(Array.from({length:30},(_,i)=>`Synthetic line ${i+1} of the long message`).join('\n'))
  const capped=await metrics()
  expect(capped.height).toBe(120)
  expect(capped.scroll).toBeGreaterThan(capped.client)
@@ -38,12 +38,12 @@ test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; M
  expect(shrunk.height).toBe(initial.height)
  expect(shrunk.overflow).toBe('hidden')
  expect(shrunk.top).toBe(0)
- await input.fill('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe')
+ await input.fill('First paragraph\nSecond paragraph\nThird paragraph')
  expect((await metrics()).height).toBeGreaterThan(initial.height)
  const response=page.waitForResponse(r=>r.url().endsWith('/api/v1/ai/chat') && r.request().method()==='POST')
  if(mobile){
   await input.press('Enter')
-  await expect(input).toHaveValue('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe\n')
+  await expect(input).toHaveValue('First paragraph\nSecond paragraph\nThird paragraph\n')
   expect(sent).toHaveLength(0)
   await page.getByRole('button',{name:L('coach.send'),exact:true}).click()
  }else{
@@ -52,7 +52,7 @@ test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; M
  // The real isolated API rejects an unconfigured provider; no paid/external AI.
  expect((await(await response).json()).error).toBe('AI_NOT_CONFIGURED')
  expect(sent).toHaveLength(1)
- expect(sent[0].postDataJSON().message).toBe('Premier paragraphe\nDeuxième paragraphe\nTroisième paragraphe')
+ expect(sent[0].postDataJSON().message).toBe('First paragraph\nSecond paragraph\nThird paragraph')
  await expect(input).toHaveValue('')
  await expect(input).toHaveCSS('overflow-y','hidden')
  expect((await metrics()).height).toBe(initial.height)
@@ -60,8 +60,8 @@ test('champ du Coach : Entrée envoie sur desktop, nouvelle ligne sur mobile ; M
  expect((await input.boundingBox()).y+(await input.boundingBox()).height).toBeLessThanOrEqual(nav.y)
 })
 
-test('Entrée respecte la composition du clavier et ne soumet pas un message vide',async({page},testInfo)=>{
- test.skip(testInfo.project.name==='mobile','Raccourci réservé au clavier desktop')
+test('Enter respects keyboard composition and does not submit an empty message',async({page},testInfo)=>{
+ test.skip(testInfo.project.name==='mobile','Shortcut reserved for desktop keyboard')
  const sent=[]
  page.on('request',request=>{if(request.url().endsWith('/api/v1/ai/chat') && request.method()==='POST')sent.push(request)})
  await page.goto('/#/coach')
@@ -85,7 +85,7 @@ test('Entrée respecte la composition du clavier et ne soumet pas un message vid
  expect(sent).toHaveLength(1)
 })
 
-test('le Coach continue hors écran avant et pendant la réponse, puis revient au dernier message',async({page,request})=>{
+test('Coach continues off-screen before and during response, then returns to the latest message',async({page,request})=>{
  // Only the provider is synthetic; chat, persistence and navigation use the real app.
  let response,requests=0,interrupted=false
  const provider=createServer((req,res)=>{
@@ -102,7 +102,7 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   await page.goto('/#/coach')
   const input=page.getByRole('textbox',{name:L('coach.placeholder'),exact:true})
   await expect(input).toBeEnabled()
-  await input.fill('Question conservée pendant la navigation')
+  await input.fill('Question preserved during navigation')
   await page.getByRole('button',{name:L('coach.send'),exact:true}).click()
   await expect.poll(()=>requests).toBe(1)
   const thinking=page.getByRole('status')
@@ -123,12 +123,12 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   await expect(page.locator('.coach-view')).toHaveCount(0)
   await page.getByRole('button',{name:L('nav.coach'),exact:true}).click()
   await expect(input).toBeDisabled()
-  await expect(page.getByText('Question conservée pendant la navigation',{exact:true})).toHaveCount(1)
+  await expect(page.getByText('Question preserved during navigation',{exact:true})).toHaveCount(1)
   await expect(page.getByRole('button',{name:L('coach.new_conversation'),exact:true})).toBeDisabled()
 
   response.writeHead(200,{'Content-Type':'text/event-stream'})
-  token('Début de réponse conservé.\n')
-  await expect(page.getByText('Début de réponse conservé.',{exact:true})).toBeVisible()
+  token('Preserved response beginning.\n')
+  await expect(page.getByText('Preserved response beginning.',{exact:true})).toBeVisible()
   await expect(thinking).toHaveCount(0)
 
   // Long answers must stay at the maximum scroll position during streaming,
@@ -154,7 +154,7 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   // Finish while another page is displayed; hidden chat must not scroll that page.
   await page.getByRole('button',{name:L('nav.home'),exact:true}).click()
   const scroll=await page.evaluate(()=>window.scrollY)
-  token(Array.from({length:50},(_,i)=>`Conseil de test ${i+1}.\n\n`).join('')+'Dernier conseil conservé.')
+  token(Array.from({length:50},(_,i)=>`Test advice ${i+1}.\n\n`).join('')+'Last preserved advice.')
   response.end('data: [DONE]\n\n')
   await expect.poll(async()=>{
    const list=await get(request,'/ai/conversations')
@@ -166,7 +166,7 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
 
   await page.getByRole('button',{name:L('nav.coach'),exact:true}).click()
   await expect(input).toBeEnabled()
-  await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Dernier conseil conservé.')
+  await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Last preserved advice.')
   await expect.poll(bottom).toBeLessThan(2)
   expect(requests).toBe(1)
 
@@ -179,7 +179,7 @@ test('le Coach continue hors écran avant et pendant la réponse, puis revient a
   // A fresh mount restores the saved answer and also starts at the end.
   await page.reload()
   await expect(input).toBeEnabled()
-  await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Dernier conseil conservé.')
+  await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Last preserved advice.')
   await expect.poll(bottom).toBeLessThan(2)
 
   await expect(page.locator('.chat-msg__avatar')).toHaveCount(0)

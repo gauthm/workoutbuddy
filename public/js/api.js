@@ -1,6 +1,6 @@
-// Wrappers fetch vers /api/v1/
-// Toutes les fonctions retournent la donnée directement ou lèvent une Error.
-// L'appelant (composant ou store) gère les erreurs.
+// Fetch wrappers for /api/v1/
+// All functions return data directly or throw an Error.
+// The caller (component or store) handles errors.
 
 const BASE = '/api/v1'
 const securityErrors = {RATE_LIMITED: 'errors.rate_limited', AI_BUSY: 'errors.ai_busy', IMPORT_BUSY: 'errors.import_busy'}
@@ -66,7 +66,7 @@ async function request(method, path, body = undefined) {
   } finally { requestActivity(-1) }
 }
 
-// ── Exercices ────────────────────────────────────────────────
+// ── Exercises ────────────────────────────────────────────────
 export const exercises = {
   list:      (params = {}) => request('GET', '/exercises?' + new URLSearchParams(params)),
   get:       (id)          => request('GET', `/exercises/${id}`),
@@ -75,7 +75,7 @@ export const exercises = {
   toggleExclusion: (id, body) => request('PUT', `/exercises/${id}/toggle-exclusion`, body),
 }
 
-// ── Équipement ────────────────────────────────────────────────
+// ── Equipment ────────────────────────────────────────────────
 export const equipment = {
   saveInventory: body => request('PUT', '/equipment/inventory', body),
   list:            ()          => request('GET', '/equipment'),
@@ -86,7 +86,7 @@ export const equipment = {
     request('GET', `/equipment/achievable-loads?exercise_id=${encodeURIComponent(exerciseId)}`),
 }
 
-// ── Paramètres ────────────────────────────────────────────────
+// ── Settings ────────────────────────────────────────────────
 export const settings = {
   get:         ()     => request('GET', '/settings'),
   update:      (body) => request('PUT', '/settings', body),
@@ -95,7 +95,7 @@ export const settings = {
   listModels:  (body) => body ? request('POST', '/settings/ai-models', body) : request('GET', '/settings/ai-models'),
 }
 
-// ── Programmes (stubs pour tâches futures) ───────────────────
+// ── Programs (stubs for future tasks) ───────────────────
 export const programs = {
   preview:    (body) => request('POST', '/programs/preview', body),
   generate:   (body) => request('POST', '/programs/generate', body),
@@ -145,7 +145,7 @@ export const stats = {
   records:    (params={}) => request('GET', '/stats/personal-records?' + new URLSearchParams(params)),
 }
 
-// ── Poids de corps ────────────────────────────────────────────
+// ── Body weight ────────────────────────────────────────────
 export const bodyweight = {
   list:   (params={}) => request('GET', '/bodyweight?' + new URLSearchParams(params)),
   create: (body)      => request('POST', '/bodyweight', body),
@@ -153,14 +153,14 @@ export const bodyweight = {
   delete: (id)        => request('DELETE', `/bodyweight/${id}`),
 }
 
-// ── Profil utilisateur ────────────────────────────────────────
+// ── User profile ────────────────────────────────────────
 export const userProfile = {
   get:    ()       => request('GET', '/user-profile'),
   save:   (fields) => request('PUT', '/user-profile', fields),
   reset:  ()       => request('DELETE', '/user-profile'),
 }
 
-// ── Coach IA ──────────────────────────────────────────────────
+// ── AI Coach ──────────────────────────────────────────────────
 export const coach = {
   chat: (body, { signal } = {}) => fetchApi('/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal }),
   advice:              ()        => request('GET', '/ai/advice'),
@@ -173,32 +173,32 @@ export const coach = {
   activateConversation: (id)        => request('PATCH', `/ai/conversations/${id}`, { is_active: true }),
   renameConversation:   (id, title) => request('PATCH', `/ai/conversations/${id}`, { title }),
   deleteConversation:   (id)        => request('DELETE', `/ai/conversations/${id}`),
-  // Note : /ai/chat utilise SSE — voir CoachView pour l'implémentation streaming
+  // Note: /ai/chat uses SSE; see CoachView for streaming implementation
 }
 
 // ── Export/Import ─────────────────────────────────────────────
 export const exportImport = {
-  // Export JSON complet
+  // Full JSON export
   exportJson: () =>
     fetchApi('/export').then(async res => {
-      if (!res.ok) throw new Error('Erreur export')
+      if (!res.ok) throw new Error((await import('./i18n.js')).t('errors.export_json'))
       return res.blob()
     }),
 
-  // Export CSV d'une table
+  // Export a table as CSV
   exportCsv: (table) =>
     fetchApi(`/export/csv/${table}`).then(async res => {
-      if (!res.ok) throw new Error('Erreur export CSV')
+      if (!res.ok) throw new Error((await import('./i18n.js')).t('errors.export_csv'))
       return res.blob()
     }),
 
   // Import JSON
   importJson: (body) => request('POST', '/import', body),
 
-  // Reset partiel : stats et historique uniquement
+  // Partial reset: stats and history only
   resetStats: () => request('POST', '/reset-stats'),
   resetAll: () => request('POST', '/reset-all'),
 
-  // Backup manuel
+  // Manual backup
   backup: () => request('POST', '/backup'),
 }

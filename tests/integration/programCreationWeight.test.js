@@ -9,7 +9,7 @@ migrate(db);seedExercises(db)
 const {app}=await import('../../server.js')
 const params={goal:'general_fitness',level:'beginner',days_per_week:2,session_duration_min:30,duration_weeks:8,priority_muscles:[],weight_kg:75,height_cm:175,language:'fr'}
 
-test('supprimer la mesure de création puis exporter/importer conserve les paramètres et les premières cibles du programme',async()=>{
+test('deleting creation weight then exporting/importing preserves program settings and initial targets',async()=>{
  db.prepare("INSERT INTO equipment_item(category,name,count,weight_min_kg,weight_max_kg,weight_step_kg) VALUES ('dumbbell_adjustable','Pair',2,1,40,1)").run()
  db.prepare("INSERT INTO equipment_item(category,name,count) VALUES ('bench_adjustable','Bench',1)").run()
  const made=await request(app).post('/api/v1/programs/generate').send(params)

@@ -9,7 +9,7 @@ async function loadLocale(lang) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     locales[lang] = await res.json()
   } catch (e) {
-    console.warn(`[i18n] Impossible de charger la locale "${lang}"`)
+    console.warn(`[i18n] Unable to load locale "${lang}"`)
     locales[lang] = {}
   }
 }
@@ -23,19 +23,19 @@ export const i18n = reactive({
   }
 })
 
-// t('key') ou t('key', { name: 'John' }) → interpolation {{name}}
+// t('key') or t('key', { name: 'John' }) → interpolation {{name}}
 export function t(key, params = {}) {
   const dict = locales[i18n.locale] || locales['fr'] || {}
   let str = dict[key]
   if (str === undefined) {
-    // Fallback sur fr si locale courante ne contient pas la clé
+    // Fall back to French if the current locale does not contain the key
     str = locales['fr']?.[key] ?? key
   }
-  // Interpolation : remplacer {{param}} par la valeur
+  // Interpolation: replace {{param}} with its value
   return str.replace(/\{\{(\w+)\}\}/g, (_, k) => params[k] ?? `{{${k}}}`)
 }
 
-// tm('chest') → t('muscles.chest'), fallback sur le nom brut si introuvable
+// tm('chest') → t('muscles.chest'), fall back to the raw name if not found
 export function tm(muscle) {
   const key = 'muscles.' + muscle
   const dict = locales[i18n.locale] || locales['fr'] || {}
@@ -45,8 +45,8 @@ export function tm(muscle) {
   return str.replace(/\{\{(\w+)\}\}/g, (_, k) => '')
 }
 
-// Catalogue, séances et statistiques emploient deux jeux de noms de colonnes.
-// Lire la locale ici rend aussi les listes et titres réactifs au changement de langue.
+// Catalog, sessions, and statistics use two sets of column names.
+// Reading the locale here also makes lists and titles react to language changes.
 export function exerciseName(exercise) {
   if (!exercise) return ''
   const fr = exercise.name_fr || exercise.exercise_name_fr
@@ -65,5 +65,5 @@ export function exerciseInstructions(exercise, includeWeightNote = true) {
   return dumbbell && includeWeightNote ? [...instructions, t('exercises.dumbbell_weight_entry')] : instructions
 }
 
-// Initialisation : charger fr dès le démarrage
+// Initialization : load French at startup
 loadLocale('fr')

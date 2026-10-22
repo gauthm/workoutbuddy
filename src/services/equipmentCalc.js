@@ -1,15 +1,15 @@
 import { isEquipmentAvailable } from './rotationEngine.js'
 
-// Calcul des charges atteignables avec un inventaire d'équipement donné
+// Calculate achievable loads with a given equipment inventory
 
 /**
- * Calcule toutes les charges atteignables avec l'inventaire donné.
+ * Calculate all achievable loads with the given inventory.
  *
- * Catégories prises en compte :
- *   barbell / ez_bar      + plate          → calcul barre + plaques
- *   dumbbell_loadable     + plate / dumbbell_plate → calcul poignée + disques
- *   dumbbell_fixed                         → charge fixe (par paire)
- *   dumbbell_adjustable                    → plage par pas
+ * Supported categories:
+ *   barbell / ez_bar      + plate          → bar + plates calculation
+ *   dumbbell_loadable     + plate / dumbbell_plate → handle + plates calculation
+ *   dumbbell_fixed                         → fixed load (per pair)
+ *   dumbbell_adjustable                    → range in steps
  *
  * @param {object[]} equipmentItems - EquipmentItem[]
  * @param {object}   exercise       - { equipment_required: string[], is_unilateral: 0|1 }
@@ -21,7 +21,7 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
   const isUnilateral = exercise.is_unilateral === 1 || exercise.is_unilateral === true
   const requiredDumbbells = isUnilateral ? 1 : 2
 
-  // Exercice sans équipement requis
+  // Exercise requiring no equipment
   if (eqTypes.length === 0) {
     return { loads_kg: [0], min_increment_kg: 0, max_load_kg: 0 }
   }
@@ -29,13 +29,13 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
   if (!isEquipmentAvailable(eqTypes, equipmentItems)) return { loads_kg: [], min_increment_kg: 0, max_load_kg: 0 }
   const all_loads = new Set()
 
-  // ── 1. Barres + disques de barre ────────────────────────────
+  // ── 1. Bars + barbell plates ────────────────────────────
   const barbells = equipmentItems.filter(i =>
     ['barbell', 'ez_bar'].includes(i.category) &&
     eqTypes.includes(i.category)
   )
   if (barbells.length > 0) {
-    // Disques compatibles avec les barres : 'plate' uniquement (pas dumbbell_plate)
+    // Bar-compatible plates: 'plate' only (not dumbbell_plate)
     const barPlatePairs = equipmentItems
       .filter(i => i.category === 'plate')
       .map(i => ({ weight: i.weight_kg, max: Math.floor((i.count || 0) / 2) }))
@@ -51,9 +51,9 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
     }
   }
 
-  // ── 2. Haltères à disques (dumbbell_loadable) ───────────────
-  // Un exercice qui requiert dumbbell_fixed ou dumbbell_loadable
-  // peut être réalisé avec des poignées à disques.
+  // ── 2. Loadable dumbbells (dumbbell_loadable) ───────────────
+  // An exercise requiring dumbbell_fixed or dumbbell_loadable
+  // can use loadable dumbbell handles.
   const exerciseNeedsDumbbells =
     eqTypes.includes('dumbbell_loadable') ||
     eqTypes.includes('dumbbell_fixed') ||
@@ -64,7 +64,7 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
     : []
 
   if (dumbHandles.length > 0) {
-    // Disques pour haltères : 'plate' + 'dumbbell_plate'
+    // Dumbbell plates: 'plate' + 'dumbbell_plate'
     const dumbPlatePairs = quantitiesByWeight(equipmentItems, ['plate', 'dumbbell_plate'])
       .map(i => ({ weight: i.weight_kg, max: Math.floor(i.count / (2 * requiredDumbbells)) }))
       .filter(p => p.max > 0 && p.weight > 0)
@@ -72,20 +72,20 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
     const perSide = dpSubsetSum(dumbPlatePairs)
     for (const handle of dumbHandles) {
       for (const s of perSide) {
-        // Charge par haltère = poids poignée + disques des 2 côtés
+        // Load per dumbbell = handle weight + plates on both sides
         all_loads.add(round2(handle.weight_kg + 2 * s))
       }
     }
   }
 
-  // ── 3. Haltères fixes ────────────────────────────────────────
+  // ── 3. Fixed dumbbells ────────────────────────────────────────
   if (exerciseNeedsDumbbells) {
     quantitiesByWeight(equipmentItems, ['dumbbell_fixed'])
       .filter(i => i.count >= requiredDumbbells)
       .forEach(i => all_loads.add(round2(i.weight_kg)))
   }
 
-  // ── 4. Haltères réglables (sélecteur) ───────────────────────
+  // ── 4. Adjustable dumbbells (selector) ───────────────────────
   if (exerciseNeedsDumbbells) {
     equipmentItems
       .filter(i => i.category === 'dumbbell_adjustable' && i.count >= requiredDumbbells)
@@ -108,7 +108,7 @@ export function calculateAchievableLoads(equipmentItems, exercise) {
   const loadedCategories = ['barbell','ez_bar','dumbbell_fixed','dumbbell_loadable','dumbbell_adjustable','kettlebell','resistance_band']
   if (!eqTypes.some(c => loadedCategories.includes(c))) all_loads.add(0)
 
-  // ── 5. Trier + incrément minimal ────────────────────────────
+  // ── 5. Sort + minimum increment ────────────────────────────
   const sorted = Array.from(all_loads).sort((a, b) => a - b)
   if (sorted.length === 0) {
     return { loads_kg: [], min_increment_kg: 0, max_load_kg: 0 }
@@ -142,7 +142,7 @@ function quantitiesByWeight(items, categories) {
 }
 
 // ── Helper : DP bounded subset sum ──────────────────────────
-// Retourne un Set de toutes les sommes atteignables avec les paires de disques.
+// Return a Set of all sums achievable with plate pairs.
 function dpSubsetSum(platePairs) {
   let current = new Set([0])
   for (const { weight, max } of platePairs) {
@@ -157,12 +157,12 @@ function dpSubsetSum(platePairs) {
   return current
 }
 
-// ── Helper : arrondi 2 décimales ─────────────────────────────
+// ── Helper: round to 2 decimal places ─────────────────────────────
 function round2(n) {
   return Math.round(n * 100) / 100
 }
 
-// ── Export roundDownToAchievable (inchangé) ──────────────────
+// ── Export roundDownToAchievable (unchanged) ──────────────────
 export function roundDownToAchievable(targetWeight, achievableLoads) {
   if (!achievableLoads || achievableLoads.length === 0) return 0
   const valid = achievableLoads.filter(l => l <= targetWeight + 0.001)

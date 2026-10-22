@@ -1,83 +1,81 @@
-# Configuration et protections du serveur
+# Server configuration and protections
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-Les variables d’environnement priment sur les réglages enregistrés. Elles peuvent être définies dans
-un fichier `.env` à la racine, en s’appuyant sur [.env.example](../.env.example).
+Environment variables take precedence over saved settings. They can be defined in
+an `.env` file at the root, using [.env.example](../.env.example) as a reference.
 
-| Variable | Valeur par défaut | Usage |
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `HOST` | `127.0.0.1` | Adresse d’écoute |
-| `PORT` | `3000` | Port HTTP |
-| `DB_PATH` | `data/workoutbuddy.db` | Base SQLite, chemin relatif au lancement ou absolu |
-| `NODE_ENV` | développement | `production` exige une origine HTTPS explicite |
-| `PUBLIC_ORIGIN` | origine HTTP locale de la requête | URL publique exacte, par exemple `https://workout.example.com` |
-| `TRUST_PROXY` | désactivé | `loopback` uniquement si le proxy est local, protégé et réécrit les en-têtes transmis |
+| `HOST` | `127.0.0.1` | Listening address |
+| `PORT` | `3000` | HTTP port |
+| `DB_PATH` | `data/workoutbuddy.db` | SQLite database, path relative to startup directory or absolute |
+| `NODE_ENV` | development | `production` requires an explicit HTTPS origin |
+| `PUBLIC_ORIGIN` | Request's local HTTP origin | Exact public URL, for example `https://workout.example.com` |
+| `TRUST_PROXY` | disabled | `loopback` only when the proxy is local, protected and rewrites forwarded headers |
 
-Si `HOST` ou `PORT` figure dans `.env`, modifier le réglage correspondant dans l’interface ne
-remplace pas cette variable. Redémarrer le serveur après un changement réseau. Configurer la clé du
-Coach IA dans l’application.
+If `HOST` or `PORT` is defined in `.env`, changing the corresponding setting in the interface
+does not override that variable. Restart the server after a network change. Configure the
+AI Coach key in the application.
 
-### Protections HTTP et hébergement
+### HTTP protections and hosting
 
-### Origine et requêtes HTTP
+### Origin and HTTP requests
 
-Les réponses portent une politique CSP, des protections contre les iframes et le sniffing de contenu
-et une politique de référent restrictive. Les données API ne sont pas mises en cache. Les appels API
-avec une origine étrangère ou signalés comme provenant d’un autre site sont refusés ; les écritures
-avec un corps exigent du JSON.
+Responses include a CSP, iframe and content-sniffing protections, and a restrictive referrer
+policy. API data is not cached. API calls with a foreign origin or marked as coming from
+another site are rejected; writes with a body require JSON.
 
-Sans `PUBLIC_ORIGIN`, seuls les hôtes `localhost` et les adresses IP sont acceptés pour bloquer le
-DNS rebinding ; pour un nom local personnalisé, définir son origine HTTP exacte. Les clients sans
-en-tête Origin (CLI et outils locaux) restent possibles : ces contrôles ne remplacent pas une
-authentification.
+Without `PUBLIC_ORIGIN`, only `localhost` hosts and IP addresses are accepted to block
+DNS rebinding; for a custom local name, set its exact HTTP origin. Clients without an
+Origin header (CLI and local tools) remain supported: these checks do not replace
+authentication.
 
-### Politique de contenu
+### Content policy
 
-La CSP autorise `unsafe-eval` pour la compilation des templates Vue actuels et les styles en ligne
-utilisés par l’interface ; les scripts en ligne sont interdits. Retirer `unsafe-eval` demanderait de
-précompiler les templates. L’enregistrement du service worker est dans le module externe de
-l’application. HSTS s’applique à l’origine HTTPS configurée ou à une connexion reconnue HTTPS, sans
-forcer le HTTPS sur le LAN HTTP.
+The CSP allows `unsafe-eval` for current Vue template compilation and inline styles used
+by the interface; inline scripts are prohibited. Removing `unsafe-eval` would require
+precompiling templates. Service worker registration is in the application's external module.
+HSTS applies to the configured HTTPS origin or a connection recognized as HTTPS, without
+forcing HTTPS on an HTTP LAN.
 
-### Limites de requêtes
+### Request limits
 
-Limites par IP et par minute : 600 appels API ; dans ce total, 60 créations/aperçus de programme, 30
-imports/sauvegardes/réinitialisations et 12 appels IA (chat, connexion, modèles, conseils). Deux
-appels IA et une seule importation peuvent être en cours au maximum pour l’instance mono-utilisateur
-; la réservation d’import intervient avant la lecture du corps volumineux.
+Per-IP, per-minute limits: 600 API calls; within this total, 60 program creations/previews,
+30 imports/backups/resets and 12 AI calls (chat, connection, models, advice). At most two
+AI calls and one import can be in progress for the single-user instance; the import slot
+is reserved before reading the large request body.
 
-Une réponse 429 indique `Retry-After` ; les limites coûtent une mémoire bornée et sont remises à
-zéro au redémarrage. Les corps JSON sont limités à 100 Ko, sauf l’import à 20 Mo ; les corps
-compressés sont refusés. Le serveur borne également les délais de réception des requêtes/en-têtes.
+A 429 response includes `Retry-After`; limits use bounded memory and reset on restart.
+JSON bodies are limited to 100 KB, except imports at 20 MB; compressed bodies are rejected.
+The server also bounds request/header reception timeouts.
 
-### Hébergement public
+### Public hosting
 
-Sur un VPS, faire écouter Node sur `127.0.0.1`, derrière un proxy ou tunnel avec HTTPS **et une
-authentification externe**. Définir `NODE_ENV=production` et
+On a VPS, bind Node to `127.0.0.1`, behind a proxy or tunnel with HTTPS **and external
+authentication**. Set `NODE_ENV=production` and
 `PUBLIC_ORIGIN=https://workout.example.com`.
 
-Le proxy doit conserver le champ Host public et rediriger HTTP vers HTTPS ; ne pas exposer
-directement le port de Node. `TRUST_PROXY=loopback` permet de lire l’IP transmise uniquement depuis
-un proxy local de confiance ; celui-ci doit supprimer ou réécrire les en-têtes fournis par le
-client. Par défaut, les en-têtes de proxy ne sont pas utilisés. Ne pas exécuter l’application en
-root.
+The proxy must preserve the public Host field and redirect HTTP to HTTPS; do not expose
+Node's port directly. `TRUST_PROXY=loopback` allows reading the forwarded IP only from a
+trusted local proxy; it must remove or rewrite client-provided headers. Proxy headers
+are ignored by default. Do not run the application as root.
 
-### Versions et dépendances
+### Versions and dependencies
 
-Les dépendances serveur sont verrouillées dans `package-lock.json`. Vérifier avec `npm audit`,
-installer avec `npm ci` et tester les mises à jour avant déploiement. La cible est Node 24 LTS ;
-Node 20 n’est plus pris en charge.
+Server dependencies are locked in `package-lock.json`. Check with `npm audit`, install with
+`npm ci` and test updates before deployment. The target is Node 24 LTS; Node 20 is no longer
+supported.
 
-### Hébergement Linux et sessions Authelia
+### Linux hosting and Authelia sessions
 
-Les guides [Red Hat](DEPLOYMENT_REDHAT.md), [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md) et
-[configuration commune](DEPLOYMENT_LINUX.md) décrivent l’hébergement public avec Caddy
-et Authelia. Les deux familles disposent de sauvegardes, protections systemd et maintenance
-nocturne propres à leur gestionnaire de paquets. Les dépendances npm restent auditées
-chaque semaine et mises à jour après tests.
+The [Red Hat](DEPLOYMENT_REDHAT.md), [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md) and
+[shared configuration](DEPLOYMENT_LINUX.md) guides describe public hosting with Caddy
+and Authelia. Both families provide backups, systemd protections and nightly maintenance
+specific to their package manager. npm dependencies remain audited weekly and updated
+after testing.
 
-Sur un appareil de confiance, cocher **Se souvenir de moi** dans Authelia conserve la connexion
-complète pendant 60 jours, y compris après maintenance. Sans cette option : 15 minutes d’inactivité,
-une heure maximum. Une déconnexion invalide la session mémorisée ; le navigateur peut aussi
-supprimer son cookie plus tôt.
+On a trusted device, selecting **Remember me** in Authelia keeps the full login session
+for 60 days, including after maintenance. Without this option: 15 minutes of inactivity,
+one hour maximum. Logging out invalidates the remembered session; the browser may also
+remove its cookie earlier.

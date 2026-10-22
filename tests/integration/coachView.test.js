@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (ce test remet le user_profile à NULL → ne doit pas toucher la DB utilisateur)
+// Isolated DB (this test resets user_profile to NULL → must not touch the user DB)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t55-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -32,17 +32,17 @@ describe('T5.5 — Coach View API', () => {
     `).run()
   })
 
-  it('GET /user-profile accessible et onboarding_completed=false', async () => {
+  it('GET /user-profile accessible and onboarding_completed=false', async () => {
     const res = await request(app).get('/api/v1/user-profile')
     assert.equal(res.status, 200)
     assert.equal(res.body.onboarding_completed, false)
   })
 
-  it('POST /ai/apply-actions ancien lot d\'onboarding refusé', async () => {
+  it('POST /ai/apply-actions rejects legacy onboarding batch', async () => {
     const res = await request(app).post('/api/v1/ai/apply-actions').send({
       actions: [
         {
-          action: 'complete_user_profile', explanation: 'Profil onboarding.',
+          action: 'complete_user_profile', explanation: 'Profile onboarding.',
           data: { display_name: 'Alex', age: 28, sex: 'male', weight_kg: 78, height_cm: 180,
                   fitness_level: 'intermediate', primary_goal: 'hypertrophy',
                   sessions_per_week: 4, session_duration_min: 60,
@@ -50,11 +50,11 @@ describe('T5.5 — Coach View API', () => {
                   onboarding_step: 'completed' }
         },
         {
-          action: 'add_equipment', explanation: 'Barre olympique.',
-          data: { category: 'barbell', name: 'Barre olympique 20kg', weight_kg: 20, count: 1 }
+          action: 'add_equipment', explanation: 'Olympic barbell.',
+          data: { category: 'barbell', name: 'Olympic barbell 20kg', weight_kg: 20, count: 1 }
         },
         {
-          action: 'create_program', explanation: 'Programme PPL sur mesure.',
+          action: 'create_program', explanation: 'Custom PPL program.',
           data: {
             name: 'PPL Onboarding Alex', goal: 'hypertrophy', level: 'intermediate',
             days_per_week: 4, progression_model: 'double_progression',
@@ -73,14 +73,14 @@ describe('T5.5 — Coach View API', () => {
     assert.equal(res.body.error, 'COACH_READ_ONLY')
   })
 
-  it('GET /user-profile après ancien lot → profil inchangé', async () => {
+  it('GET /user-profile after legacy batch → unchanged profile', async () => {
     const res = await request(app).get('/api/v1/user-profile')
     assert.equal(res.status, 200)
     assert.equal(res.body.onboarding_completed, false)
     assert.equal(res.body.display_name, null)
   })
 
-  it('GET /ai/advice retourne tableau', async () => {
+  it('GET /ai/advice returns an array', async () => {
     const res = await request(app).get('/api/v1/ai/advice')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.advice))

@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS equipment_item (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- 4. Réinsérer les données existantes (toutes valides dans le nouveau schéma)
+-- 4. Reinsert existing data (all valid under the new schema)
 INSERT INTO equipment_item
   (id, category, name, weight_kg, count, weight_min_kg, weight_max_kg,
    weight_step_kg, resistance_min_kg, resistance_max_kg, notes, created_at)
@@ -120,5 +120,5 @@ SELECT
   weight_step_kg, resistance_min_kg, resistance_max_kg, notes, created_at
 FROM equipment_item_before_catalog;
 
--- 5. Nettoyer la table temporaire
+-- 5. Clean up the temporary table
 DROP TABLE IF EXISTS equipment_item_before_catalog;

@@ -1,5 +1,5 @@
-// Formules de RM estimé — miroir client de src/services/rmCalculator.js
-// Utiliser uniquement pour l'affichage (calcul autoritaire sur le serveur)
+// Estimated RM formulas: client mirror of src/services/rmCalculator.js
+// Use for display only (the server performs authoritative calculations)
 
 export const FORMULAS = {
   epley:    (w, r) => r === 1 ? w : w * (1 + r / 30),

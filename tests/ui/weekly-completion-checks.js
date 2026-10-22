@@ -12,21 +12,21 @@ async page => {
  try {
   await page.goto('http://workoutbuddy.test/?weekly-test=1#/')
   await page.locator('.weekly-complete').waitFor()
-  assert((await page.locator('.weekly-complete').textContent()).includes('Toutes les séances de la semaine sont faites'),'Message absent sur accueil')
+  assert((await page.locator('.weekly-complete').textContent()).includes('Toutes les séances de la semaine sont faites'),'Message missing on home')
   for(const width of [320,390,768,1280]) {
    await page.setViewportSize({width,height:844})
-   assert(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),'Débordement mobile')
+   assert(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),'Mobile overflow')
    layouts.push(width)
   }
   await page.goto('http://workoutbuddy.test/?weekly-test=1#/programs/900')
   await page.locator('.weekly-complete').waitFor()
-  assert(await page.locator('.btn--primary').filter({hasText:'séance'}).isEnabled(),'Limite de séances ajoutée sans demande')
+  assert(await page.locator('.btn--primary').filter({hasText:'séance'}).isEnabled(),'Unrequested workout limit added')
   complete=false;await page.reload()
   await page.locator('.program-summary-tags').first().waitFor()
-  assert(await page.locator('.weekly-complete').count()===0,'Message présent avant objectif atteint')
+  assert(await page.locator('.weekly-complete').count()===0,'Message present before goal reached')
   await page.goto('http://workoutbuddy.test/?weekly-test=1#/')
   await page.locator('.dashboard-program').waitFor()
-  assert(await page.locator('.weekly-complete').count()===0,'Message incorrect sur accueil')
+  assert(await page.locator('.weekly-complete').count()===0,'Incorrect message on home')
   assert(!errors.length,'Erreur JavaScript')
   return {homeAndProgram:true,onlyAfterCompletion:true,noExtraLimit:true,layouts,errors}
  } finally {page.removeListener('pageerror',errorHandler);await page.unroute('http://workoutbuddy.test/api/v1/programs**',handler)}

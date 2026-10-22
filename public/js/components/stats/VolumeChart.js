@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted, watch } from '/vendor/vue.esm-browser.prod.js'
 import { t, i18n } from '../../i18n.js'
 
-// Palette de couleurs par groupe musculaire
+// Color palette by muscle group
 const MUSCLE_COLORS = {
   chest:      '#e74c3c',
   back:       '#3498db',
@@ -49,7 +49,7 @@ export default {
       if (chartInstance) { chartInstance.destroy(); chartInstance = null }
 
       if (props.groupBy === 'week') {
-        // Histogramme simple : volume total par semaine
+        // Simple bar chart: total volume per week
         chartInstance = new window.Chart(canvas, {
           type: 'bar',
           data: {
@@ -89,14 +89,14 @@ export default {
         return
       }
 
-      // group_by = muscle : histogramme empilé par muscle
-      // Collecter toutes les périodes et tous les muscles uniques
+      // group_by = muscle: stacked bar chart by muscle
+      // Collect all unique periods and muscles
       const periodsSet = new Set(props.data.map(d => d.period))
       const musclesSet = new Set(props.data.map(d => d.muscle || 'other'))
       const periods    = Array.from(periodsSet).sort()
       const muscles    = Array.from(musclesSet)
 
-      // Construire un objet { muscle → Map<period, volume> }
+      // Build a { muscle → Map<period, volume> } object
       const volumeMap = {}
       for (const m of muscles) {
         volumeMap[m] = new Map()

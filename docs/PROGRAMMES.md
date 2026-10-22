@@ -1,98 +1,94 @@
-# Programmes et calendrier
+# Programs and calendar
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Créer un programme](#créer-un-programme)
-- [Répartir les priorités musculaires](#répartir-les-priorités-musculaires)
-- [Mesures personnelles](#mesures-personnelles)
-- [Activation et semaine d’entraînement](#activation-et-semaine-dentraînement)
-- [Présentation de l’accueil](#présentation-de-laccueil)
-- [Sélection des jours et des séances](#sélection-des-jours-et-des-séances)
-- [Durée et prolongation](#durée-et-prolongation)
-- [Paramètres modifiables](#paramètres-modifiables)
+- [Create a program](#create-a-program)
+- [Distribute muscle priorities](#distribute-muscle-priorities)
+- [Personal measurements](#personal-measurements)
+- [Activation and training week](#activation-and-training-week)
+- [Home screen layout](#home-screen-layout)
+- [Select days and sessions](#select-days-and-sessions)
+- [Duration and extension](#duration-and-extension)
+- [Editable settings](#editable-settings)
 
-## Créer un programme
+## Create a program
 
-La création suit un questionnaire avec des choix prédéfinis : objectif, niveau, jours
-d’entraînement, durée de séance, durée totale, priorités musculaires et mesures personnelles. Les
-priorités musculaires sont regroupées en haut et bas du corps, avec sélection de tout un groupe ou
-de plusieurs muscles sans limite de deux.
+Creation follows a questionnaire with predefined choices: goal, experience level, training days,
+session duration, total duration, muscle priorities, and personal measurements. Muscle priorities
+are grouped into upper and lower body, with support for selecting an entire group or multiple
+muscles without a two-muscle limit.
 
-Le moteur cherche à utiliser le temps de séance choisi avec des séries et exercices supplémentaires
-adaptés, sans dépasser ce temps ni ses limites de volume ; un avertissement explique les séances
-plus courtes. Des explications accompagnent les objectifs et un aperçu permet de consulter les
-séances avant de créer le programme.
+The engine aims to use the selected session time with suitable additional sets and exercises,
+without exceeding that time or its volume limits; a warning explains shorter sessions. Goals have
+explanations, and a preview lets you review sessions before creating the program.
 
-## Répartir les priorités musculaires
+## Distribute muscle priorities
 
-Un focus conserve du travail de base pour l’autre partie du corps. Sur deux ou trois jours, les
-séances réservent d’abord une poussée ou un tirage et du travail des jambes, avec alternance sur la
-semaine ; le temps restant va aux priorités, réparties entre les séances selon leur travail direct
-déjà prévu. Les formats sur quatre à six jours conservent leurs séances haut/bas ou
-poussée/tirage/jambes.
+A focus preserves basic work for the other part of the body. With two or three days, sessions
+first reserve a push or pull and leg work, alternating across the week; remaining time goes to
+priorities, distributed between sessions according to the direct work already planned. Four- to
+six-day formats keep their upper/lower or push/pull/legs sessions.
 
-La durée, la fréquence, les repos, le matériel, les douleurs et les exclusions restent respectés.
-Les messages jaunes distinguent travail direct limité, sollicitation indirecte et absence d’exercice
-compatible, et proposent moins de priorités ou des séances plus longues plutôt que d’ajouter des
-jours. Le travail indirect est compté séparément, sans être présenté comme un focus direct.
+Duration, frequency, rest periods, equipment, pain, and exclusions remain respected. Yellow messages
+distinguish limited direct work, indirect work, and the absence of compatible exercises, and suggest
+fewer priorities or longer sessions rather than adding days. Indirect work is counted separately
+and is not presented as a direct focus.
 
-Les repères de répartition sont des heuristiques de planification, pas une garantie de volume
-optimal pour chaque personne.
+Distribution guidelines are planning heuristics, not a guarantee of optimal volume for everyone.
 
-## Mesures personnelles
+## Personal measurements
 
-Le poids saisi à la création est ajouté au suivi du poids corporel à la date locale du jour. Une
-mesure déjà présente ce jour-là est conservée, avec avertissement si sa valeur diffère. Le poids et
-la taille de référence restent enregistrés dans les paramètres du programme, indépendamment du suivi
-: supprimer une mesure ne les efface pas et ne la recrée pas au redémarrage ou à l’import.
+Body weight entered during creation is added to body-weight tracking on the current local date.
+An existing measurement for that day is preserved, with a warning if its value differs. Reference
+weight and height remain stored in program settings independently of tracking: deleting a
+measurement neither removes them nor recreates it on restart or import.
 
-Ils ne sont plus affichés sur la fiche du programme. Ces changements s’appliquent aux nouvelles
-créations ; les programmes déjà enregistrés gardent leurs exercices et leurs données.
+They are no longer displayed on the program details page. These changes apply to newly created
+programs; existing programs retain their exercises and data.
 
-## Activation et semaine d’entraînement
+## Activation and training week
 
-Un seul programme est actif à la fois ; un rappel apparaît dans la liste et sur chaque fiche. Son
-activation planifie les séances sur les jours choisis ; le calendrier de l’accueil montre les
-séances réellement complétées ou en cours, même hors programme, et les séances planifiées ou sautées
-du seul programme actif.
+Only one program is active at a time; a reminder appears in the list and on each details page.
+Activation schedules sessions on the selected days. The home calendar shows sessions actually
+completed or in progress, including those outside a program, and planned or skipped sessions from
+the active program only.
 
-Quand le nombre de séances terminées du lundi au dimanche atteint celui prévu par le programme,
-l’accueil et la fiche du programme indiquent que toutes les séances de la semaine sont faites.
+When the number of sessions completed from Monday through Sunday reaches the program's planned
+number, the home screen and program details indicate that all sessions for the week are complete.
 
-## Présentation de l’accueil
+## Home screen layout
 
-L’accueil et le titre de la fiche programme reprennent le libellé exact de l’objectif choisi dans le
-formulaire, selon la langue de l’interface, et l’accueil indique la fréquence hebdomadaire. Les
-zones du programme actif et des séances du jour sont légèrement agrandies pour mieux équilibrer le
-calendrier. Les boutons Programmes et Historique apparaissent sous le programme, en dehors de
-l’en-tête.
+The home screen and program details title use the exact goal label selected in the form, in the
+interface language, and the home screen shows weekly frequency. The active program and today's
+sessions areas are slightly larger to balance the calendar. Programs and History buttons appear
+below the program, outside the header.
 
-Le libellé « Programme actif » est masqué sur l’accueil, le programme et ses raccourcis n’ont pas de
-séparation, et la légende est plus aérée sans bordure au-dessus. Le panneau du jour utilise la même
-bordure fine et neutre que l’en-tête. Le calendrier utilise la place restante et s’adapte aux zones
-de sécurité iPhone ; les informations du jour apparaissent à côté en paysage.
+The “Active program” label is hidden on the home screen, the program and its shortcuts have no
+separator, and the legend has more spacing without a border above it. The day panel uses the same
+thin neutral border as the header. The calendar fills the remaining space and adapts to iPhone
+safe areas; day information appears alongside it in landscape.
 
-Sur les écrans de faible hauteur, la page défile pour garder les textes et les boutons lisibles.
+On short screens, the page scrolls to keep text and buttons readable.
 
-## Sélection des jours et des séances
+## Select days and sessions
 
-Si plusieurs séances partagent une date, des flèches permettent de les consulter une par une, avec
-un compteur. La séance en cours apparaît en priorité, puis les séances planifiées ; toutes les
-actions restent accessibles. Sur l’accueil, un jour reste toujours sélectionné : toucher une
-nouvelle fois la même case conserve le panneau du jour et la séance affichée.
+When several sessions share a date, arrows let you browse them one at a time, with a counter.
+The session in progress appears first, followed by planned sessions; all actions remain available.
+On the home screen, a day always remains selected: tapping the same cell again preserves the day
+panel and displayed session.
 
-Changer de mois sélectionne son premier jour ; revenir au mois courant sélectionne la date du jour.
-La sélection est également conservée après une replanification ou une séance marquée sautée. Le
-calendrier ouvert séparément conserve sa liste complète.
+Changing months selects the first day; returning to the current month selects today. Selection is
+also preserved after rescheduling or marking a session as skipped. The separate calendar keeps
+its full list.
 
-## Durée et prolongation
+## Duration and extension
 
-La durée totale peut être limitée ou illimitée. Une durée limitée est comptée depuis la première
-activation ; une réactivation conserve ce point de départ. À la fin, les nouvelles séances sont
-bloquées et l’historique reste accessible. Prolonger le programme reprend la planification.
+Total duration can be limited or unlimited. A limited duration starts at first activation;
+reactivation preserves that starting point. At the end, new sessions are blocked and history
+remains accessible. Extending the program resumes scheduling.
 
-## Paramètres modifiables
+## Editable settings
 
-Depuis la fiche du programme, deux paramètres sont modifiables : la durée totale et les jours
-d’entraînement, en conservant le nombre de jours initial. Le niveau, l’objectif et la durée de
-séance restent ceux du programme créé.
+The program details page allows editing two settings: total duration and training days, while
+preserving the original number of days. Experience level, goal, and session duration remain those
+of the created program.

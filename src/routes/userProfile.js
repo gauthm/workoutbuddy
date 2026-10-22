@@ -1,10 +1,11 @@
+import { message } from '../utils/messages.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
 
 const router = express.Router()
 const db     = getDb()
 
-// Champs modifiables avec leurs types et contraintes
+// Editable fields with their types and constraints
 const PROFILE_SCHEMA = {
   display_name:              { type: 'string_nullable' },
   date_of_birth:             { type: 'date_nullable' },
@@ -38,11 +39,11 @@ function parseProfile(row) {
 
 export function validateField(key, value) {
   const schema = PROFILE_SCHEMA[key]
-  if (!schema) return { valid: false, error: `Champ inconnu : ${key}` }
+  if (!schema) return { valid: false, error: message('validation.unknown_field', { key: key }) }
 
   if (value === null || value === undefined) {
     if (['string_nullable','number_nullable','enum_nullable','date_nullable'].includes(schema.type)) return { valid: true }
-    if (schema.type !== 'json_array') return { valid: false, error: `${key} ne peut pas être null.` }
+    if (schema.type !== 'json_array') return { valid: false, error: message('validation.null_forbidden', { key: key }) }
   }
 
   switch (schema.type) {
@@ -50,34 +51,34 @@ export function validateField(key, value) {
       if (value === null) break
       if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
         !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0,10) !== value || value > new Date().toISOString().slice(0,10) || value < '1900-01-01')
-        return { valid:false,error:'date_of_birth invalide.' }
+        return { valid:false,error:message('validation.invalid_birth_date') }
       break
     }
     case 'string':
     case 'string_nullable':
-      if (value !== null && typeof value !== 'string') return { valid: false, error: `${key} doit être une chaîne.` }
+      if (value !== null && typeof value !== 'string') return { valid: false, error: message('validation.string_required', { key: key }) }
       break
     case 'number':
     case 'number_nullable': {
       if (value === null) break
       const n = value
-      if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: `${key} doit être un nombre.` }
+      if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: message('validation.number_required', { key: key }) }
       if (schema.min !== undefined && n < schema.min) return { valid: false, error: `${key} ≥ ${schema.min}.` }
       if (schema.max !== undefined && n > schema.max) return { valid: false, error: `${key} ≤ ${schema.max}.` }
       break
     }
     case 'enum':
-      if (!schema.enum.includes(value)) return { valid: false, error: `${key} : valeurs valides = ${schema.enum.join(', ')}.` }
+      if (!schema.enum.includes(value)) return { valid: false, error: message('validation.valid_values', { key: key, values: schema.enum.join(', ') }) }
       break
     case 'enum_nullable':
       if (value !== null && !schema.enum.includes(value))
-        return { valid: false, error: `${key} : valeurs valides = ${schema.enum.join(', ')}, null.` }
+        return { valid: false, error: message('validation.valid_values_nullable', { key: key, values: schema.enum.join(', ') }) }
       break
     case 'boolean_int':
-      if (![0, 1, true, false].includes(value)) return { valid: false, error: `${key} doit être 0, 1, true ou false.` }
+      if (![0, 1, true, false].includes(value)) return { valid: false, error: message('validation.boolean_integer_required', { key: key }) }
       break
     case 'json_array':
-      if (!Array.isArray(value)) return { valid: false, error: `${key} doit être un tableau.` }
+      if (!Array.isArray(value)) return { valid: false, error: message('validation.array_required', { key: key }) }
       break
   }
   return { valid: true }
@@ -110,7 +111,7 @@ router.get('/', (req, res) => {
 })
 
 // ── PUT /user-profile ─────────────────────────────────────────
-// Met à jour les champs fournis (patch partiel)
+// Update provided fields (partial patch)
 router.put('/', (req, res) => {
   try {
     const body = req.body
@@ -124,7 +125,7 @@ router.put('/', (req, res) => {
       const r = validateField(key, value)
       if (!r.valid) { errors.push(r.error); continue }
 
-      // Sérialiser selon le type
+      // Serialize according to type
       let dbValue = value
       if (PROFILE_SCHEMA[key]?.type === 'json_array') dbValue = JSON.stringify(value)
       if (PROFILE_SCHEMA[key]?.type === 'boolean_int') dbValue = (value === true || value === 1) ? 1 : 0
@@ -150,7 +151,7 @@ router.put('/', (req, res) => {
 })
 
 // ── DELETE /user-profile ──────────────────────────────────────
-// Reset complet du profil singleton (jamais suppression de la ligne id=1)
+// Fully reset the singleton profile (never delete the id=1 row)
 router.delete('/', (req, res) => {
   try {
     resetProfile(db)

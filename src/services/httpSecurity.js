@@ -13,13 +13,13 @@ export function securityConfig(env = process.env) {
   if (env.PUBLIC_ORIGIN) {
     const url = new URL(env.PUBLIC_ORIGIN)
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password ||
-        url.pathname !== '/' || url.search || url.hash) throw new Error('PUBLIC_ORIGIN invalide.')
+        url.pathname !== '/' || url.search || url.hash) throw new Error('Invalid PUBLIC_ORIGIN.')
     origin = url.origin
   }
   if (env.NODE_ENV === 'production' && !origin?.startsWith('https://')) {
-    throw new Error('PUBLIC_ORIGIN=https://… est requis en production derrière un proxy HTTPS.')
+    throw new Error('PUBLIC_ORIGIN=https://… is required in production behind an HTTPS proxy.')
   }
-  if (env.TRUST_PROXY && env.TRUST_PROXY !== 'loopback') throw new Error('TRUST_PROXY accepte uniquement loopback.')
+  if (env.TRUST_PROXY && env.TRUST_PROXY !== 'loopback') throw new Error('TRUST_PROXY only accepts loopback.')
   return {origin, trustProxy: env.TRUST_PROXY === 'loopback' ? 'loopback' : false}
 }
 

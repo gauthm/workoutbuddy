@@ -14,25 +14,25 @@ function createDb() {
 }
 
 describe('T1.3 — Seed', () => {
-  it('insère les exercices si la table est vide', () => {
+  it('inserts exercises when table is empty', () => {
     const db = createDb()
     seedExercises(db)
     const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
     assert.ok(count >= 5, `Attendu ≥ 5, obtenu ${count}`)
   })
 
-  it('est idempotent : re-seed ne duplique pas', () => {
+  it('is idempotent: reseeding creates no duplicates', () => {
     const db = createDb()
     seedExercises(db)
     seedExercises(db)
     const count = db.prepare('SELECT COUNT(*) as n FROM exercise').get().n
     assert.ok(count >= 5)
-    // Pas de doublon
+    // No duplicates
     const distinct = db.prepare('SELECT COUNT(DISTINCT id) as n FROM exercise').get().n
     assert.equal(count, distinct)
   })
 
-  it('primary_muscles est du JSON valide', () => {
+  it('primary_muscles is valid JSON', () => {
     const db = createDb()
     seedExercises(db)
     const row = db.prepare("SELECT primary_muscles FROM exercise WHERE id = 'barbell_bench_press_medium_grip'").get()
@@ -42,7 +42,7 @@ describe('T1.3 — Seed', () => {
     assert.ok(muscles.includes('chest'))
   })
 
-  it('les mouvements polyarticulaires de base sont présents', () => {
+  it('basic compound movements are present', () => {
     const db = createDb()
     seedExercises(db)
     const ids = [
@@ -51,15 +51,15 @@ describe('T1.3 — Seed', () => {
     ]
     for (const id of ids) {
       const row = db.prepare('SELECT id FROM exercise WHERE id = ?').get(id)
-      assert.ok(row, `Exercice manquant : ${id}`)
+      assert.ok(row, `Missing exercise: ${id}`)
     }
   })
 })
 
-describe('Catalogue français et conservation de la source anglaise', () => {
+describe('French catalog and English source preservation', () => {
   const source = JSON.parse(readFileSync(new URL('../../src/seed/exercises.json', import.meta.url), 'utf8'))
   const fr = JSON.parse(readFileSync(new URL('../../src/seed/exercises.fr.json', import.meta.url), 'utf8'))
-  it('couvre chaque exercice et chaque étape, sans altérer les données anglaises ou techniques', () => {
+  it('covers every exercise and step without altering English or technical data', () => {
     const catalogue = readSeedCatalog()
     assert.deepEqual(Object.keys(fr).sort(), source.map(ex => ex.id).sort())
     for (let i = 0; i < source.length; i++) {
@@ -77,7 +77,7 @@ describe('Catalogue français et conservation de la source anglaise', () => {
     assert.equal(catalogue.find(ex => ex.id === 'dumbbell_bench_press').name_fr, 'Développé couché avec haltères')
   })
 
-  it('actualise une ancienne base sans perdre les exclusions, séries ni la progression ; deuxième passage sans écriture', () => {
+  it('updates an old database without losing exclusions, sets or progression; second pass without writes', () => {
     const db = createDb()
     try {
       seedExercises(db)
@@ -101,7 +101,7 @@ describe('Catalogue français et conservation de la source anglaise', () => {
     } finally { db.close() }
   })
 
-  it('ne remplace pas les consignes d’une source anglaise qui a changé', () => {
+  it('does not replace instructions when the English source has changed', () => {
     const db = createDb()
     try {
       seedExercises(db)

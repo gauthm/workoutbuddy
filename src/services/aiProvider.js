@@ -1,9 +1,10 @@
+import { message } from '../utils/messages.js'
 const AI_TIMEOUT_MS = 30_000
 
-// ── Normalisation URL ─────────────────────────────────────────
+// ── URL normalization ─────────────────────────────────────────
 /**
- * Garantit que l'URL se termine par "/v1" sans slash final.
- * Cas gérés :
+ * Ensure the URL ends in "/v1" without a trailing slash.
+ * Handled cases:
  *   "https://api.openai.com"       → "https://api.openai.com/v1"
  *   "https://api.openai.com/"      → "https://api.openai.com/v1"
  *   "https://api.openai.com/v1"    → "https://api.openai.com/v1"
@@ -18,7 +19,7 @@ export function normalizeBaseUrl(url) {
   return u
 }
 
-// ── Lecture stream ligne par ligne ────────────────────────────
+// ── Read the stream line by line ────────────────────────────
 async function* readLines(body) {
   const reader  = body.getReader()
   const decoder = new TextDecoder()
@@ -40,7 +41,7 @@ async function* readLines(body) {
 
 // ── Streaming Chat Completions ────────────────────────────────
 /**
- * Générateur asynchrone → événements SSE parsés.
+ * Async generator → parsed SSE events.
  * Types : { type:'token', content } | { type:'done', usage } | { type:'error', message }
  *
  * Compatible OpenAI, Groq, Mistral, Ollama, LM Studio, OpenRouter.
@@ -49,7 +50,7 @@ export async function* streamChat(messages, aiSettings, { signal } = {}) {
   const { base_url, api_key, model } = aiSettings
 
   if (!base_url || !model) {
-    yield { type: 'error', message: 'Provider IA non configuré. Allez dans Paramètres > Coach IA.' }
+    yield { type: 'error', message: message('ai.setup_required') }
     return
   }
 
@@ -86,7 +87,7 @@ export async function* streamChat(messages, aiSettings, { signal } = {}) {
       let parsed
       try { parsed = JSON.parse(raw) } catch { continue }
 
-      // Compatible OpenAI delta ET Ollama message
+      // Support OpenAI delta and Ollama message formats
       const token =
         parsed.choices?.[0]?.delta?.content ??
         parsed.choices?.[0]?.message?.content ?? ''
@@ -98,9 +99,9 @@ export async function* streamChat(messages, aiSettings, { signal } = {}) {
 
   } catch (err) {
     if (err.name === 'AbortError') {
-      yield { type: 'error', message: 'Délai dépassé (30 s). Vérifiez la connexion au provider IA.' }
+      yield { type: 'error', message: message('ai.connection_timeout') }
     } else {
-      yield { type: 'error', message: `Erreur réseau : ${err.message}` }
+      yield { type: 'error', message: message('ai.network_error', { error: err.message }) }
     }
   } finally {
     clearTimeout(timeout)
@@ -108,10 +109,10 @@ export async function* streamChat(messages, aiSettings, { signal } = {}) {
   }
 }
 
-// ── Lister les modèles ────────────────────────────────────────
+// ── List models ────────────────────────────────────────
 export async function listModels(aiSettings) {
   const { base_url, api_key } = aiSettings
-  if (!base_url) throw new Error('URL de base non configurée.')
+  if (!base_url) throw new Error(message('ai.missing_base_url'))
   const url        = normalizeBaseUrl(base_url) + '/models'
   const controller = new AbortController()
   const timeout    = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
@@ -125,14 +126,14 @@ export async function listModels(aiSettings) {
     const items = data.data || data.models || []
     return { models: items.map(m => ({ id: m.id||m.name||String(m), name: m.name||m.id||String(m) })) }
   } catch (err) {
-    if (err.name === 'AbortError') throw new Error('Délai dépassé.')
+    if (err.name === 'AbortError') throw new Error(message('ai.timeout'))
     throw err
   } finally {
     clearTimeout(timeout)
   }
 }
 
-// ── Test de connexion ─────────────────────────────────────────
+// ── Connection test ─────────────────────────────────────────
 export async function testConnection(aiSettings) {
   const start = Date.now()
   let collected = ''
@@ -144,7 +145,7 @@ export async function testConnection(aiSettings) {
   return { success: true, latency_ms: Date.now() - start, model: aiSettings.model }
 }
 
-// ── Collecter un stream en une chaîne ─────────────────────────
+// ── Collect a stream into a string ─────────────────────────
 export async function collectStream(messages, aiSettings) {
   let text = ''
   for await (const event of streamChat(messages, aiSettings)) {
@@ -155,16 +156,16 @@ export async function collectStream(messages, aiSettings) {
   return text.trim()
 }
 
-// ── Messages d'erreur HTTP ────────────────────────────────────
+// ── HTTP error messages ────────────────────────────────────
 function httpErrorMessage(status, body) {
   const p = body ? body.slice(0, 200) : ''
   switch (status) {
-    case 401: return 'Clé API invalide ou expirée. Vérifiez dans Paramètres > Coach IA.'
-    case 403: return 'Accès refusé. Vérifiez les droits de la clé API.'
-    case 404: return `Endpoint introuvable. Vérifiez l'URL de base (/v1 manquant ?).`
-    case 429: return 'Limite de requêtes atteinte. Attendez quelques secondes.'
-    case 500: return `Erreur serveur du provider IA.`
-    case 503: return `Provider IA indisponible.`
-    default:  return `Erreur HTTP ${status}${p ? ' : ' + p : ''}.`
+    case 401: return message('ai.invalid_key')
+    case 403: return message('ai.access_denied')
+    case 404: return message('ai.endpoint_not_found')
+    case 429: return message('ai.rate_limit')
+    case 500: return message('ai.server_error')
+    case 503: return message('ai.unavailable')
+    default:  return message('ai.http_error', { status: status, detail: p ? ' : ' + p : '' })
   }
 }

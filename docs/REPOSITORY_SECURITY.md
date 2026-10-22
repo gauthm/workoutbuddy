@@ -1,41 +1,39 @@
-# Vérification du dépôt public
+# Public repository review
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-Contrôle effectué le 16 octobre 2026 sur les fichiers versionnés actuels et les 50 commits
-accessibles, avant publication des changements d’interface.
+Review performed on October 16, 2026, on the current tracked files and 50 accessible commits,
+before publishing the frontend changes.
 
-### Résultats du contrôle
+### Review results
 
-- Gitleaks 8.30.1 : aucune détection dans l’historique ou les fichiers actuels.
-- Aucun fichier de base SQLite, sauvegarde, `.env` réel, clé privée ou fichier
-  utilisateur Authelia retrouvé dans l’historique.
-- Aucun identifiant spécifique au VPS retrouvé dans les contenus historiques.
-- Comparaison en mémoire des secrets présents dans les configurations de
-  production avec les contenus Git : aucune correspondance ; aucun secret
-  affiché ou enregistré dans un rapport versionné.
-- Les adresses des scénarios de test sont des exemples réservés.
-- Les métadonnées de 42 anciens commits contiennent une adresse e-mail
-  personnelle. L’historique est conservé ; les nouveaux commits utilisent une
-  adresse GitHub noreply.
+- Gitleaks 8.30.1: no findings in history or current files.
+- No SQLite database, backup, real `.env`, private key, or Authelia user file
+  found in history.
+- No VPS-specific identifier found in historical contents.
+- In-memory comparison of secrets in production configurations against Git contents:
+  no match; no secret displayed or recorded in a tracked report.
+- Addresses in test scenarios are reserved examples.
+- Metadata of 42 older commits contains a personal email address. History is
+  preserved; new commits use a GitHub noreply address.
 
-### Limites et fichiers ignorés
+### Limitations and ignored files
 
-Le contrôle automatisé ne garantit pas l’absence de toute donnée sensible. Les données locales,
-exports, journaux, variantes `.env.*`, bases SQLite et clés sont ignorés par Git ; `.env.example`
-reste volontairement versionné. Ne jamais ajouter ces fichiers avec `git add -f`.
+Automated review does not guarantee the absence of all sensitive data. Local data,
+exports, logs, `.env.*` variants, SQLite databases, and keys are ignored by Git;
+`.env.example` remains intentionally tracked. Never add these files with `git add -f`.
 
-### Répéter le contrôle
+### Repeat the review
 
-Pour répéter le contrôle avec le binaire officiel de
-[Gitleaks](https://github.com/gitleaks/gitleaks), depuis le dépôt :
+To repeat the review with the official
+[Gitleaks](https://github.com/gitleaks/gitleaks) binary, from the repository:
 
 ```sh
 gitleaks git --redact=100 --log-opts=--all .
 ```
 
-### En cas de secret publié
+### If a secret is published
 
-Vérifier aussi les nouveaux fichiers avant le commit. Un secret déjà publié doit être révoqué et
-remplacé, même après suppression du fichier. Une réécriture de l’historique demande une coordination
-avec les autres clones.
+Also inspect new files before committing. An already published secret must be revoked
+and replaced, even after deleting the file. Rewriting history requires coordination
+with other clones.

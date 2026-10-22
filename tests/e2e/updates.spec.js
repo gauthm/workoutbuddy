@@ -30,7 +30,7 @@ async function update(page) {
 }
 const release=page=>page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--update-test-release').trim())
 
-test('mise à jour automatique sans hard refresh, API hors cache et caches étrangers conservés',async({page,app,context})=>{
+test('automatic update without hard refresh, API outside cache and foreign caches preserved',async({page,app,context})=>{
   await controlled(page)
   await page.evaluate(async()=>{await caches.open('unrelated-app-cache')})
   await publish(app)
@@ -46,7 +46,7 @@ test('mise à jour automatique sans hard refresh, API hors cache et caches étra
   await context.setOffline(false)
 })
 
-test('une saisie reste intacte, annulation possible, puis mise à jour après sauvegarde et navigation',async({page,request,app})=>{
+test('input remains intact, cancellation possible, then update after save and navigation',async({page,request,app})=>{
   await controlled(page,'/#/settings')
   await page.getByText(L('settings.section_profile'),{exact:true}).click()
   const name=page.getByLabel(L('settings.profile_display_name'),{exact:true})
@@ -66,7 +66,7 @@ test('une saisie reste intacte, annulation possible, puis mise à jour après sa
   await expect(page.locator('html')).toHaveCSS('--update-test-release',/deployed/)
 })
 
-test('une redirection d’authentification ne remplace pas les assets et bloque une version incomplète',async({page,app,context})=>{
+test('an authentication redirect does not replace assets and blocks an incomplete version',async({page,app,context})=>{
   await controlled(page)
   const old=await page.evaluate(async()=>(await caches.keys()).find(k=>k.startsWith('workoutbuddy-v')))
   await context.route('**/js/router.js',route=>route.fulfill({status:302,headers:{location:'/login'}}))
@@ -90,7 +90,7 @@ test('une redirection d’authentification ne remplace pas les assets et bloque 
 })
 
 for(const scenario of ['navigation','api','foreground','legacy']) {
-  test(`session expirée : retour au portail sans faux hors ligne (${scenario})`,async({page,app})=>{
+  test(`expired session: return to portal without false offline state (${scenario})`,async({page,app})=>{
     const proxy=await authenticationProxy(app)
     try {
       if(scenario==='legacy') {

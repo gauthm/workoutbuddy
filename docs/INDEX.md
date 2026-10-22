@@ -1,52 +1,52 @@
-# Documentation WorkoutBuddy
+# WorkoutBuddy documentation
 
-[README](../README.md) · [Licence](../LICENSE)
+[README](../README.md) · [License](../LICENSE)
 
-Les commandes et les chemins de code se lisent depuis la racine du dépôt. Les guides ci-dessous
-conservent les détails du fonctionnement et de l’exploitation.
+Commands and code paths are relative to the repository root. The guides below
+describe application behavior and operations in detail.
 
-## Installer et utiliser
+## Installation and usage
 
-| Guide | Contenu |
+| Guide | Contents |
 | --- | --- |
-| [Installation](INSTALLATION.md) | Prérequis, démarrage, bibliothèques et photos locales |
-| [Programmes et calendrier](PROGRAMMES.md) | Questionnaire, priorités, activation, durée et navigation |
-| [Exercices et matériel](EXERCICES_MATERIEL.md) | Catalogue, langues, inventaire, douleurs et remplacement |
-| [Séances et progression](SEANCES_PROGRESSION.md) | Saisie, reprise, charges, calculs et historique |
-| [Réglages et Coach IA](REGLAGES_COACH.md) | Profil, écran allumé, sauvegarde des réglages, chat et clé API |
-| [Accès mobile](MOBILE.md) | Réseau local, écran d’accueil, gestes et mises à jour |
-| [Données](DONNEES.md) | Export, import, sauvegarde, permissions et réinitialisations |
+| [Installation](INSTALLATION.md) | Requirements, startup, local libraries and photos |
+| [Programs and calendar](PROGRAMMES.md) | Questionnaire, priorities, activation, duration and navigation |
+| [Exercises and equipment](EXERCICES_MATERIEL.md) | Catalog, languages, inventory, pain and replacement |
+| [Workouts and progression](SEANCES_PROGRESSION.md) | Data entry, resuming workouts, weights, calculations and history |
+| [Settings and AI Coach](REGLAGES_COACH.md) | Profile, keeping the screen awake, saving settings, chat and API key |
+| [Mobile access](MOBILE.md) | Local network, home screen, gestures and updates |
+| [Data](DONNEES.md) | Export, import, backups, permissions and resets |
 
-## Configurer et héberger
+## Configuration and hosting
 
-| Guide | Contenu |
+| Guide | Contents |
 | --- | --- |
-| [Docker](DEPLOYMENT_DOCKER.md) | Image, Compose, volume persistant, proxy HTTPS, sauvegarde et restauration |
-| [Configuration du serveur](CONFIGURATION.md) | Variables d’environnement, protections HTTP et limites |
-| [Famille Red Hat](DEPLOYMENT_REDHAT.md) | DNF 4/5, RPM, SELinux et firewalld |
-| [Debian et Ubuntu](DEPLOYMENT_DEBIAN.md) | APT, dpkg, needrestart et pare-feu |
-| [Installation Linux commune](DEPLOYMENT_LINUX.md) | Comptes, configurations privées, Caddy, Authelia et systemd |
-| [Authentification](AUTHENTIFICATION.md) | Compte, TOTP, déconnexion, sessions Redis et tests isolés |
-| [Exploitation et maintenance](DEPLOYMENT_OPERATIONS.md) | Sauvegardes, restauration, journaux, DNF/APT et audit npm |
-| [Livrer l’interface](DEPLOYMENT_RELEASES.md) | Cache, publication atomique, ancienne version et vérifications |
+| [Docker](DEPLOYMENT_DOCKER.md) | Image, Compose, persistent volume, HTTPS proxy, backup and restore |
+| [Server configuration](CONFIGURATION.md) | Environment variables, HTTP protections and limits |
+| [Red Hat family](DEPLOYMENT_REDHAT.md) | DNF 4/5, RPM, SELinux and firewalld |
+| [Debian and Ubuntu](DEPLOYMENT_DEBIAN.md) | APT, dpkg, needrestart and firewall |
+| [Shared Linux installation](DEPLOYMENT_LINUX.md) | Accounts, private configuration, Caddy, Authelia and systemd |
+| [Authentication](AUTHENTIFICATION.md) | Account, TOTP, logout, Redis sessions and isolated tests |
+| [Operations and maintenance](DEPLOYMENT_OPERATIONS.md) | Backups, restore, logs, DNF/APT and npm audit |
+| [Frontend releases](DEPLOYMENT_RELEASES.md) | Cache, atomic publication, previous version and verification |
 
-## Développer et tester
+## Development and testing
 
-| Guide | Contenu |
+| Guide | Contents |
 | --- | --- |
-| [Développement](DEVELOPPEMENT.md) | Commandes, architecture et choix des tests |
-| [Index du code](CODEBASE.md) | Fichiers par domaine, services, interface et tests |
-| [Consignes de travail](../AGENTS.md) | Conventions, validation ciblée et déploiement après tests |
-| [Tests navigateur](TESTS_E2E.md) | Playwright, domaines, isolation, rapports et limites |
-| [Parcours métier](TESTS_JOURNEYS.md) | Sept parcours API, base en mémoire et couverture |
-| [Tâches en cours](TASKS.md) | Travail restant ; historique des tâches terminées dans Git |
+| [Development](DEVELOPPEMENT.md) | Commands, architecture and test selection |
+| [Code index](CODEBASE.md) | Files by domain, services, frontend and tests |
+| [Working instructions](../AGENTS.md) | Conventions, targeted validation and deployment after testing |
+| [Browser tests](TESTS_E2E.md) | Playwright, domains, isolation, reports and limitations |
+| [User journeys](TESTS_JOURNEYS.md) | Seven API journeys, in-memory database and coverage |
+| [Current tasks](TASKS.md) | Remaining work; completed task history is in Git |
 
-## Audits et résultats
+## Audits and results
 
-Ces documents décrivent les contrôles effectués à leur date de rédaction.
+These documents describe checks performed as of their publication date.
 
-| Document | Contenu |
+| Document | Contents |
 | --- | --- |
-| [Audit de fiabilité](RELIABILITY_AUDIT.md) | Défauts corrigés, simulations, résultats et limites |
-| [Validation du déploiement](DEPLOYMENT_VALIDATION.md) | Interface, données, authentification et protections du serveur |
-| [Vérification du dépôt public](REPOSITORY_SECURITY.md) | Recherche de secrets, historique Git et commande de contrôle |
+| [Reliability audit](RELIABILITY_AUDIT.md) | Fixed defects, simulations, results and limitations |
+| [Deployment validation](DEPLOYMENT_VALIDATION.md) | Frontend, data, authentication and server protections |
+| [Public repository review](REPOSITORY_SECURITY.md) | Secret scanning, Git history and verification command |

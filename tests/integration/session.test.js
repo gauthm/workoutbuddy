@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-// DB isolée (règle AGENTS.md §3 : ne jamais toucher data/workoutbuddy.db)
+// Isolated DB (AGENTS.md §3: never touch data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t22-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -16,11 +16,11 @@ seedExercises(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T2.2 — Séance complète bout en bout', () => {
+describe('T2.2 — Complete end-to-end workout', () => {
   let programId, templateId, sessionId, seId, setId
 
   before(() => {
-    // Nettoyage des traces d'exécutions précédentes (DB fichier partagée)
+    // Clean up traces of previous runs (shared file DB)
     const db = getDb()
     db.prepare(`
       DELETE FROM personal_record
@@ -35,7 +35,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
     db.prepare("DELETE FROM session WHERE status = 'in_progress'").run()
   })
 
-  it('1. Crée un programme et un template', async () => {
+  it('1. Create a program and template', async () => {
     const db = getDb()
     const pRes = db.prepare(
       "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES ('Test', 'strength', 'beginner', 3, 'linear')"
@@ -53,7 +53,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
     })
   })
 
-  it('2. Crée une séance depuis le template', async () => {
+  it('2. Create a workout from the template', async () => {
     const res = await request(app)
       .post(`/api/v1/sessions/from-template/${templateId}`)
       .send({ scheduled_date: '2025-07-10' })
@@ -63,13 +63,13 @@ describe('T2.2 — Séance complète bout en bout', () => {
     seId = res.body.exercises[0].id
   })
 
-  it('3. Démarre la séance', async () => {
+  it('3. Start the workout', async () => {
     const res = await request(app).post(`/api/v1/sessions/${sessionId}/start`)
     assert.equal(res.status, 200)
     assert.equal(res.body.status, 'in_progress')
   })
 
-  it('4. Ajoute 3 séries validées', async () => {
+  it('4. Add 3 completed sets', async () => {
     for (let i = 1; i <= 3; i++) {
       const res = await request(app)
         .post(`/api/v1/session-exercises/${seId}/sets`)
@@ -78,13 +78,13 @@ describe('T2.2 — Séance complète bout en bout', () => {
     }
   })
 
-  it('5. Complète la séance', async () => {
+  it('5. Complete the workout', async () => {
     const res = await request(app).post(`/api/v1/sessions/${sessionId}/complete`)
     assert.equal(res.status, 200)
     assert.equal(res.body.status, 'completed')
     // volume = 60 * 5 * 3 = 900 kg
     assert.equal(res.body.total_volume_kg, 900)
-    // Backup auto-créé à la complétion
+    // Backup automatically created on completion
     const today = new Date().toISOString().slice(0, 10)
     assert.ok(
       fs.existsSync(path.join(path.dirname(getDbPath()), 'backups', `workoutbuddy_${today}.db`)),
@@ -92,7 +92,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
     )
   })
 
-  it("6. La séance est dans l'historique", async () => {
+  it("6. The workout appears in history", async () => {
     const res = await request(app)
       .get(`/api/v1/exercises/barbell_bench_press_medium_grip/history?limit=1`)
     assert.equal(res.status, 200)
@@ -100,8 +100,8 @@ describe('T2.2 — Séance complète bout en bout', () => {
     assert.equal(res.body.history[0].sets.length, 3)
   })
 
-  it('7. Un PR a été enregistré', async () => {
-    // Endpoint /stats/personal-records sera implémenté en T4.1 — vérification directe en DB
+  it('7. A PR was recorded', async () => {
+    // Endpoint /stats/personal-records will be implemented in T4.1 — check DB directly
     const db = getDb()
     const pr = db.prepare(
       "SELECT * FROM personal_record WHERE exercise_id = 'barbell_bench_press_medium_grip' ORDER BY id DESC LIMIT 1"
@@ -115,7 +115,7 @@ describe('T2.2 — Séance complète bout en bout', () => {
 })
 
 
-it('le détail expose les séries prévues et le repos du template sans créer de séries', async()=>{
+it('details expose planned sets and template rest without creating sets', async()=>{
   const db=getDb()
   const pid=db.prepare("INSERT INTO program(name,goal,level,days_per_week,progression_model) VALUES('Affichage','strength','beginner',3,'linear')").run().lastInsertRowid
   const tid=db.prepare("INSERT INTO workout_template(program_id,name) VALUES(?,'T')").run(pid).lastInsertRowid

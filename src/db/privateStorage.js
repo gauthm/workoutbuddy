@@ -10,7 +10,7 @@ export function privateCreation(action) {
 export function privateFile(filename) {
   let stat
   try {stat = fs.lstatSync(filename)} catch (error) {if (error.code === 'ENOENT') return; throw error}
-  if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Stockage privé : fichier ordinaire requis.')
+  if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Private storage: a regular file is required.')
   fs.chmodSync(filename, 0o600)
 }
 
@@ -18,11 +18,11 @@ export function privateDirectory(directory, {restrictExisting = true} = {}) {
   const exists = fs.existsSync(directory)
   fs.mkdirSync(directory, {recursive: true, mode: 0o700})
   const stat = fs.lstatSync(directory)
-  if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('Stockage privé : dossier ordinaire requis.')
+  if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('Private storage: a regular directory is required.')
   // A custom DB_PATH may live in an existing home or mounted directory.
   // Do not change that parent's permissions; its data files remain owner-only.
   if (!exists || restrictExisting) fs.chmodSync(directory, 0o700)
-  else if (stat.mode & 0o022) throw new Error('Stockage privé : choisir un dossier non modifiable par les autres utilisateurs.')
+  else if (stat.mode & 0o022) throw new Error('Private storage: choose a directory that other users cannot modify.')
 }
 
 export function privateBackups(dbPath, {create = false} = {}) {

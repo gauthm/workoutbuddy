@@ -19,54 +19,54 @@ const EX_BAR  = { equipment_required: ['barbell'],        is_unilateral: 0 }
 const EX_NONE = { equipment_required: [],                 is_unilateral: 0 }
 
 // ── Tests dumbbell_loadable ───────────────────────────────────
-describe('dumbbell_loadable — poignée + disques', () => {
+describe('dumbbell_loadable — handle + plates', () => {
 
-  it('poignée 2kg + 2 disques 1kg (2 paires/côté) → charges 2,4,6 kg', () => {
+  it('2kg handle + two 1kg plates (2 pairs/side) → loads 2,4,6 kg', () => {
     const items = [ dumbHandle(2), dumbPlate(1, 4) ]
-    // DP côté : {0, 1, 2} → charges : 2+2×0=2, 2+2×1=4, 2+2×2=6
+    // Side DP: {0, 1, 2} → loads: 2+2×0=2, 2+2×1=4, 2+2×2=6
     const r = calculateAchievableLoads(items, EX_DUMB)
     assert.deepEqual(r.loads_kg, [2, 4, 6])
     assert.equal(r.min_increment_kg, 2)
     assert.equal(r.max_load_kg, 6)
   })
 
-  it('poignée 2kg + disques 0.5kg×8 + 1kg×8 → incrément 1 kg', () => {
+  it('2kg handle + 0.5kg×8 + 1kg×8 plates → 1 kg increment', () => {
     const items = [
       dumbHandle(2),
-      dumbPlate(0.5, 8),  // 4 paires/côté
-      dumbPlate(1,   8),  // 4 paires/côté
+      dumbPlate(0.5, 8),  // 4 pairs/side
+      dumbPlate(1,   8),  // 4 pairs/side
     ]
     const r = calculateAchievableLoads(items, EX_DUMB)
-    assert.equal(r.loads_kg[0], 2)              // poignée nue
+    assert.equal(r.loads_kg[0], 2)              // bare handle
     assert.equal(r.min_increment_kg, 1)         // 2×0.5
     assert.ok(r.max_load_kg > 10, `max_load=${r.max_load_kg}`)
   })
 
-  it('disques plate (barre) partagés avec dumbbell_loadable', () => {
-    // Les 'plate' sont utilisables sur les haltères aussi
+  it('barbell plates shared with dumbbell_loadable', () => {
+    // The 'plate' category can also be used on dumbbells
     const items = [
       dumbHandle(2),
-      plate(2.5, 4),  // 2 paires/côté — utilisables sur haltères
+      plate(2.5, 4),  // 2 pairs/side — usable on dumbbells
     ]
     const r = calculateAchievableLoads(items, EX_DUMB)
-    // DP côté : {0, 2.5, 5} → charges : 2, 7, 12
+    // Side DP: {0, 2.5, 5} → loads: 2, 7, 12
     assert.deepEqual(r.loads_kg, [2, 7, 12])
     assert.equal(r.min_increment_kg, 5)
   })
 
-  it('dumbbell_plate et plate cumulés', () => {
+  it('dumbbell_plate and plate combined', () => {
     const items = [
       dumbHandle(2),
-      plate(2.5, 2),      // 1 paire/côté
-      dumbPlate(1.25, 4), // 2 paires/côté
+      plate(2.5, 2),      // 1 pair/side
+      dumbPlate(1.25, 4), // 2 pairs/side
     ]
     const r = calculateAchievableLoads(items, EX_DUMB)
-    // DP côté : +2.5×1 → {0,2.5}, +1.25×2 → {0,1.25,2.5,3.75}... etc.
+    // Side DP: +2.5×1 → {0,2.5}, +1.25×2 → {0,1.25,2.5,3.75}... etc.
     assert.ok(r.loads_kg.length > 3, `Attendu plusieurs charges, obtenu ${r.loads_kg.length}`)
-    assert.equal(r.loads_kg[0], 2)  // poignée nue toujours présente
+    assert.equal(r.loads_kg[0], 2)  // bare handle always present
   })
 
-  it('poignée sans disques → une seule charge (poignée nue)', () => {
+  it('handle without plates → one load (bare handle)', () => {
     const items = [ dumbHandle(2) ]
     const r = calculateAchievableLoads(items, EX_DUMB)
     assert.deepEqual(r.loads_kg, [2])
@@ -74,7 +74,7 @@ describe('dumbbell_loadable — poignée + disques', () => {
   })
 
   it('dumbbell_loadable satisfait exercice qui requiert dumbbell_fixed', () => {
-    // EX_DUMB requiert dumbbell_fixed → doit être satisfait par dumbbell_loadable
+    // EX_DUMB requires dumbbell_fixed → must be satisfied by dumbbell_loadable
     const items = [ dumbHandle(3), dumbPlate(1, 4) ]
     const r = calculateAchievableLoads(items, EX_DUMB)
     assert.ok(r.loads_kg.length > 0)
@@ -83,81 +83,81 @@ describe('dumbbell_loadable — poignée + disques', () => {
 
 })
 
-// ── Tests cohabitation barre + haltères ───────────────────────
+// ── Barbell + dumbbell coexistence tests ───────────────────────
 describe('cohabitation barbell + dumbbell_loadable', () => {
-  it('disques plate partagés — exercice barre utilise seulement plate (pas dumbbell_plate)', () => {
+  it('shared plates — barbell exercise uses only plate (not dumbbell_plate)', () => {
     const items = [
       barbell(20),
-      plate(5, 4),           // pour la barre
+      plate(5, 4),           // for the barbell
       dumbHandle(2),
-      dumbPlate(1.25, 4),    // seulement pour haltères
+      dumbPlate(1.25, 4),    // only for dumbbells
     ]
-    // Exercice barre : ne doit pas utiliser dumbbell_plate
+    // Barbell exercise: must not use dumbbell_plate
     const rBar = calculateAchievableLoads(items, EX_BAR)
-    // Charges barre : 20+2×{0,5,10} = {20, 30, 40}
+    // Barbell loads: 20+2×{0,5,10} = {20, 30, 40}
     assert.deepEqual(rBar.loads_kg, [20, 30, 40])
 
-    // Exercice haltère : peut utiliser plate + dumbbell_plate
+    // Dumbbell exercise: can use plate + dumbbell_plate
     const rDumb = calculateAchievableLoads(items, EX_DUMB)
-    // DP côté (plate 5kg ×2 paires + dumbbell_plate 1.25 ×2 paires) :
-    // {0, 1.25, 2.5, 5, 6.25, 7.5} → charges 2+2×... = plusieurs valeurs
-    assert.ok(rDumb.loads_kg.includes(2))     // poignée nue
+    // Side DP (5kg plate ×2 pairs + 1.25 dumbbell_plate ×2 pairs):
+    // {0, 1.25, 2.5, 5, 6.25, 7.5} → loads 2+2×... = multiple values
+    assert.ok(rDumb.loads_kg.includes(2))     // bare handle
     assert.ok(rDumb.loads_kg.includes(12))    // 2+2×5
   })
 })
 
 // ── Tests bench_adjustable ─────────────────────────────────────
-describe('isEquipmentAvailable — bench_adjustable satisfait bench', () => {
-  // Tester via l'API achievable-loads ou directement programGenerator
-  // Pour ce test unitaire, vérifier la logique de isEquipmentAvailable
-  // en important la fonction depuis programGenerator ou en la dupliquant
+describe('isEquipmentAvailable — bench_adjustable satisfies bench', () => {
+  // Test through the achievable-loads API or directly through programGenerator
+  // For this unit test, check isEquipmentAvailable logic
+  // by importing the function from programGenerator or duplicating it
 
-  it('plate count impair → doit être rejeté par le serveur (test API)', async () => {
-    // Ce test est dans tests/integration — voir ci-dessous
+  it('odd plate count → must be rejected by the server (API test)', async () => {
+    // This test is in tests/integration — see below
     assert.ok(true)  // placeholder
   })
 })
 
-// ── Tests cas limites ─────────────────────────────────────────
+// ── Edge case tests ─────────────────────────────────────────
 describe('cas limites', () => {
-  it('une seule poignée suffit à un exercice unilatéral', () => {
+  it('one handle suffices for a unilateral exercise', () => {
     const r = calculateAchievableLoads([{ category: 'dumbbell_loadable', weight_kg: 2, count: 1 }, dumbPlate(1, 3)], EX_DUMB)
     assert.deepEqual(r.loads_kg, [2, 4])
   })
-  it('deux haltères répartissent les disques disponibles sur quatre côtés', () => {
+  it('two dumbbells distribute available plates across four sides', () => {
     const r = calculateAchievableLoads([dumbHandle(2), dumbPlate(1, 4)], { ...EX_DUMB, is_unilateral: 0 })
     assert.deepEqual(r.loads_kg, [2, 4])
   })
-  it('les quantités de plusieurs lignes de même poids se cumulent', () => {
+  it('counts from multiple rows of the same weight are combined', () => {
     const r = calculateAchievableLoads([dumbFixed(10, 1), dumbFixed(10, 1)], { ...EX_DUMB, is_unilateral: 0 })
     assert.deepEqual(r.loads_kg, [10])
     const discs = calculateAchievableLoads([dumbHandle(2), dumbPlate(1, 2), dumbPlate(1, 2)], { ...EX_DUMB, is_unilateral: 0 })
     assert.deepEqual(discs.loads_kg, [2, 4])
   })
-  it('exercice sans équipement → loads=[0]', () => {
+  it('exercise without equipment → loads=[0]', () => {
     const r = calculateAchievableLoads([], EX_NONE)
     assert.deepEqual(r.loads_kg, [0])
   })
 
-  it('dumbbell_plate sans dumbbell_loadable → ignoré pour exercice haltère', () => {
-    // Sans poignée, les disques d'haltère seuls ne servent à rien
+  it('dumbbell_plate without dumbbell_loadable → ignored for dumbbell exercise', () => {
+    // Without a handle, dumbbell plates alone are unusable
     const items = [ dumbPlate(1, 4) ]
     const r = calculateAchievableLoads(items, EX_DUMB)
-    // Aucune charge atteignable (pas de poignée, pas d'haltère fixe/réglable)
+    // No achievable load (no handle, no fixed/adjustable dumbbell)
     assert.deepEqual(r.loads_kg, [])
   })
 
-  it('haltères fixes + poignées à disques → charges cumulées', () => {
+  it('fixed dumbbells + plate-loaded handles → combined loads', () => {
     const items = [
-      dumbFixed(10, 2),    // haltère fixe 10kg
-      dumbFixed(15, 2),    // haltère fixe 15kg
+      dumbFixed(10, 2),    // 10kg fixed dumbbell
+      dumbFixed(15, 2),    // 15kg fixed dumbbell
       dumbHandle(2),
-      dumbPlate(2.5, 4),   // 2 paires/côté
+      dumbPlate(2.5, 4),   // 2 pairs/side
     ]
     const r = calculateAchievableLoads(items, EX_DUMB)
-    assert.ok(r.loads_kg.includes(10))  // haltère fixe
-    assert.ok(r.loads_kg.includes(15))  // haltère fixe
-    assert.ok(r.loads_kg.includes(2))   // poignée nue
+    assert.ok(r.loads_kg.includes(10))  // fixed dumbbell
+    assert.ok(r.loads_kg.includes(15))  // fixed dumbbell
+    assert.ok(r.loads_kg.includes(2))   // bare handle
     assert.ok(r.loads_kg.includes(7))   // 2+2×2.5
   })
 })

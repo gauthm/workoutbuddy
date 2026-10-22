@@ -8,14 +8,14 @@ function response(){const res=new EventEmitter();res.headers={};res.statusCode=2
 function invoke(fn,{ip='127.0.0.1',path='/',method='POST',...rest}={}){
  const res=response();let passed=false;fn({ip,path,method,...rest},res,()=>{passed=true});return {res,passed}
 }
-test('production : origine HTTPS explicite, sans identifiants ni chemin, et proxy restreint',()=>{
+test('production: explicit HTTPS origin without credentials or path, and restricted proxy',()=>{
  for(const env of [{NODE_ENV:'production'},{NODE_ENV:'production',PUBLIC_ORIGIN:'http://example.com'},
   {PUBLIC_ORIGIN:'https://user:pwd@example.com'},{PUBLIC_ORIGIN:'https://example.com/path'},
   {PUBLIC_ORIGIN:'https://example.com?x=1'},{PUBLIC_ORIGIN:'javascript:alert(1)'},{TRUST_PROXY:'true'}])assert.throws(()=>securityConfig(env))
  assert.deepEqual(securityConfig({NODE_ENV:'production',PUBLIC_ORIGIN:'https://example.com/',TRUST_PROXY:'loopback'}),{origin:'https://example.com',trustProxy:'loopback'})
  assert.deepEqual(securityConfig({}),{origin:null,trustProxy:false})
 })
-test('hôte public contrôlé et HSTS sur HTTPS, sans forcer le HTTPS du réseau local',()=>{
+test('public host checked and HSTS on HTTPS, without forcing HTTPS on the local network',()=>{
  const secure=securityHeaders({origin:'https://app.example.com'})
  let result=invoke(secure,{get:key=>key==='host'?'app.example.com':undefined})
  assert.equal(result.passed,true);assert.match(result.res.headers['Strict-Transport-Security'],/31536000/)
@@ -26,7 +26,7 @@ test('hôte public contrôlé et HSTS sur HTTPS, sans forcer le HTTPS du réseau
  for(const host of ['127.0.0.1:3000','192.168.1.10:3000','[::1]:3000'])assert.equal(invoke(securityHeaders(),{get:()=>host}).passed,true)
  for(const host of ['attacker.example','localhost.attacker.example','user@localhost','localhost/path'])assert.equal(invoke(securityHeaders(),{get:()=>host}).res.body.error,'HOST_NOT_ALLOWED')
 })
-test('limite par IP : réponse 429, Retry-After, expiration et mémoire bornée',()=>{
+test('per-IP limit: 429 response, Retry-After, expiry and bounded memory',()=>{
  let time=0;const limit=rateLimit({limit:2,windowMs:1000,maxEntries:2,now:()=>time})
  assert.equal(invoke(limit).passed,true);assert.equal(invoke(limit).passed,true)
  const denied=invoke(limit);assert.equal(denied.res.statusCode,429);assert.equal(denied.res.headers['Retry-After'],'1')
@@ -35,7 +35,7 @@ test('limite par IP : réponse 429, Retry-After, expiration et mémoire bornée'
  time=1000;assert.equal(invoke(limit,{ip:'overflow'}).passed,true)
  assert.equal(invoke(limit).passed,true)
 })
-test('IA : deux requêtes simultanées au maximum, libération après fin ou déconnexion une seule fois',()=>{
+test('AI: at most two concurrent requests, released once after completion or disconnect',()=>{
  const gate=expensiveRequests(),request={path:'/ai/chat'}
  const one=invoke(gate,request),two=invoke(gate,request)
  assert.equal(one.passed,true);assert.equal(two.passed,true)
@@ -45,7 +45,7 @@ test('IA : deux requêtes simultanées au maximum, libération après fin ou dé
  assert.equal(invoke(gate,request).res.body.error,'AI_BUSY')
  two.res.emit('close');assert.equal(invoke(gate,request).passed,true)
 })
-test('limites coûteuses couvrent les chemins avec slash final et les appels de modèles en GET',()=>{
+test('expensive limits cover trailing-slash paths and GET model calls',()=>{
  const gate=expensiveRequests()
  for(let i=0;i<12;i++){const r=invoke(gate,{path:'/settings/ai-models/',method:'GET'});assert.equal(r.passed,true);r.res.emit('finish')}
  assert.equal(invoke(gate,{path:'/SETTINGS/TEST-AI/'}).res.body.error,'RATE_LIMITED')
@@ -54,7 +54,7 @@ test('limites coûteuses couvrent les chemins avec slash final et les appels de 
  assert.equal(invoke(gate,{path:'/sessions/12/complete'}).passed,true)
 })
 
-test('un seul import peut réserver un corps volumineux ; sa déconnexion libère la place',()=>{
+test('only one import can reserve a large body; disconnect releases the slot',()=>{
  const gate=expensiveRequests()
  const first=invoke(gate,{path:'/import'})
  assert.equal(first.passed,true)

@@ -1,7 +1,7 @@
 import {test,expect} from './fixtures.js'
 import {L,get,planned,trainThroughUI} from './helpers.js'
 
-test('supprimer une séance terminée depuis sa fiche reste supprimé après retour, reload et redémarrage',async({page,request,app})=>{
+test('deleting a completed workout from details persists after return, reload and restart',async({page,request,app})=>{
  const p=await planned(request),session=await trainThroughUI(page,request,p)
  await page.goto('/#/session/history')
  await page.getByRole('button',{name:L('session.filter_completed'),exact:true}).click()
@@ -19,7 +19,7 @@ test('supprimer une séance terminée depuis sa fiche reste supprimé après ret
  await expect(page.getByText('SESSION_NOT_FOUND',{exact:true})).toHaveCount(0)
 })
 
-test('marquer sautée → remettre en planifiée → replanifier dans le calendrier sans doublon',async({page,request})=>{
+test('mark skipped → restore planned → reschedule in calendar without duplicates',async({page,request})=>{
  await planned(request)
  const session=(await get(request,'/sessions?active_program=1')).sessions.find(s=>s.status==='planned')
  await page.goto('/#/calendar')
@@ -42,7 +42,7 @@ test('marquer sautée → remettre en planifiée → replanifier dans le calendr
  expect((await get(request,'/sessions')).sessions.filter(s=>s.id===session.id)).toHaveLength(1)
 })
 
-test('réinitialiser une séance terminée retire ses résultats et permet de la recommencer',async({page,request,app})=>{
+test('resetting a completed workout removes results and allows restarting',async({page,request,app})=>{
  const p=await planned(request),session=await trainThroughUI(page,request,p)
  await page.goto(`/#/session/${session.id}`)
  await page.getByRole('button',{name:L('session.reset_workout'),exact:true}).click()

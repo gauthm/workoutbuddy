@@ -1,48 +1,47 @@
-# Parcours navigateur isolés
+# Isolated browser journeys
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Prérequis](#prérequis)
-- [Commandes](#commandes)
-- [Choisir le bon domaine](#choisir-le-bon-domaine)
-- [Contrôle avant push](#contrôle-avant-push)
-- [Résultats et diagnostic](#résultats-et-diagnostic)
-- [Limites explicites](#limites-explicites)
+- [Requirements](#requirements)
+- [Commands](#commands)
+- [Choosing the right domain](#choosing-the-right-domain)
+- [Pre-push checks](#pre-push-checks)
+- [Results and diagnosis](#results-and-diagnosis)
+- [Explicit limitations](#explicit-limitations)
 
-### Isolation du serveur et des données
+### Server and data isolation
 
-Ces tests lancent le **vrai `server.js`**, le vrai frontend, les migrations et le catalogue. Chaque
-cas reçoit une base SQLite neuve dans un dossier temporaire et un port libre lié à `127.0.0.1`. Les
-variables `DB_PATH`, `HOST` et `PORT` du serveur sont imposées par la fixture ; aucune URL ou base
-personnelle n’est acceptée. La base fichier permet de redémarrer le serveur et vérifier la
-persistance.
+These tests start **the real `server.js`**, frontend, migrations and catalog. Each case
+receives a fresh SQLite database in a temporary directory and a free port bound to `127.0.0.1`.
+The fixture enforces the server's `DB_PATH`, `HOST` and `PORT` variables; no personal URL or
+database is accepted. The file-based database allows server restarts and persistence checks.
 
-Le navigateur, le serveur, la base et les sauvegardes temporaires sont nettoyés après chaque cas,
-même en échec. Deux cas peuvent tourner en parallèle sans partager leurs données.
+The browser, server, database and temporary backups are cleaned up after every case,
+including failures. Two cases can run in parallel without sharing data.
 
-### Actions utilisateur et réseau réel
+### User actions and real networking
 
-Les actions testées passent par les boutons et champs de l’application. Les appels HTTP directs
-servent à préparer les préconditions et à vérifier les données sauvegardées. Par exemple, le test du
-questionnaire crée le programme dans l’interface ; les tests de séance préparent leur programme par
-l’API, puis effectuent les séries dans l’interface. Aucune réponse de l’API de l’application n’est
-simulée.
+Tested actions go through application buttons and fields. Direct HTTP calls prepare
+preconditions and verify saved data. For example, the questionnaire test creates the
+program in the interface; workout tests prepare their program through the API, then
+complete sets in the interface. No application API response is mocked.
 
-Les tests de panne interrompent une véritable requête, puis réessaient contre le serveur.
+Failure tests interrupt a real request, then retry against the server.
 
-## Prérequis
+## Requirements
 
-- Installer normalement le projet et ses ressources locales (README principal).
-- Vérifier les photos avec `node scripts/download-exercise-images.js --check` ; les installer avec la même commande sans `--check` si nécessaire. Les parcours d’animation utilisent les vraies photos du catalogue.
-- Disposer de Playwright et de Google Chrome. Sur cette machine, le Playwright fourni par `@playwright/mcp` est réutilisé. Aucune dépendance npm n’est ajoutée au projet.
-- Sur un serveur Linux minimal, installer aussi des polices système (par exemple `dejavu-sans-fonts` et `liberation-sans-fonts` sur Rocky). Sans police, Chromium headless peut afficher des textes sans dimensions et fausser les clics ou les assertions de visibilité.
-- Le résolveur essaie un Playwright disponible localement, puis les installations globales `playwright` et `@playwright/mcp` obtenues avec `npm root -g`.
-- Si l’installation est ailleurs, définir `WB_PLAYWRIGHT_PATH` vers son `package.json` (celui de `playwright` ou de `@playwright/mcp`). Son environnement doit fournir `playwright/test` et le CLI de Playwright. Un Playwright installé ailleurs par l’équipe convient aussi ; le résolveur ne télécharge rien.
-- `WB_E2E_BROWSER_CHANNEL=chromium` permet d’utiliser le Chromium déjà installé avec cette même version de Playwright. Le défaut est le canal `chrome` installé sur la machine. `WB_E2E_HEADED=1` affiche les fenêtres.
+- Install the project and its local resources normally (main README).
+- Check photos with `node scripts/download-exercise-images.js --check`; install them with the same command without `--check` if necessary. Animation journeys use real catalog photos.
+- Have Playwright and a compatible browser available. Reuse an existing toolchain; no npm dependency is added to the project.
+- On a minimal Linux server, also install system fonts (for example `dejavu-sans-fonts` and `liberation-sans-fonts` on Rocky). Without fonts, headless Chromium may render text without dimensions and invalidate clicks or visibility assertions.
+- The resolver tries locally available Playwright, then global `playwright` and `@playwright/mcp` installations found through `npm root -g`.
+- If installed elsewhere, set `WB_PLAYWRIGHT_PATH` to its `package.json` (for `playwright` or `@playwright/mcp`). Its environment must provide `playwright/test` and the Playwright CLI. A Playwright installation elsewhere provided by the team is also suitable; the resolver downloads nothing.
+- `WB_E2E_BROWSER_CHANNEL=chromium` uses Chromium already installed with that same Playwright version. The default is the machine's installed `chrome` channel. `WB_E2E_HEADED=1` shows browser windows.
+- On the current server, use `WB_PLAYWRIGHT_PATH=/usr/local/src/workoutbuddy-deploy/browser/node_modules/playwright/package.json` and `WB_E2E_BROWSER_CHANNEL=chromium-headless-shell` to reuse the installed Playwright and headless Chromium shell.
 
-## Commandes
+## Commands
 
-Depuis la racine du dépôt :
+From the repository root:
 
 ```sh
 npm run test:e2e
@@ -56,165 +55,159 @@ npm run test:e2e:affected -- --base origin/main
 npm run test:e2e:affected -- --domains exercises,motion
 ```
 
-Chaque fichier tourne sur deux projets : ordinateur 1280×900 et mobile 390×844, avec Chrome, locale
-française et fuseau Europe/Paris. Les scénarios privilégient les rôles et libellés accessibles, les
-attentes sur l’état visible et les données réellement persistées. Pas de temporisations arbitraires
-ni de réessais automatiques masquant les échecs.
+Each file runs in two projects: desktop 1280×900 and mobile 390×844, with Chrome,
+French locale and Europe/Paris timezone. Scenarios favor accessible roles and labels,
+expectations on visible state and genuinely persisted data. No arbitrary delays or
+automatic retries conceal failures.
 
-## Choisir le bon domaine
+## Choosing the right domain
 
 ### `dashboard.spec.js`
 
-Accueil sans texte coupé ni action inaccessible : huit formats iPhone/Safari et ordinateur, zones
-programme/jour agrandies, raccourcis sous le programme, défilement sur écran court,
-portrait/paysage, safe areas, six semaines, sélection permanente et changement de mois/année, retour
-à aujourd’hui, aucun programme, semaine accomplie, tous les statuts, pagination de plusieurs séances
-; libellé exact des cinq objectifs FR/EN.
+Dashboard without clipped text or inaccessible actions: eight iPhone/Safari and desktop
+sizes, enlarged program/day areas, shortcuts below the program, scrolling on short screens,
+portrait/landscape, safe areas, six weeks, persistent selection and month/year changes,
+return to today, no program, completed week, all statuses, multiple-session pagination;
+exact labels for all five goals in French and English.
 
 ### `coach.spec.js`
 
-Saisie ajustable, Entrée desktop pour envoyer, Maj+Entrée et Entrée mobile pour une ligne,
-composition du clavier et fenêtre desktop étroite, réflexion animée et mouvement réduit, absence
-d’avatars ; navigation avant et pendant une réponse, fin hors écran, absence de doublon, suivi
-immédiat des fragments longs et des redimensionnements, persistance et retour en bas après
-navigation/rechargement ; vraie API avec fournisseur SSE local jetable.
+Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newline,
+keyboard composition and narrow desktop window, animated thinking and reduced motion,
+no avatars; navigation before and during a response, off-screen completion, no duplicates,
+immediate tracking of long chunks and resizes, persistence and return to bottom after
+navigation/reload; real API with a disposable local SSE provider.
 
 ### `programs.spec.js`
 
-Questionnaire, aperçu, activation, durée illimitée, jours valides/invalides, remplacement
-compatible.
+Questionnaire, preview, activation, unlimited duration, valid/invalid days, compatible
+replacement.
 
 ### `sessions.spec.js`
 
-Validation/annulation, reprise après reload et redémarrage, séance complète, cible suivante du même
-exercice, requête interrompue avant/après écriture sans doublon, conflit de réessai, fin bloquée
-pendant sauvegarde, réponses de fin/annulation perdues, arrêt brutal, continuer/quitter sans
-enregistrer.
+Set completion/undo, resumption after reload and restart, full workout, next target for
+the same exercise, request interrupted before/after write without duplication, retry
+conflict, completion blocked during save, lost completion/cancellation responses, abrupt
+shutdown, continue/leave without saving.
 
 ### `history.spec.js`
 
-Suppression persistante et recalcul des acquis, annulation du statut Sautée, déplacement,
-réinitialisation d’une séance terminée.
+Persistent deletion and progress recalculation, undoing Skipped status, rescheduling,
+resetting a completed workout.
 
 ### `equipment.spec.js`
 
-Ajout quantité/poids, sauvegarde persistante, saisie invalide et annulation du brouillon.
+Adding quantity/weight, persistent saving, invalid input and draft cancellation.
 
 ### `settings.spec.js`
 
-Sauvegarde groupée profil/préférences, thème, redémarrage, échec réseau et reprise ; déconnexion via
-proxy HTTP, annulation du brouillon et données conservées ; bouton absent sans authentification.
+Batch profile/preferences saving, theme, restart, network failure and recovery; logout
+through HTTP proxy, draft cancellation and data preserved; button absent without authentication.
 
 ### `data.spec.js`
 
-Téléchargement JSON, confirmation RESET, réinitialisation/import et reprise, rollback sur référence
-invalide.
+JSON download, RESET confirmation, reset/import and resumption, rollback on invalid reference.
 
 ### `exercises.spec.js`
 
-Recherche, filtres, disponibilité avec matériel, retour de fiche, exclusion et compteur ; consigne
-de poids par haltère sur le catalogue entier, FR/EN.
+Search, filters, equipment availability, return from details, exclusion and counter;
+per-dumbbell weight instructions across the entire catalog, in French and English.
 
 ### `motion.spec.js`
 
-Photos réelles en alternance, pause/reprise, réduction des animations, arrêt hors écran et aide en
-séance.
+Alternating real photos, pause/resume, reduced animations, stopping off-screen and
+in-workout help.
 
 ### `security.spec.js`
 
-Pincement/double tap sans zoom, vrai balayage tactile conservé, champs compacts à 16 px ; CSP,
-séance et graphiques sous protection, origines étrangères, JSON obligatoire, limite IA, import en
-cours/interrompu, service worker et décodage des icônes navigateur/iPhone.
+Pinch/double tap without zoom, real touch scrolling preserved, compact fields at 16 px;
+CSP, workouts and charts under protection, foreign origins, mandatory JSON, AI limit,
+in-progress/interrupted import, service worker and browser/iPhone icon decoding.
 
 ### `stats.spec.js`
 
-Compteurs et graphique après séance, regroupement, état vide.
+Counters and chart after a workout, grouping, empty state.
 
 ### `updates.spec.js`
 
-Publication sur une copie des assets : détection au premier plan, reload sans hard refresh,
-brouillon préservé, vraie panne réseau, refus des assets de connexion ; proxy HTTP avec session
-expirée sur navigation, API, premier plan et mise à niveau d’un ancien worker.
+Publishing a copy of assets: foreground detection, reload without hard refresh,
+draft preserved, real network failure, login assets rejected; HTTP proxy with expired
+session during navigation, API calls, foregrounding and upgrade of an old worker.
 
 ### `theme.spec.js`
 
-Thème clair enregistré par l’interface, contraste des textes et champs, focus visible, navigation et
-calendrier ; valeurs des séries validées lisibles.
+Light theme saved through the interface, text and field contrast, visible focus,
+navigation and calendar; completed set values remain readable.
 
-### Contrôle d’accès dans les tests
+### Access control in tests
 
-`authProxy.js` fournit un proxy HTTP jetable commun aux réglages et aux mises à jour. Il reproduit
-les redirections et expirations ; la révocation d’une véritable session Authelia est vérifiée
-séparément avec `deploy/linux/redhat-based/test-auth-sessions.py` ou
-`deploy/linux/debian-based/test-auth-sessions.py`, jamais avec une identité personnelle.
+`authProxy.js` provides a disposable HTTP proxy shared by settings and update tests. It
+reproduces redirects and expiry; revocation of a real Authelia session is checked
+separately with `deploy/linux/redhat-based/test-auth-sessions.py` or
+`deploy/linux/debian-based/test-auth-sessions.py`, never using a personal identity.
 
-### Sélection des tests concernés
+### Selecting affected tests
 
-`scripts/e2e-selection.js` décrit les dépendances. Le chat, l’accueil et un fichier de parcours
-modifié sélectionnent leurs propres domaines ; un simple changement de numéro de cache est ignoré
-(une modification du comportement du worker sélectionne `updates`). Une modification du moteur de
-progression lance séances, historique, données et statistiques ; une modification du matériel lance
-aussi les programmes et les exercices.
+`scripts/e2e-selection.js` describes dependencies. Chat, dashboard and a modified journey
+file select their own domains; a cache version change alone is ignored (worker behavior
+changes select `updates`). A progression-engine change runs workouts, history, data and
+statistics; an equipment change also runs programs and exercises.
 
-Un fichier partagé (API, store, navigation, styles, traductions, base…) ou un nouveau fichier source
-déclenche toute la suite. Les changements purement documentaires ne déclenchent pas le navigateur.
+A shared file (API, store, navigation, styles, translations, database…) or new source
+file triggers the full suite. Documentation-only changes do not trigger the browser.
 
-Sans `--base`, la sélection tient compte des fichiers modifiés, indexés et nouveaux ; avec `--base`,
-elle compare cette référence à l’arbre de travail, y compris les modifications non committées, et
-ajoute les nouveaux fichiers non suivis. Après lecture du diff, `--domains exercises,motion` permet
-de cibler une modification locale dans un fichier partagé ; conserver la sélection complète si son
-effet est global.
+Without `--base`, selection includes modified, staged and new files; with `--base`, it
+compares that reference to the working tree, including uncommitted changes, and adds new
+untracked files. After reviewing the diff, `--domains exercises,motion` can target a local
+change in a shared file; retain full selection when its effect is global.
 
-## Contrôle avant push
+## Pre-push checks
 
 ```sh
 npm run hooks:install
 ```
 
-Cette commande active `.githooks` **pour ce dépôt seulement**. Elle refuse de remplacer un autre
-chemin de hooks ou un hook pre-push existant.
+This command enables `.githooks` **for this repository only**. It refuses to replace another
+hooks path or an existing pre-push hook.
 
-Ensuite chaque push sélectionne les fichiers Node et les domaines Playwright concernés par les
-commits effectivement poussés. `scripts/test-selection.js` suit les imports des tests unitaires et
-les dépendances explicites des tests API ; un nouveau test API non classé reste inclus pour les
-changements backend. Les dépendances globales et sources inconnues conservent un repli complet.
+Each subsequent push selects Node files and Playwright domains affected by the commits
+actually pushed. `scripts/test-selection.js` follows unit test imports and explicit API
+test dependencies; a new unclassified API test remains included for backend changes.
+Global dependencies and unknown sources retain a full-suite fallback.
 
-Le mode in-process, également utilisé par défaut par `npm test`, exécute Express et ses routes sans
-ouvrir de ports TCP éphémères pour les tests métier/API ; le réseau HTTP réel reste testé par
-Playwright. Une nouvelle branche ou une référence distante indisponible déclenche toute la suite. Un
-échec empêche le push. Une suppression de branche ne lance pas les tests.
+In-process mode, also used by default by `npm test`, runs Express and its routes without
+opening ephemeral TCP ports for business logic/API tests; real HTTP networking remains
+covered by Playwright. A new branch or unavailable remote reference triggers the full suite.
+A failure blocks the push. Branch deletion does not run tests.
 
-Pour le développement courant, lancer le domaine touché ou `test:e2e:affected`, avec seulement les
-tests Node concernés (`npm run test:affected`, aperçu `-- --list`, ou fichiers `.test.js`
-explicites). Éviter les suites complètes à chaque modification et les répétitions sans changement
-nouveau ; voir `AGENTS.md`. Les changements de tests se vérifient aussi en exécutant le fichier
-concerné.
+For routine development, run the affected domain or `test:e2e:affected`, with only affected
+Node tests (`npm run test:affected`, preview with `-- --list`, or explicit `.test.js` files).
+Avoid full suites after every change and repetitions without new changes; see `AGENTS.md`.
+Test changes are also checked by running the affected file.
 
-## Résultats et diagnostic
+## Results and diagnosis
 
-La dernière exécution produit un rapport HTML dans `test-results/report/`. Les traces, captures en
-échec et journaux du serveur sont dans `test-results/e2e/`. Ces fichiers ne sont pas versionnés ;
-ils ne contiennent que les données des tests.
+The latest run produces an HTML report in `test-results/report/`. Traces, failure screenshots
+and server logs are in `test-results/e2e/`. These files are not versioned; they contain only
+test data.
 
 ```sh
 npm run test:e2e:report
-npm run test:e2e:trace -- test-results/e2e/chemin-du-cas/trace.zip
+npm run test:e2e:trace -- test-results/e2e/case-path/trace.zip
 ```
 
-La [documentation du trace viewer](https://playwright.dev/docs/trace-viewer) explique comment
-retrouver les actions, captures et requêtes d’un échec.
+The [trace viewer documentation](https://playwright.dev/docs/trace-viewer) explains how
+to find actions, screenshots and requests for a failure.
 
-## Limites explicites
+## Explicit limitations
 
-Cette suite couvre des parcours fonctionnels sous Chrome, avec une taille mobile émulée. Elle ne
-valide pas Safari/Firefox, les téléphones physiques, les performances sous charge ou toutes les
-possibilités d’erreur. Le service worker est bloqué par défaut pour interroger les fichiers et le
-serveur de la version testée.
+This suite covers functional journeys in Chrome with an emulated mobile viewport. It
+does not validate Safari/Firefox, physical phones, load performance or every possible error.
+The service worker is blocked by default so tests query the tested version's files and server.
 
-Les cas de sécurité et de mise à jour l’autorisent explicitement : installation, rechargement sous
-CSP, publication d’une version complète, panne d’un asset/redirection d’authentification et
-navigation hors ligne. Les tests de livraison copient `public/` dans leur dossier temporaire avant
-modification ; ils ne modifient jamais le dépôt partagé ni les fichiers déployés. Aucun service d’IA
-externe n’est sollicité.
+Security and update cases explicitly allow it: installation, reload under CSP, publication
+of a complete version, asset failure/authentication redirect and offline navigation.
+Release tests copy `public/` to their temporary directory before modification; they never
+modify the shared repository or deployed files. No external AI service is used.
 
-Les tests unitaires/API restent nécessaires pour explorer finement les règles du moteur.
+Unit/API tests remain necessary for detailed exploration of engine rules.

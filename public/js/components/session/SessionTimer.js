@@ -6,7 +6,7 @@ export default {
   name: 'SessionTimer',
   props: {
     startedAt: { type: String, required: true }
-    // Format : "2025-07-10T14:30:00" (sans Z — UTC de SQLite)
+    // Format: "2025-07-10T14:30:00" (without Z: SQLite UTC)
   },
 
   setup(props) {
@@ -31,7 +31,7 @@ export default {
 
     onMounted(() => {
       worker.addEventListener('message', onMessage)
-      // Calculer le nombre de secondes écoulées depuis le démarrage
+      // Calculate seconds elapsed since the start
       const elapsedSec = Math.max(
         0,
         Math.floor((Date.now() - parseUtcTimestamp(props.startedAt)) / 1000)
@@ -41,8 +41,8 @@ export default {
 
     onUnmounted(() => {
       worker.removeEventListener('message', onMessage)
-      // NE PAS stopper le worker ici — il continue en arrière-plan
-      // Il sera stoppé par RestTimer ou à la fin de la séance
+      // Do not stop the worker here: it continues in the background
+      // RestTimer or the end of the session will stop it
     })
 
     return { elapsed, format }

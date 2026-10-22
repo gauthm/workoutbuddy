@@ -1,73 +1,71 @@
-# Compte, MFA et sessions
+# Account, MFA, and sessions
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-## Configurer le compte dans votre terminal
+## Configure the account in your terminal
 
-Exécuter `sudo /usr/local/sbin/workoutbuddy-auth-setup` en SSH interactif : identifiant, mot de
-passe unique et varié de 20 caractères minimum, deux saisies masquées. Le script sauvegarde, calcule
-Argon2id sans secret en argument ou environnement, active le compte et redémarre Authelia. Le compte
-provisoire reste désactivé avant cela.
+Run `sudo /usr/local/sbin/workoutbuddy-auth-setup` over interactive SSH: username, unique
+and varied password of at least 20 characters, entered twice with input hidden. The script
+backs up, computes Argon2id without secrets in arguments or environment variables, enables
+the account, and restarts Authelia. The temporary account remains disabled until then.
 
-### Enregistrer le TOTP et tester la déconnexion
+### Register TOTP and test logout
 
-Ouvrir `https://auth.DOMAINE`, se connecter et demander l'enregistrement TOTP. Lire le lien de
-vérification **dans votre terminal SSH uniquement** : `sudo cat
-/var/lib/authelia/notifications.txt`. L'ouvrir, scanner le QR dans votre authentificateur et
-confirmer un code. Aucun SMTP ni adresse personnelle requis. Tronquer ensuite ce fichier privé. Ne
-transmettre aucun secret par messagerie.
+Open `https://auth.DOMAIN`, log in, and request TOTP registration. Read the verification
+link **only in your SSH terminal**: `sudo cat
+/var/lib/authelia/notifications.txt`. Open it, scan the QR in your authenticator, and
+confirm a code. No SMTP or personal address required. Then truncate this private file.
+Do not send secrets through messaging.
 
-Tester en fenêtre privée : mot de passe seul insuffisant, accès après TOTP, puis déconnexion depuis
-**Réglages → Se déconnecter**, ou via `https://auth.DOMAINE/logout`. Le proxy annonce le bouton avec
-`X-WorkoutBuddy-Logout: /auth/logout` et renvoie cette route vers le logout natif d’Authelia. La
-session mémorisée est révoquée sans supprimer les données SQLite.
+Test in a private window: password alone is insufficient, access works after TOTP, then log out
+from **Settings → Log out**, or through `https://auth.DOMAIN/logout`. The proxy advertises
+the button with `X-WorkoutBuddy-Logout: /auth/logout` and redirects this route to Authelia's
+native logout. The remembered session is revoked without deleting SQLite data.
 
-### Durée des sessions
+### Session duration
 
-Sans **Se souvenir de moi** : 15 min d’inactivité et 1 h maximum. Avec cette case cochée sur un
-appareil de confiance : connexion complète mémorisée pendant **60 jours**, sans expiration par
-inactivité ; nouveau navigateur, cookie effacé, déconnexion ou expiration imposent mot de passe et
-TOTP. Le cookie reste Secure, HttpOnly et SameSite=Lax. Ce mécanisme ne mémorise pas séparément le
-MFA.
+Without **Remember me**: 15 minutes of inactivity and 1 hour maximum. With this box checked on
+a trusted device: full login is remembered for **60 days**, without inactivity expiration;
+a new browser, deleted cookie, logout, or expiration requires password and TOTP. The cookie
+remains Secure, HttpOnly, and SameSite=Lax. This mechanism does not remember MFA separately.
 
-Voir la [configuration officielle](https://www.authelia.com/configuration/session/introduction/).
+See the [official configuration](https://www.authelia.com/configuration/session/introduction/).
 
-### Redis privé et persistance
+### Private Redis and persistence
 
-`workoutbuddy-sessions.service` utilise uniquement un socket Unix 0660, sous un dossier 0750
-accessible au groupe dédié d’Authelia. Aucun port TCP Redis. Le mot de passe aléatoire du
-fournisseur est généré hors dépôt par `render.py` ; pour une installation existante, l’ajouter sans
-changer les clés Authelia ni le compte.
+`workoutbuddy-sessions.service` uses only a 0660 Unix socket, in a 0750 directory
+accessible to Authelia's dedicated group. No Redis TCP port. The provider's random password
+is generated outside the repository by `render.py`; for an existing installation,
+add it without changing Authelia keys or the account.
 
-Son stockage `/var/lib/workoutbuddy-sessions` est en 0700, avec AOF synchronisé chaque seconde et
-limite Redis de 32 Mio. Le service est plafonné à 128 Mio de RAM au total et 20 % d’un CPU. Au
-repos, sa consommation mesurée est d’environ 7 à 8 Mio. Un arrêt propre conserve les sessions ; une
-coupure brutale peut perdre la dernière seconde.
+Its `/var/lib/workoutbuddy-sessions` storage has mode 0700, with AOF synchronized every second
+and a 32 MiB Redis limit. The service is capped at 128 MiB total RAM and 20% of one CPU.
+Measured idle usage is about 7–8 MiB. A clean shutdown preserves sessions;
+an abrupt interruption may lose the last second.
 
-Ne pas restaurer les anciennes sessions depuis une sauvegarde : une restauration doit imposer une
-reconnexion.
+Do not restore old sessions from a backup: a restore must require users to log in again.
 
-### Tests isolés de l’authentification
+### Isolated authentication tests
 
-Le test `python3 deploy/linux/redhat-based/test-auth-sessions.py` (ou son équivalent
-`deploy/linux/debian-based/test-auth-sessions.py`) utilise des services, secrets, utilisateurs,
-TOTP et bases intégralement jetables, sur loopback ; il exige les binaires Node, Caddy, Redis et
-Authelia, et ne touche pas aux comptes réels.
+The `python3 deploy/linux/redhat-based/test-auth-sessions.py` test (or its
+`deploy/linux/debian-based/test-auth-sessions.py` equivalent) uses fully disposable services,
+secrets, users, TOTP, and databases on loopback; it requires the Node, Caddy, Redis, and
+Authelia binaries, and does not touch real accounts.
 
-Avec `WB_PLAYWRIGHT_PATH` défini comme pour les E2E, il ajoute le test navigateur HTTPS
-`test-auth-recovery.mjs` : ancien cache et installation du worker anonyme, redirection effective
-vers Authelia sans blocage d’activation, puis déconnexion par le bouton des réglages, annulation
-d’un brouillon et révocation de l’ancien cookie mémorisé avec données sauvegardées inchangées.
+With `WB_PLAYWRIGHT_PATH` set as for E2E tests, it adds the HTTPS browser test
+`test-auth-recovery.mjs`: old cache and anonymous worker installation, actual redirect
+to Authelia without activation blocking, then logout through the settings button,
+cancellation of a draft, and revocation of the old remembered cookie with saved data unchanged.
 
-Les deux photos d’un exercice sont aussi décodées derrière le véritable TLS, la CSP et le MFA. Aucun
-certificat de test n’est ajouté au système ; le navigateur jetable accepte uniquement ce test avec
-sa propre autorité locale et des noms `.test` résolus sur loopback.
+Both photos of an exercise are also decoded behind real TLS, CSP, and MFA. No test
+certificate is added to the system; the disposable browser accepts only this test with
+its own local authority and `.test` names resolved on loopback.
 
-### Flux du Coach IA
+### AI Coach streams
 
-Les flux IA sont authentifiés à l'ouverture et limités à 30 secondes côté fournisseur ; une
-déconnexion ne coupe pas un flux existant, mais interdit les requêtes suivantes. Arrêter Node pour
-couper immédiatement.
+AI streams are authenticated when opened and limited to 30 seconds on the provider side;
+logout does not interrupt an existing stream, but prevents subsequent requests. Stop Node
+to interrupt immediately.
 
-Avec Valkey, utiliser le drop-in décrit dans l’[installation commune](DEPLOYMENT_LINUX.md).
-Le socket privé et la configuration Authelia restent identiques.
+With Valkey, use the drop-in described in the [common installation](DEPLOYMENT_LINUX.md).
+The private socket and Authelia configuration remain identical.

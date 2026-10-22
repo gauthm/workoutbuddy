@@ -1,7 +1,7 @@
 {
   "name": "workoutbuddy",
   "version": "1.0.0",
-  "description": "Web app de musculation locale",
+  "description": "Single-user strength-training web application",
   "main": "server.js",
   "type": "module",
   "scripts": {

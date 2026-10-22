@@ -33,7 +33,7 @@ export default {
       exercises: [],    // [{ sessionExercise, exerciseDetail, history, target }]
       showCompleteConfirm: false,
       completing: false, pendingSaves:0,
-      adjustments: [],      // ajustements retournés par POST /start
+      adjustments: [],      // adjustments returned by POST /start
       showAdjustments: true,
       activeProgram: null, selectedExerciseId: null, restSequence: 0,
     })
@@ -41,13 +41,13 @@ export default {
     async function load() {
       state.loading = true; state.error = null
       try {
-        // Charger le programme actif
+        // Load the active program
         try {
           const progData = await programsApi.list()
           state.activeProgram = progData.programs.find(p => p.is_active) || null
         } catch { state.activeProgram = null }
 
-        // Chercher une séance in_progress
+        // Find an in_progress session
         const data = await sessionsApi.list({ status: 'in_progress', limit: 1 })
         if (!data.sessions.length) {
           state.session = null; state.loading = false; return
@@ -56,7 +56,7 @@ export default {
         state.session = session
         store.setActiveSession(session)
 
-        // Pour chaque exercise, charger le détail + l'historique + la cible
+        // For each exercise, load details, history, and target
         const enriched = []
         for (const se of session.exercises) {
           const [detail, history] = await Promise.all([
@@ -67,7 +67,7 @@ export default {
           if (se.template_exercise_id) {
             try {
               target = await sessionsApi.target(session.id, se.template_exercise_id)
-            } catch (_) { /* pas de cible si non rattaché à un template */ }
+            } catch (_) { /* no target when not linked to a template */ }
           }
           enriched.push({
             sessionExercise: se,
@@ -151,7 +151,7 @@ export default {
     }
 
     onMounted(() => {
-      // Les ajustements coach arrivent de POST /sessions/:id/start (store, non persistant)
+      // Coach adjustments come from POST /sessions/:id/start (store, not persisted)
       state.adjustments = store.pendingAdjustments || []
       store.clearPendingAdjustments()
       load()
@@ -162,7 +162,7 @@ export default {
 
   template: `
     <div class="view session-active" :class="{'session-active--resting':activeRest}">
-      <!-- Header avec chronomètre -->
+      <!-- Header with timer -->
       <header class="page-header">
         <h1 class="page-header__title">
           {{ state.session?.name || t('session.title') }}
@@ -191,7 +191,7 @@ export default {
         <LoadingSpinner v-if="state.loading" />
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
 
-        <!-- Aucune séance active -->
+        <!-- No active session -->
         <EmptyState
           v-else-if="!state.session"
           icon="🏋️"
@@ -205,7 +205,7 @@ export default {
             {{ t('programs.new') }}
           </button>
         </EmptyState>
-        <!-- Séance active -->
+        <!-- Active session -->
         <template v-else>
           <div class="session-progress">
             <div class="session-progress__labels"><strong>{{ t('session.workout_progress',{done:progress.done,total:progress.total}) }}</strong><span>{{ t('session.exercise_count',{n:state.exercises.length}) }}</span></div>

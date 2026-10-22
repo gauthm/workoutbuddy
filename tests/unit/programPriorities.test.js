@@ -10,7 +10,7 @@ const params={goal:'general_fitness',level:'beginner',days_per_week:2,session_du
 const exercises=draft=>draft.templates.flatMap(t=>t.exercises.map(item=>({...byId.get(item.exercise_id),...item})))
 const direct=(draft,muscle)=>exercises(draft).filter(ex=>ex.primary_muscles.includes(muscle)).reduce((sum,ex)=>sum+ex.target_sets,0)
 
-test('les semaines courtes gardent poussée, tirage, quadriceps et chaîne postérieure quel que soit le focus',()=>{
+test('short weeks retain pushing, pulling, quadriceps and posterior chain regardless of focus',()=>{
  for(const goal of ['general_fitness','strength','hypertrophy','endurance','weight_loss'])
  for(const level of ['beginner','intermediate','advanced'])
  for(const days_per_week of [2,3,4,5,6])
@@ -26,7 +26,7 @@ test('les semaines courtes gardent poussée, tirage, quadriceps et chaîne post�
  }
 })
 
-test('une priorité isolée bénéficie du temps restant sans évincer l’autre partie du corps',()=>{
+test('a single priority benefits from remaining time without excluding the other body region',()=>{
  const short=generateProgram({...params,session_duration_min:20,priority_muscles:['biceps']},catalog,equipment)
  assert.ok(direct(short,'biceps')>=4)
  assert.ok(direct(short,'chest')>=2)
@@ -35,7 +35,7 @@ test('une priorité isolée bénéficie du temps restant sans évincer l’autre
  assert.ok(direct(short,'hamstrings')>=2)
 })
 
-test('priorités multiples : répartir les accessoires entre les deux séances au lieu de toujours sacrifier le dernier muscle',()=>{
+test('multiple priorities: distribute accessories between both workouts instead of always sacrificing the last muscle',()=>{
  const draft=generateProgram(params,catalog,equipment)
  for(const muscle of ['biceps','triceps','core'])assert.ok(direct(draft,muscle)>0,muscle)
  const short=generateProgram({...params,session_duration_min:20},catalog,equipment)
@@ -44,7 +44,7 @@ test('priorités multiples : répartir les accessoires entre les deux séances a
  assert.ok(short.warnings.every(w=>w.code!=='priority_not_covered'))
 })
 
-test('le travail indirect est décrit séparément sans compter le même muscle deux fois dans une série',()=>{
+test('indirect work is described separately without counting the same muscle twice within a set',()=>{
  const draft=generateProgram({...params,session_duration_min:20},catalog,equipment)
  for(const coverage of draft.priority_coverage){
   const items=exercises(draft)
@@ -59,7 +59,7 @@ test('le travail indirect est décrit séparément sans compter le même muscle 
  }
 })
 
-test('plus de temps permet de couvrir les priorités sans ajouter de séances ni réduire artificiellement les repos',()=>{
+test('more time covers priorities without adding workouts or artificially reducing rest',()=>{
  const draft=generateProgram({...params,session_duration_min:60},catalog,equipment)
  assert.equal(draft.templates.length,2)
  assert.ok(draft.priority_coverage.every(p=>p.status==='direct'))
@@ -68,7 +68,7 @@ test('plus de temps permet de couvrir les priorités sans ajouter de séances ni
  assert.ok(short.templates.flatMap(t=>t.exercises).filter(ex=>byId.get(ex.exercise_id).mechanic==='compound').every(ex=>ex.rest_seconds===180))
 })
 
-test('contraintes réelles : ne pas inventer de travail direct et signaler un équilibre impossible',()=>{
+test('real constraints: do not invent direct work and report impossible balance',()=>{
  const noBack=catalog.map(ex=>({...ex,is_excluded:ex.primary_muscles.includes('back')}))
  const draft=generateProgram({...params,priority_muscles:['back','biceps']},noBack,[])
  assert.equal(draft.priority_coverage.find(p=>p.muscle==='back').direct_available,false)
@@ -83,7 +83,7 @@ test('contraintes réelles : ne pas inventer de travail direct et signaler un é
  assert.ok(painful.warnings.some(w=>w.code==='balance_limited'&&w.muscle==='quads'))
 })
 
-test('priorités et compteurs restent reproductibles indépendamment de l’ordre du catalogue et des priorités cochées',()=>{
+test('priorities and counters remain reproducible regardless of catalog and checked-priority order',()=>{
  const first=generateProgram(params,catalog,equipment)
  assert.deepEqual(first,generateProgram(params,[...catalog].reverse(),equipment))
  const reversed=generateProgram({...params,priority_muscles:[...params.priority_muscles].reverse()},catalog,equipment)

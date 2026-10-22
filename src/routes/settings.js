@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { ALL_MUSCLES } from '../../public/js/utils/muscles.js'
 import express from 'express'
 import { getDb } from '../db/database.js'
@@ -7,7 +8,7 @@ import { testConnection, listModels } from '../services/aiProvider.js'
 const router = express.Router()
 const db     = getDb()
 
-// ── Schéma de validation ──────────────────────────────────────
+// ── Validation schema ──────────────────────────────────────
 const SETTINGS_SCHEMA = {
   painful_muscles: { type:'enum_array', enum:ALL_MUSCLES },
   unit:                               { type: 'enum',   enum: ['kg','lb'] },
@@ -61,20 +62,20 @@ function getAllSettings(db) {
 
 export function validateValue(key, value) {
   const schema = SETTINGS_SCHEMA[key]
-  if (!schema) return { valid: false, error: `Clé inconnue : ${key}` }
+  if (!schema) return { valid: false, error: message('validation.unknown_setting', { key: key }) }
   if (schema.type === 'enum_array') {
-    if (!Array.isArray(value) || new Set(value).size !== value.length || value.some(v=>!schema.enum.includes(v))) return {valid:false,error:`${key} : liste invalide.`}
+    if (!Array.isArray(value) || new Set(value).size !== value.length || value.some(v=>!schema.enum.includes(v))) return {valid:false,error:message('validation.invalid_list', { key: key })}
   } else if (schema.type === 'boolean') {
-    if (typeof value !== 'boolean') return { valid: false, error: `${key} doit être un booléen.` }
+    if (typeof value !== 'boolean') return { valid: false, error: message('validation.boolean_required', { key: key }) }
   } else if (schema.type === 'number') {
     const n = value
-    if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: `${key} doit être un nombre.` }
+    if (typeof n !== 'number' || !Number.isFinite(n)) return { valid: false, error: message('validation.number_required', { key: key }) }
     if (schema.min !== undefined && n < schema.min) return { valid: false, error: `${key} ≥ ${schema.min}.` }
     if (schema.max !== undefined && n > schema.max) return { valid: false, error: `${key} ≤ ${schema.max}.` }
   } else if (schema.type === 'enum') {
-    if (!schema.enum.includes(value)) return { valid: false, error: `${key} : valeurs valides = ${schema.enum.join(', ')}.` }
+    if (!schema.enum.includes(value)) return { valid: false, error: message('validation.valid_values', { key: key, values: schema.enum.join(', ') }) }
   } else if (schema.type === 'string') {
-    if (typeof value !== 'string') return { valid: false, error: `${key} doit être une chaîne.` }
+    if (typeof value !== 'string') return { valid: false, error: message('validation.string_required', { key: key }) }
   }
   return { valid: true }
 }
@@ -155,7 +156,7 @@ function getDraftAiSettings(body) {
 router.post('/test-ai', async (req, res) => {
   try {
     const s = getDraftAiSettings(req.body)
-    if (!s.base_url || !s.model) return res.status(400).json({ success: false, error: 'Provider IA non configuré.' })
+    if (!s.base_url || !s.model) return res.status(400).json({ success: false, error: message('ai.not_configured') })
     const result = await testConnection(s)
     res.json(result)
   } catch (err) { res.status(400).json({ success: false, error: err.message }) }
@@ -165,7 +166,7 @@ router.post('/test-ai', async (req, res) => {
 router.get('/ai-models', async (req, res) => {
   try {
     const s = getAiSettings(db)
-    if (!s.base_url) return res.status(400).json({ error: 'URL de base non configurée.' })
+    if (!s.base_url) return res.status(400).json({ error: message('ai.missing_base_url') })
     const result = await listModels(s)
     res.json(result)
   } catch (err) { res.status(400).json({ error: err.message }) }
@@ -174,7 +175,7 @@ router.get('/ai-models', async (req, res) => {
 router.post('/ai-models', async (req,res) => {
   try {
     const s = getDraftAiSettings(req.body)
-    if (!s.base_url) return res.status(400).json({ error: 'URL de base non configurée.' })
+    if (!s.base_url) return res.status(400).json({ error: message('ai.missing_base_url') })
     res.json(await listModels(s))
   } catch (err) { res.status(400).json({ error: err.message }) }
 })

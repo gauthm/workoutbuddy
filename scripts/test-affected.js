@@ -9,9 +9,9 @@ const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim().
 const files = [...git('diff', '--name-only', ...(base ? [base] : ['HEAD'])), ...git('ls-files', '--others', '--exclude-standard')]
 const tests = explicit.length ? explicit : selectNodeTests(files)
 const options = args.filter(arg => !arg.endsWith('.test.js'))
-if (!tests.length) console.log('Aucun test Node concerné par ces fichiers.')
+if (!tests.length) console.log('No Node tests affected by these files.')
 else {
-  console.log('Tests Node concernés : '+tests.join(', '))
+  console.log('Affected Node tests: '+tests.join(', '))
   if (!options.includes('--list')) {
     const result = spawnSync(process.execPath, ['--import', './tests/helpers/register-in-process.js', '--test', ...options, ...tests], { stdio: 'inherit' })
     process.exitCode = result.status ?? 1

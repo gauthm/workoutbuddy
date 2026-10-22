@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="public/icons/workoutbuddy.svg" alt="Logo WorkoutBuddy" width="96" height="96">
+  <img src="public/icons/workoutbuddy.svg" alt="WorkoutBuddy logo" width="96" height="96">
 </p>
 
 <h1 align="center">WorkoutBuddy</h1>
 
-Application locale de musculation pour un utilisateur, avec programmes personnalisés, suivi des séances et progression par exercice. Les algorithmes créent les programmes et calculent leur progression ; un Coach IA facultatif apporte des conseils.
+A single-user strength-training application with personalized programs, workout tracking and exercise progression. Algorithms create programs and calculate progression; an optional AI Coach provides advice.
 
-Les données sont stockées dans SQLite sur la machine qui lance le serveur. Si le Coach IA est activé, les informations nécessaires à ses réponses sont envoyées au fournisseur configuré.
+Data is stored in SQLite on the machine running the server. When the AI Coach is enabled, the information needed for its answers is sent to the configured provider.
 
-## Démarrer
+## Getting started
 
-Prérequis : **Node.js 24.x LTS et npm**. Sur macOS, SQLite peut nécessiter
-les Xcode Command Line Tools (`xcode-select --install`).
+Requirements: **Node.js 24.x LTS and npm**. On macOS, SQLite may require
+the Xcode Command Line Tools (`xcode-select --install`).
 
 ```sh
 git clone https://github.com/gauthm/workoutbuddy.git
@@ -22,25 +22,25 @@ node scripts/download-exercise-images.js
 npm start
 ```
 
-Ouvrir [localhost:3000](http://localhost:3000). Aucun build frontend.
-Les bibliothèques et les photos sont installées une fois, puis servies localement.
-Voir le [guide d’installation](docs/INSTALLATION.md) pour les détails.
+Open [localhost:3000](http://localhost:3000). No frontend build is required.
+Libraries and photos are installed once, then served locally.
+See the [installation guide](docs/INSTALLATION.md) for details.
 
 ## Documentation
 
-| Besoin | Guide |
+| Need | Guide |
 | --- | --- |
-| Créer un programme, utiliser le calendrier | [Programmes](docs/PROGRAMMES.md) |
-| Consulter les exercices, gérer le matériel et les douleurs | [Exercices et matériel](docs/EXERCICES_MATERIEL.md) |
-| S’entraîner, choisir ses charges, suivre sa progression | [Séances et progression](docs/SEANCES_PROGRESSION.md) |
-| Régler l’application et le Coach IA | [Réglages et Coach](docs/REGLAGES_COACH.md) |
-| Utiliser un téléphone, installer l’application, recevoir les mises à jour | [Accès mobile](docs/MOBILE.md) |
-| Sauvegarder, importer, exporter ou réinitialiser | [Données](docs/DONNEES.md) |
-| Configurer le serveur ou héberger l’application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
-| Développer et tester | [Développement](docs/DEVELOPPEMENT.md) · [Index du code](docs/CODEBASE.md) · [Consignes](AGENTS.md) |
+| Create a program and use the calendar | [Programs](docs/PROGRAMMES.md) |
+| Browse exercises and manage equipment and pain | [Exercises and equipment](docs/EXERCICES_MATERIEL.md) |
+| Train, choose weights and track progress | [Workouts and progression](docs/SEANCES_PROGRESSION.md) |
+| Configure the application and AI Coach | [Settings and Coach](docs/REGLAGES_COACH.md) |
+| Use a phone, install the application and receive updates | [Mobile access](docs/MOBILE.md) |
+| Back up, import, export or reset data | [Data](docs/DONNEES.md) |
+| Configure the server or host the application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
+| Develop and test | [Development](docs/DEVELOPPEMENT.md) · [Code index](docs/CODEBASE.md) · [Instructions](AGENTS.md) |
 
-Les guides, les audits et le suivi des tâches sont regroupés dans
+Guides, audits and task tracking are collected in
 [docs/INDEX.md](docs/INDEX.md).
 
-L’application n’a pas d’authentification intégrée : utiliser un réseau de confiance
-ou un proxy HTTPS avec authentification pour un accès Internet.
+The application has no built-in authentication: use a trusted network
+or an HTTPS proxy with authentication for Internet access.

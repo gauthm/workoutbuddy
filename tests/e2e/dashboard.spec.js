@@ -11,14 +11,14 @@ const screens=[
 ]
 const sixWeekDate='2026-11-15'
 
-test('accueil : le panneau du jour reste sélectionné après une séance sautée ou replanifiée',async({page,request})=>{
+test('dashboard: day panel remains selected after skipped or rescheduled workout',async({page,request})=>{
  const program=await planned(request)
- await call(request,'post','/sessions',{name:'Séance de sélection persistante',scheduled_date:sixWeekDate,
+ await call(request,'post','/sessions',{name:'Persistent selection workout',scheduled_date:sixWeekDate,
   program_id:program.id,workout_template_id:program.templates[0].id},201)
  await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
  await page.goto('/#/')
  const panel=page.locator('.calendar-day-panel')
- await expect(panel).toContainText('Séance de sélection persistante')
+ await expect(panel).toContainText('Persistent selection workout')
  await panel.getByRole('button',{name:L('calendar.mark_skipped'),exact:true}).click()
  await page.getByRole('dialog').getByRole('button',{name:L('common.confirm'),exact:true}).click()
  await expect(panel.getByRole('button',{name:L('calendar.restore'),exact:true})).toBeVisible()
@@ -32,10 +32,10 @@ test('accueil : le panneau du jour reste sélectionné après une séance sauté
  await expect(panel).toContainText(L('calendar.no_session'))
  await expect(page.getByRole('button',{name:sixWeekDate,exact:true})).toHaveAttribute('aria-pressed','true')
  await page.getByRole('button',{name:'2026-11-16',exact:true}).click()
- await expect(panel).toContainText('Séance de sélection persistante')
+ await expect(panel).toContainText('Persistent selection workout')
 })
 
-test('accueil : jour toujours sélectionné, premier du mois ailleurs et jour courant au retour',async({page})=>{
+test('dashboard: day always selected, first of month elsewhere and current day on return',async({page})=>{
  await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
  await page.goto('/#/')
  const selected=page.locator('.calendar-cell[aria-pressed="true"]')
@@ -121,7 +121,7 @@ async function fits(page,info,state){
  }finally{await cdp.detach()}
 }
 
-test('accueil sans programme : six semaines, raccourcis sous le programme et thème clair',async({page,request},info)=>{
+test('dashboard without program: six weeks, shortcuts below program and light theme',async({page,request},info)=>{
  await page.clock.setFixedTime(new Date(sixWeekDate+'T12:00:00'))
  for(const theme of ['dark','light']){
   await call(request,'put','/settings',{theme})
@@ -142,7 +142,7 @@ test('accueil sans programme : six semaines, raccourcis sous le programme et th�
  await page.waitForURL('**/#/programs/new')
 })
 
-test('accueil avec programme : semaine accomplie, plusieurs séances et toutes les actions du jour visibles',async({page,request},info)=>{
+test('dashboard with program: completed week, multiple workouts and all day actions visible',async({page,request},info)=>{
  test.setTimeout(60000)
  const program=await planned(request,{duration_weeks:null})
  const scheduled=(await get(request,'/sessions?active_program=1')).sessions.filter(s=>s.status==='planned')
@@ -153,7 +153,7 @@ test('accueil avec programme : semaine accomplie, plusieurs séances et toutes l
  expect((await get(request,'/programs')).programs.find(p=>p.id===program.id).weekly_progress.is_complete).toBe(true)
  const sessionIds=[]
  for(let n=0;n<3;n++){
-  const session=await call(request,'post','/sessions',{name:`Corps entier ${n+1} — poussée, tirage et renforcement`,scheduled_date:sixWeekDate,program_id:program.id,workout_template_id:program.templates[0].id},201)
+  const session=await call(request,'post','/sessions',{name:`Full body ${n+1} — pushing, pulling and strengthening`,scheduled_date:sixWeekDate,program_id:program.id,workout_template_id:program.templates[0].id},201)
   sessionIds.push(session.id)
  }
  await call(request,'post',`/sessions/${sessionIds[2]}/skip`)
@@ -183,10 +183,10 @@ test('accueil avec programme : semaine accomplie, plusieurs séances et toutes l
  expect((await get(request,`/sessions/${sessionIds[1]}`)).status).toBe('in_progress')
 })
 
-test('accueil : libellé exact des cinq objectifs du formulaire, en français et en anglais',async({page,request})=>{
+test('dashboard: exact labels for all five form goals, in French and English',async({page,request})=>{
  test.setTimeout(60000)
  for(const goal of ['strength','hypertrophy','endurance','weight_loss','general_fitness']){
-  const program=await planned(request,{goal,name:'Nom personnalisé distinct de l’objectif'})
+  const program=await planned(request,{goal,name:'Custom name distinct from the goal'})
   for(const language of ['fr','en']){
    await call(request,'put','/settings',{language})
    const labels=JSON.parse(readFileSync(new URL(`../../public/locales/${language}.json`,import.meta.url),'utf8'))
@@ -196,14 +196,14 @@ test('accueil : libellé exact des cinq objectifs du formulaire, en français et
    await page.locator('.dashboard-program').click()
    await expect(page.locator('.page-header__title')).toHaveText(label)
    await expect(page.locator('.program-activation-hint')).toHaveText(labels['programs.single_active_hint'])
-   expect((await get(request,`/programs/${program.id}`)).name).toBe('Nom personnalisé distinct de l’objectif')
+   expect((await get(request,`/programs/${program.id}`)).name).toBe('Custom name distinct from the goal')
   }
  }
 })
 
-test('accueil sans programme avec historique : reprise et séance terminée accessibles',async({page,request},info)=>{
+test('dashboard without program but with history: resumable and completed workouts accessible',async({page,request},info)=>{
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Paris'})
- for(const [name,complete] of [['Séance terminée avec un nom assez long pour revenir à la ligne',true],['Séance à reprendre avec toutes ses informations visibles',false]]){
+ for(const [name,complete] of [['Completed workout with a name long enough to wrap onto another line',true],['Workout to resume with all its information visible',false]]){
   const session=await call(request,'post','/sessions',{name,scheduled_date:today},201)
   await call(request,'post',`/sessions/${session.id}/start`)
   if(complete)await call(request,'post',`/sessions/${session.id}/complete`)

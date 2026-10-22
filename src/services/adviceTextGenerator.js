@@ -1,95 +1,95 @@
 import { streamChat } from './aiProvider.js'
 import { getAiSettings } from '../routes/settings.js'
 
-// Prompts par type de signal
+// Prompts by signal type
 const ADVICE_PROMPTS = {
-  equipment_limit_approaching: d => `L’utilisateur approche de la limite de son matériel pour ${d.exercise_name_fr}. Charge actuelle ${d.current_weight_kg} kg, plafond ${d.max_load_kg} kg. ${d.resistance_is_approximate ? 'Élastiques : résistance nominale variable avec l’étirement, aucune date précise possible.' : `Estimation : environ ${d.estimated_sessions} séances si la progression récente continue ; estimation incertaine, pas une garantie.`} Matériel requis : ${JSON.stringify(d.equipment_required)}. Rédige en français un conseil concis pour anticiper un achat adapté au matériel, avec une alternative gratuite, sans inventer de prix ni de date.`,
+  equipment_limit_approaching: d => `The user is approaching the equipment limit for ${d.exercise_name_fr}. Current load ${d.current_weight_kg} kg, maximum ${d.max_load_kg} kg. ${d.resistance_is_approximate ? 'Resistance bands: nominal resistance varies with stretch; no precise date can be given.': `Estimate: about ${d.estimated_sessions} workouts if recent progression continues; an uncertain estimate, not a guarantee.`} Required equipment: ${JSON.stringify(d.equipment_required)}. Write concise advice in French to plan an equipment-appropriate purchase, with a free alternative, without inventing prices or dates.`,
   max_load_reached: (d) => `
-Signal détecté dans WorkoutBuddy :
-- Exercice : ${d.exercise_name_fr}
-- Matériel : ${JSON.stringify(d.equipment_required || [])}
-- Résistance approximative : ${!!d.resistance_is_approximate}
-- Charge maximale atteignable avec l'équipement actuel : ${d.max_load_kg} kg
-- Depuis ${d.sessions_checked} séances consécutives : ${d.actual_reps_avg} reps en moyenne (objectif max : ${d.target_reps_max})
+Signal detected in WorkoutBuddy :
+- Exercise: ${d.exercise_name_fr}
+- Equipment: ${JSON.stringify(d.equipment_required || [])}
+- Approximate resistance: ${!!d.resistance_is_approximate}
+- Maximum load achievable with current equipment: ${d.max_load_kg} kg
+- Over ${d.sessions_checked} consecutive workouts: ${d.actual_reps_avg} reps on average (maximum target: ${d.target_reps_max})
 
-En tant que coach expert, rédige un conseil concis (4-6 phrases) :
-1. Explique le problème précisément (cite les chiffres)
-2. Quel matériel acheter et pourquoi (sans marque, avec fourchette de prix EUR)
-3. Ce que ça débloquera concrètement pour la progression
-4. Une alternative gratuite ou créative si possible
-Réponds en français.`,
+As an expert coach, write concise advice (4-6 sentences) :
+1. Explain the problem precisely (cite the numbers)
+2. Which equipment to buy and why (no brands, with a EUR price range)
+3. What this will concretely enable for progression
+4. A free or creative alternative if possible
+Reply in French.`,
 
   min_increment_too_large: (d) => `
-Signal détecté dans WorkoutBuddy :
-- Exercice : ${d.exercise_name_fr}
-- Matériel : ${JSON.stringify(d.equipment_required || [])}
-- Résistance approximative : ${!!d.resistance_is_approximate}
-- Charge actuelle : ${d.current_weight_kg} kg
-- Plus petit incrément possible : ${d.min_increment_kg} kg (${d.pct}% de la charge courante)
-- Plateau confirmé sur les dernières séances
+Signal detected in WorkoutBuddy :
+- Exercise: ${d.exercise_name_fr}
+- Equipment: ${JSON.stringify(d.equipment_required || [])}
+- Approximate resistance: ${!!d.resistance_is_approximate}
+- Current load: ${d.current_weight_kg} kg
+- Smallest possible increment: ${d.min_increment_kg} kg (${d.pct}% of the current load)
+- Plateau confirmed over recent workouts
 
-Rédige un conseil de coach (4-6 phrases) sur comment progresser quand l'incrément minimal est trop grand :
-- Matériel adapté à la catégorie : micro-disques pour barres/haltères à disques ; kettlebell intermédiaire pour kettlebells ; ne pas proposer de micro-disques pour les élastiques
-- Techniques alternatives (rest-pause, drop-sets, accentuation excentrique)
-- Réorganisation de l'entraînement pour contourner ce problème
-Réponds en français.`,
+Write coaching advice (4-6 sentences) on progressing when the minimum increment is too large :
+- Equipment suited to the category: microplates for barbells/plate-loaded dumbbells; an intermediate kettlebell for kettlebells; do not suggest microplates for resistance bands
+- Alternative techniques (rest-pause, drop sets, eccentric emphasis)
+- Reorganizing training to work around this problem
+Reply in French.`,
 
   no_exercise_available: (d) => `
-Signal détecté dans WorkoutBuddy :
-- Groupe musculaire : ${d.muscle_group}
-- Aucun exercice de force n'est réalisable avec l'équipement actuel pour ce muscle
+Signal detected in WorkoutBuddy :
+- Muscle group: ${d.muscle_group}
+- No strength exercise is feasible for this muscle with the current equipment
 
-Rédige un conseil de coach (4-6 phrases) :
-1. Pourquoi travailler ce muscle est important
-2. Quel équipement minimal acheter pour débloquer des exercices (prix EUR)
-3. Des alternatives avec le matériel actuel si elles existent (exercices au poids du corps, élastiques)
-Réponds en français.`,
+Write coaching advice (4-6 sentences) :
+1. Why training this muscle matters
+2. Which minimum equipment to buy to enable exercises (EUR prices)
+3. Alternatives with current equipment if any exist (bodyweight exercises, resistance bands)
+Reply in French.`,
 
   no_rotation_possible: (d) => `
-Signal détecté dans WorkoutBuddy :
-- Exercice : ${d.exercise_name_fr}
-- Matériel : ${JSON.stringify(d.equipment_required || [])}
-- Résistance approximative : ${!!d.resistance_is_approximate} (groupe de rotation : ${d.rotation_group})
-- Impossible de varier l'exercice — aucun mouvement équivalent réalisable avec l'équipement actuel
+Signal detected in WorkoutBuddy :
+- Exercise: ${d.exercise_name_fr}
+- Equipment: ${JSON.stringify(d.equipment_required || [])}
+- Approximate resistance: ${!!d.resistance_is_approximate} (rotation group: ${d.rotation_group})
+- Cannot vary the exercise — no equivalent movement is feasible with current equipment
 
-Rédige un conseil de coach (3-5 phrases) :
-1. Pourquoi varier les exercices est bénéfique (brise les plateaux, prévient les blessures)
-2. Quel matériel permettrait d'ajouter des variantes (prix EUR)
-3. Une suggestion de variante gratuite si possible
-Réponds en français.`,
+Write coaching advice (3-5 sentences) :
+1. Why varying exercises is beneficial (breaks plateaus, prevents injuries)
+2. Which equipment would allow more variations (EUR prices)
+3. A suggested free variation if possible
+Reply in French.`,
 
   persistent_plateau: (d) => `
-Signal détecté dans WorkoutBuddy :
-- Exercice : ${d.exercise_name_fr}
-- Matériel : ${JSON.stringify(d.equipment_required || [])}
-- Résistance approximative : ${!!d.resistance_is_approximate}
-- Plateau persistant sur ${d.sessions_checked} séances (delta : ${d.delta_pct}%)
-- Charge actuelle : ${d.current_weight_kg} kg
-- Plus petit incrément disponible : ${d.min_increment_kg} kg
+Signal detected in WorkoutBuddy :
+- Exercise: ${d.exercise_name_fr}
+- Equipment: ${JSON.stringify(d.equipment_required || [])}
+- Approximate resistance: ${!!d.resistance_is_approximate}
+- Persistent plateau over ${d.sessions_checked} workouts (delta: ${d.delta_pct}%)
+- Current load: ${d.current_weight_kg} kg
+- Smallest available increment: ${d.min_increment_kg} kg
 
-Rédige un conseil de coach expert (5-7 phrases) pour débloquer ce plateau :
-- Analyse des causes (incrément trop grand, volume insuffisant, récupération)
-- Solutions techniques (micro-plaques, changement de programme, variation)
-- Matériel recommandé si c'est un problème d'équipement (prix EUR)
-- Recommandation d'action immédiate
-Réponds en français.`,
+Write expert coaching advice (5-7 sentences) to break through this plateau :
+- Analyze causes (increment too large, insufficient volume, recovery)
+- Technical solutions (microplates, program change, variation)
+- Recommended equipment if this is an equipment problem (EUR prices)
+- Recommended immediate action
+Reply in French.`,
 
   high_fatigue: (d) => `
-Signal détecté dans WorkoutBuddy :
-- RPE moyen des ${d.sets_analyzed} dernières séries : ${d.avg_rpe}/10
-- Seuil d'alerte : 8.5/10
+Signal detected in WorkoutBuddy :
+- Average RPE over the last ${d.sets_analyzed} sets: ${d.avg_rpe}/10
+- Alert threshold: 8.5/10
 
-En tant que coach sportif expert, rédige un conseil de récupération (4-6 phrases) :
-1. Interprétation du RPE élevé (surentraînement ? progression trop rapide ?)
-2. Actions immédiates recommandées (déload ? repos ? ajustement volume)
-3. Indicateurs à surveiller
-4. Prévention long terme
-Réponds en français.`,
+As an expert fitness coach, write recovery advice (4-6 sentences) :
+1. Interpret the high RPE (overtraining? progression too fast?)
+2. Recommended immediate actions (deload? rest? volume adjustment?)
+3. Indicators to monitor
+4. Long-term prevention
+Reply in French.`,
 }
 
 /**
- * Génère les textes LLM pour les advice sans texte.
- * Maximum 5 générations par appel pour ne pas bloquer.
+ * Generate LLM text for advice entries without text.
+ * Limit to 5 generations per call to avoid blocking.
  */
 export async function generatePendingAdviceTexts(db) {
   const aiSettings = getAiSettings(db)

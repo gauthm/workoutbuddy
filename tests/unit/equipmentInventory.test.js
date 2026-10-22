@@ -25,12 +25,12 @@ function session(db,index,weight,sets=3){
  db.prepare(`INSERT INTO session_exercise(id,session_id,exercise_id,template_exercise_id) VALUES(?,?,'fixture',1)`).run(index,index)
  for(let n=1;n<=sets;n++)db.prepare(`INSERT INTO set_log(session_exercise_id,set_number,weight_kg,reps,is_completed) VALUES(?,?,?,12,1)`).run(index,n,weight)
 }
-describe('Inventaire cohérent et anticipation des limites',()=>{
- it('la progression automatique ne traite pas une bande comme une pile de disques',()=>{
+describe('Consistent inventory and equipment-limit forecasts',()=>{
+ it('automatic progression does not treat a band as a stack of plates',()=>{
   const result=computeNextState({current_weight_kg:10,consecutive_failures:0},[{reps:12,weight_kg:10}],{progression_model:'linear',target_sets:1,target_reps:12},null,[5,16],{resistance_is_approximate:true})
   assert.equal(result.current_weight_kg,10)
  })
- it('la migration préserve un inventaire et un conseil existants',()=>{
+ it('migration preserves existing inventory and advice',()=>{
   const db=new Database(':memory:');try{
    for(const name of fs.readdirSync('src/db/migrations').filter(n=>parseInt(n)<=6&&n.endsWith('.sql')).sort()) db.exec(fs.readFileSync('src/db/migrations/'+name,'utf8'))
    db.exec('CREATE TABLE IF NOT EXISTS schema_version(version INTEGER PRIMARY KEY,applied_at TEXT DEFAULT (datetime(\'now\'))); INSERT INTO schema_version(version) VALUES(1),(2),(3),(4),(5),(6)')
@@ -41,39 +41,39 @@ describe('Inventaire cohérent et anticipation des limites',()=>{
   }finally{db.close()}
  })
 
- it('les kettlebells utilisent les poids réellement possédés',()=>{
+ it('kettlebells use actual owned weights',()=>{
   const result=calc([{category:'kettlebell',count:1,weight_kg:12},{category:'kettlebell',count:2,weight_kg:16}],['kettlebell'])
   assert.deepEqual(result.loads_kg,[12,16]);assert.equal(result.min_increment_kg,4);assert.equal(result.max_load_kg,16)
  })
- it('les bandes exposent des fourchettes, jamais un faux pas de progression',()=>{
+ it('bands expose ranges, never a fictitious progression increment',()=>{
   const result=calc([{category:'resistance_band',count:2,resistance_min_kg:5,resistance_max_kg:16},{category:'resistance_band',count:1,resistance_min_kg:10,resistance_max_kg:25}],['resistance_band'])
   assert.equal(result.max_load_kg,25);assert.equal(result.min_increment_kg,0);assert.equal(result.resistance_is_approximate,true);assert.equal(result.resistance_ranges.length,2)
  })
- it('une bande invalide ne crée pas de charge réalisable',()=>assert.deepEqual(calc([{category:'resistance_band',count:1,resistance_min_kg:16,resistance_max_kg:5}],['resistance_band']).loads_kg,[]))
- it('le matériel complémentaire requis reste nécessaire',()=>assert.deepEqual(calc([{category:'kettlebell',count:1,weight_kg:16}],['kettlebell','bench']).loads_kg,[]))
- it('la chaise romaine permet la traction et les dips',()=>{
+ it('an invalid band does not create an achievable load',()=>assert.deepEqual(calc([{category:'resistance_band',count:1,resistance_min_kg:16,resistance_max_kg:5}],['resistance_band']).loads_kg,[]))
+ it('required additional equipment remains necessary',()=>assert.deepEqual(calc([{category:'kettlebell',count:1,weight_kg:16}],['kettlebell','bench']).loads_kg,[]))
+ it('a power tower supports pull-ups and dips',()=>{
   assert.equal(isEquipmentAvailable(['pullup_bar'],[{category:'roman_chair'}]),true)
   assert.equal(isEquipmentAvailable(['dip_station'],[{category:'roman_chair'}]),true)
   assert.deepEqual(calc([{category:'roman_chair',count:1}],['roman_chair']).loads_kg,[0])
  })
- it('chaque case de la liste unique possède une catégorie acceptée par SQLite',()=>{
+ it('every shared list entry has a category accepted by SQLite',()=>{
   const db=new Database(':memory:');try{migrate(db);for(const category of SIMPLE_CATEGORIES)db.prepare('INSERT INTO equipment_item(category,name) VALUES(?,?)').run(category,category)}finally{db.close()}
  })
- it('prévoit un plafond proche à partir de trois séances distinctes',()=>assert.equal(forecastEquipmentLimit({max_load_kg:20},[{weight_kg:12},{weight_kg:14},{weight_kg:16}]).estimated_sessions,2))
- it('ne prédit rien sans historique suffisant ou en recul',()=>{
+ it('forecasts a nearby ceiling from three distinct workouts',()=>assert.equal(forecastEquipmentLimit({max_load_kg:20},[{weight_kg:12},{weight_kg:14},{weight_kg:16}]).estimated_sessions,2))
+ it('no forecast without sufficient history or when regressing',()=>{
   assert.equal(forecastEquipmentLimit({max_load_kg:20},[{weight_kg:16},{weight_kg:18}]),null)
   assert.equal(forecastEquipmentLimit({max_load_kg:20},[{weight_kg:16},{weight_kg:14},{weight_kg:16}]),null)
  })
- it('ne prédit rien pour une stagnation ou un plafond éloigné',()=>{
+ it('no forecast for a plateau or distant ceiling',()=>{
   assert.equal(forecastEquipmentLimit({max_load_kg:20},[{weight_kg:16},{weight_kg:16},{weight_kg:16}]),null)
   assert.equal(forecastEquipmentLimit({max_load_kg:40},[{weight_kg:12},{weight_kg:14},{weight_kg:16}]),null)
  })
- it('ne promet pas un nombre de séances pour une résistance élastique',()=>{
+ it('does not promise a workout count for elastic resistance',()=>{
   const result=forecastEquipmentLimit({max_load_kg:16,resistance_is_approximate:true},[{weight_kg:10},{weight_kg:12},{weight_kg:14}])
   assert.equal(result.estimated_sessions,null);assert.equal(result.resistance_is_approximate,true)
  })
  for(const category of ['kettlebell','resistance_band']){
-  it(`le coach anticipe le plafond pour ${category}, sans doublon`,()=>{
+  it(`coach forecasts the ${category} ceiling without duplicates`,()=>{
    const db=fixture(category,20);try{
     session(db,1,14);session(db,2,16);session(db,3,18)
     runAllSignalChecks(db,{});runAllSignalChecks(db,{})
@@ -82,7 +82,7 @@ describe('Inventaire cohérent et anticipation des limites',()=>{
     assert.equal(data.resistance_is_approximate,category==='resistance_band')
    }finally{db.close()}
   })
-  it(`le plafond de ${category} exige trois séances, pas trois séries`,()=>{
+  it(`the ${category} ceiling requires three workouts, not three sets`,()=>{
    const db=fixture(category,20);try{
     session(db,1,20,4);runAllSignalChecks(db,{})
     assert.equal(db.prepare("SELECT COUNT(*) AS n FROM equipment_advice WHERE signal_type='max_load_reached'").get().n,0)
@@ -91,7 +91,7 @@ describe('Inventaire cohérent et anticipation des limites',()=>{
    }finally{db.close()}
   })
  }
- it('les nouvelles migrations conservent les données et sont idempotentes',()=>{
+ it('new migrations preserve data and are idempotent',()=>{
   const db=fixture('kettlebell',16);try{
    session(db,1,16);session(db,2,16);session(db,3,16);runAllSignalChecks(db,{})
    const inventory=db.prepare('SELECT * FROM equipment_item').all(),advice=db.prepare('SELECT * FROM equipment_advice').all()

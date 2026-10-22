@@ -14,7 +14,7 @@ function createDb() {
 }
 
 describe('deloadEngine', () => {
-  it('deload auto désactivé → jamais de deload planifié', () => {
+  it('automatic deload disabled → never schedules deload', () => {
     const db = createDb()
     const program = {
       id: 1, is_in_deload: 0, deload_auto_enabled: 0,
@@ -25,12 +25,12 @@ describe('deloadEngine', () => {
     assert.equal(r.should, false)
   })
 
-  it('deload planifié après N semaines', () => {
+  it('deload scheduled after N weeks', () => {
     const db = createDb()
     const pRes = db.prepare(
       "INSERT INTO program (name,goal,level,days_per_week,progression_model,deload_auto_enabled,deload_frequency_weeks) VALUES ('T','strength','beginner',3,'linear',1,4)"
     ).run()
-    // Simuler last_deload_date il y a 5 semaines
+    // Simulate last_deload_date 5 weeks ago
     const oldDate = new Date()
     oldDate.setDate(oldDate.getDate() - 35)  // 35 jours = 5 semaines
     db.prepare("UPDATE program SET last_deload_date = ? WHERE id = ?")
@@ -42,7 +42,7 @@ describe('deloadEngine', () => {
     assert.equal(r.reason, 'scheduled')
   })
 
-  it('programme déjà en deload → pas de nouveau déclenchement', () => {
+  it('program already in deload → no new trigger', () => {
     const db = createDb()
     const program = {
       id: 1, is_in_deload: 1, deload_auto_enabled: 1,
@@ -52,7 +52,7 @@ describe('deloadEngine', () => {
     assert.equal(r.should, false)
   })
 
-  it('computeDeloadTargets : -20% charge, min 2 séries', () => {
+  it('computeDeloadTargets: -20% load, minimum 2 sets', () => {
     const te    = { target_sets: 4, target_reps_min: 8, target_reps_max: 12 }
     const state = { current_weight_kg: 100 }
     const prog  = { deload_load_reduction_pct: 20, deload_volume_reduction_pct: 40 }

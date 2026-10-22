@@ -48,7 +48,7 @@ test('calendar includes completed discovery sessions outside the active program 
  const b=(await api.post('/api/v1/programs/generate').send(params)).body.id
  await api.post(`/api/v1/programs/${b}/activate`)
  const insert=db.prepare('INSERT INTO session(name,scheduled_date,program_id,status) VALUES (?,?,?,?)')
- const orphan=Number(insert.run('Séance découverte',today,null,'completed').lastInsertRowid)
+ const orphan=Number(insert.run('Discovery workout',today,null,'completed').lastInsertRowid)
  const oldDone=Number(insert.run('Previous completion',today,a,'completed').lastInsertRowid)
  const oldPlan=Number(insert.run('Inactive plan',today,a,'planned').lastInsertRowid)
  const response=await api.get(`/api/v1/sessions?calendar=1&from=${today}&to=${today}`)

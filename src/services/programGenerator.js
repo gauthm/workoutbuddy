@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { PROGRAM_MUSCLES, PROGRAM_MUSCLE_GROUPS } from '../../public/js/utils/programMuscles.js'
 import { isExerciseRestricted } from './exerciseConstraints.js'
 import { generationCandidate } from './programExerciseCatalog.js'
@@ -243,7 +244,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
     }
     if (selected.length && estimateSessionMinutes(selected) < desired) warnings.push({code:'duration_limited',muscle:''})
     const namesEn = { 'Full Body':'Full body', Upper:'Upper body', Lower:'Lower body', Push:'Push', Pull:'Pull', Legs:'Legs' }
-    const namesFr = { 'Full Body':'Corps entier', Upper:'Haut du corps', Lower:'Bas du corps', Push:'Poussée', Pull:'Tirage', Legs:'Jambes' }
+    const namesFr = { 'Full Body':message('program.full_body'), Upper:message('program.upper_body'), Lower:message('program.lower_body'), Push:message('program.push'), Pull:message('program.pull'), Legs:message('program.legs') }
     const labels = params.language === 'en' ? namesEn : namesFr
     let name = definition.name
     for (const [key,value] of Object.entries(labels)) name = name.replace(key,value)
@@ -254,7 +255,7 @@ export function generateProgram(params, allExercises, equipmentItems, painfulMus
   if (templates.some(t => !t.exercises.length)) throw new Error('NO_AVAILABLE_EXERCISES')
   const goalNames = params.language === 'en'
     ? { strength:'Strength', hypertrophy:'Muscle growth', endurance:'Endurance', weight_loss:'Weight loss', general_fitness:'General fitness' }
-    : { strength:'Force', hypertrophy:'Prise de muscle', endurance:'Endurance', weight_loss:'Perte de poids', general_fitness:'Forme générale' }
+    : { strength:message('program.goal_strength'), hypertrophy:message('program.goal_hypertrophy'), endurance:'Endurance', weight_loss:message('program.goal_weight_loss'), general_fitness:message('program.goal_general_fitness') }
   const items = templates.flatMap(t=>t.exercises)
   const priority_coverage = priority_muscles.map(muscle => {
     const direct_sets = muscleSets(items,byId,muscle)

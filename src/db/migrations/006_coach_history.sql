@@ -1,4 +1,4 @@
--- Historique des conversations avec le coach IA
+-- AI coach conversation history
 CREATE TABLE IF NOT EXISTS coach_conversation (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   title      TEXT    NOT NULL DEFAULT 'Conversation',

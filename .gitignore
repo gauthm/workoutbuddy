@@ -1,23 +1,23 @@
-# ── Dépendances ──────────────────────────────────────────────
+# ── Dependencies ──────────────────────────────────────────────
 node_modules/
 
-# ── Données locales (jamais versionnées) ─────────────────────
+# ── Local data (never tracked) ─────────────────────
 data/
-# Autoriser le dossier data/ mais ignorer son contenu
+# Allow the data/ directory but ignore its contents
 !data/.gitkeep
 
-# ── Variables d'environnement ─────────────────────────────────
+# ── Environment variables ─────────────────────────────────
 .env
 .env.*
 !.env.example
-# .env.example est versionné intentionnellement
+# .env.example is intentionally tracked
 
-# ── Vendors téléchargés (régénérables via download-vendors.js) ─
+# ── Downloaded vendors (regenerate with download-vendors.js) ─
 public/vendor/
 
-# ── Images d'exercices (volumineuses, régénérables via import) ─
+# ── Exercise images (large, regenerable through import) ─
 public/exercises/images/
-# Autoriser le dossier vide
+# Allow the empty directory
 !public/exercises/images/.gitkeep
 
 # ── Logs ─────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ logs/
 *.log
 npm-debug.log*
 
-# ── Système d'exploitation ───────────────────────────────────
+# ── Operating system ───────────────────────────────────
 # macOS
 .DS_Store
 .AppleDouble
@@ -44,7 +44,7 @@ $RECYCLE.BIN/
 # Linux
 *~
 
-# ── Éditeurs ─────────────────────────────────────────────────
+# ── Editors ─────────────────────────────────────────────────
 # VSCode
 .vscode/
 !.vscode/extensions.json
@@ -71,11 +71,11 @@ auto-save-list
 tramp
 .\#*
 
-# ── Couverture de tests ───────────────────────────────────────
+# ── Test coverage ───────────────────────────────────────
 coverage/
 .nyc_output/
 
-# ── Fichiers temporaires ─────────────────────────────────────
+# ── Temporary files ─────────────────────────────────────
 *.tmp
 *.temp
 *.bak
@@ -83,13 +83,13 @@ coverage/
 __pycache__/
 *.pyc
 
-# ── Exports générés ──────────────────────────────────────────
+# ── Generated exports ──────────────────────────────────────────
 workoutbuddy-export-*.json
 *.export.csv
 # Playwright browser reports and traces
 test-results/
 
-# Secrets et bases hors des dossiers habituels
+# Secrets and databases outside their usual directories
 *.db
 *.db-*
 *.sqlite

@@ -32,7 +32,7 @@ app.use('/api/v1/import', express.json({ limit: '20mb', inflate: false }))
 app.use(express.json({ limit: '100kb', inflate: false }))
 app.use(express.static(path.join(__dirname, 'public')))
 
-// ── Montage des routes (à compléter tâche par tâche) ──────────
+// ── Route registration ──────────
 app.use('/api/v1/settings',    settingsRouter)
 app.use('/api/v1/exercises', exercisesRouter)
 app.use('/api/v1/equipment', equipmentRouter)
@@ -47,7 +47,7 @@ app.use('/api/v1/user-profile', userProfileRouter)
 app.use('/api/v1/ai', aiRouter)
 app.use('/api/v1', exportImportRouter)
 
-// ── Fallback SPA ──────────────────────────────────────────────
+// ── SPA fallback ──────────────────────────────────────────────
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next()
   if (path.extname(req.path)) return res.status(404).end()
@@ -64,7 +64,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'INTERNAL_ERROR' })
 })
 
-// ── Démarrage ─────────────────────────────────────────────────
+// ── Startup ─────────────────────────────────────────────────
 let httpServer
 let stopping = false
 
@@ -90,21 +90,21 @@ async function bootstrap() {
   try {
     const scheduled = scheduleWeeks(db)
     if (scheduled > 0) {
-      console.log(`[scheduler] ${scheduled} séance(s) planifiée(s) au démarrage`)
+      console.log(`[scheduler] ${scheduled} session(s) scheduled at startup`)
     }
   } catch (err) {
-    console.warn('[scheduler] Erreur planification au démarrage :', err.message)
-    // Non bloquant
+    console.warn('[scheduler] Startup scheduling error:', err.message)
+    // Non-blocking
   }
 
-  // Précédence : variables d'environnement > table settings > défauts
+  // Precedence: environment variables > settings table > defaults
   const portRow = db.prepare("SELECT value FROM settings WHERE key='network_port'").get()
   const hostRow = db.prepare("SELECT value FROM settings WHERE key='network_host'").get()
   const port = process.env.PORT ? Number(process.env.PORT)
     : portRow ? JSON.parse(portRow.value) : 3000
   const host = process.env.HOST || (hostRow ? JSON.parse(hostRow.value) : '127.0.0.1')
 
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Port réseau invalide.')
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid network port.')
   await new Promise((resolve, reject) => {
     const server = app.listen(port, host, resolve)
     httpServer = server
@@ -114,7 +114,7 @@ async function bootstrap() {
     server.maxHeadersCount = 100
     server.once('error', reject)
   })
-  console.log(`WorkoutBuddy démarré → http://${host}:${port}`)
+  console.log(`WorkoutBuddy started → http://${host}:${port}`)
 }
 
 const isMain = process.argv[1] &&
@@ -124,9 +124,9 @@ if (isMain) {
   process.on('SIGTERM', shutdown)
   process.on('SIGINT', shutdown)
   bootstrap().catch(err => {
-    console.error('Erreur au démarrage :', err.message)
+    console.error('Startup error:', err.message)
     process.exit(1)
   })
 }
 
-export { app } // pour supertest
+export { app } // for supertest

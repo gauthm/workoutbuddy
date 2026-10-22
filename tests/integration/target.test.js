@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (règle AGENTS.md §3 : ne jamais toucher data/workoutbuddy.db)
+// Isolated DB (AGENTS.md §3: never touch data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t71-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -19,7 +19,7 @@ const { app } = await import('../../server.js')
 const TPL_NAME = 'T71 Target Tpl'
 const PROG_NAME = 'T71 Target Prog'
 
-describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
+describe('T7.1 — Enhanced GET /sessions/:id/target/:teId', () => {
   let sessionId, teId
 
   before(async () => {
@@ -54,7 +54,7 @@ describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
     db.prepare('DELETE FROM program WHERE name = ?').run(PROG_NAME)
   })
 
-  it('premier essai → is_first_time=true + first_time_suggestion non null', async () => {
+  it('first attempt → is_first_time=true + non-null first_time_suggestion', async () => {
     const res = await request(app)
       .get(`/api/v1/sessions/${sessionId}/target/${teId}`)
     assert.equal(res.status, 200)
@@ -63,12 +63,12 @@ describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
     assert.ok(typeof res.body.first_time_suggestion.reasoning === 'string')
     assert.ok(res.body.first_time_suggestion.reasoning.length > 10)
     assert.equal(typeof res.body.first_time_suggestion.weight_kg, 'number')
-    // Les reps suivent la fourchette du template
+    // Reps follow the template range
     assert.equal(res.body.reps_min, 5)
     assert.equal(res.body.first_time_suggestion.reps, 5)
   })
 
-  it('la réponse contient estimated_10rm_kg si weight et reps > 0', async () => {
+  it('response contains estimated_10rm_kg when weight and reps > 0', async () => {
     const res = await request(app)
       .get(`/api/v1/sessions/${sessionId}/target/${teId}`)
     assert.equal(res.status, 200)
@@ -80,7 +80,7 @@ describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
     }
   })
 
-  it('après progression (state > 0) → is_first_time=false + suggestion null', async () => {
+  it('after progression (state > 0) → is_first_time=false + null suggestion', async () => {
     const db = getDb()
     db.prepare(
       'UPDATE progression_state SET current_weight_kg = 60, current_target_reps = 5 WHERE template_exercise_id = ?'
@@ -97,7 +97,7 @@ describe('T7.1 — GET /sessions/:id/target/:teId enrichi', () => {
     assert.ok(typeof res.body.explanation === 'string' && res.body.explanation.length > 0)
   })
 
-  it('session inexistante → 404', async () => {
+  it('missing session → 404', async () => {
     const res = await request(app).get('/api/v1/sessions/999999/target/1')
     assert.equal(res.status, 404)
     assert.equal(res.body.error, 'SESSION_NOT_FOUND')

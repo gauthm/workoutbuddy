@@ -1,137 +1,139 @@
-# Index du code
+# Code index
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Serveur et données](#serveur-et-données)
+- [Server and data](#server-and-data)
 - [API — `/api/v1`](#api--apiv1)
-- [Logique métier — `src/services/`](#logique-métier--srcservices)
-- [Interface — `public/`](#interface--public)
-- [Tests et documentation](#tests-et-documentation)
-Installation, fonctionnement et tests : [README.md](../README.md). Règles de développement : [AGENTS.md](../AGENTS.md). Suivi : [TASKS.md](TASKS.md).
+- [Business logic — `src/services/`](#business-logic--srcservices)
+- [Frontend — `public/`](#frontend--public)
+- [Tests and documentation](#tests-and-documentation)
 
-## Serveur et données
+Installation, behavior and testing: [README.md](../README.md). Development rules: [AGENTS.md](../AGENTS.md). Tracking: [TASKS.md](TASKS.md).
 
-| Emplacement | Rôle |
+## Server and data
+
+| Location | Role |
 | --- | --- |
-| `server.js` | Démarrage, routes, fichiers statiques |
-| `src/db/database.js` | Connexion SQLite |
+| `server.js` | Startup, routes, static files |
+| `src/db/database.js` | SQLite connection |
+| `src/utils/messages.js`, `src/locales/` | Backend message keys and French/English resources; French default preserves API responses and saved explanations |
 | `src/db/migrate.js`, `src/db/migrations/` | Migrations |
-| `src/db/backup.js`, `src/db/privateStorage.js` | Sauvegardes et permissions privées SQLite |
-| `src/seed/` | Catalogue source, traductions `exercises.fr.json`, chargement et synchronisation |
-| `scripts/` | Téléchargement des bibliothèques et import d’exercices |
-| `scripts/download-exercise-images.js` | Installation/reprise des photos à une révision source figée, contrôle hors ligne avec `--check`, sans import du catalogue ni accès SQLite |
+| `src/db/backup.js`, `src/db/privateStorage.js` | Private SQLite backups and permissions |
+| `src/seed/` | Source catalog, `exercises.fr.json` translations, loading and synchronization |
+| `scripts/` | Library downloads and exercise imports |
+| `scripts/download-exercise-images.js` | Photo installation/resumption at a pinned source revision, offline checks with `--check`, without catalog import or SQLite access |
 
 ## API — `/api/v1`
 
-Tous les fichiers ci-dessous sont dans `src/routes/`.
+All files below are in `src/routes/`.
 
-| Domaine | Fichier |
+| Domain | File |
 | --- | --- |
-| Exercices, historique, exclusions | `exercises.js` |
-| Inventaire et charges disponibles | `equipment.js` |
-| Création, activation, modification des programmes | `programs.js` |
-| Séances types et remplacement d’exercices | `templates.js` |
-| Séances, cibles, démarrage et complétion | `sessions.js` |
-| Séries | `sets.js` |
-| Statistiques et records | `stats.js` |
-| Poids corporel | `bodyweight.js` |
-| Préférences, sauvegarde groupée, connexion IA | `settings.js` |
-| Profil | `userProfile.js` |
-| Coach IA et conversations | `ai.js` |
-| Exports, import, sauvegarde et réinitialisations | `exportImport.js` |
+| Exercises, history, exclusions | `exercises.js` |
+| Inventory and available weights | `equipment.js` |
+| Program creation, activation, editing | `programs.js` |
+| Workout templates and exercise replacement | `templates.js` |
+| Workouts, targets, starting and completing | `sessions.js` |
+| Sets | `sets.js` |
+| Statistics and records | `stats.js` |
+| Bodyweight | `bodyweight.js` |
+| Preferences, batch saving, AI connection | `settings.js` |
+| Profile | `userProfile.js` |
+| AI Coach and conversations | `ai.js` |
+| Exports, import, backups and resets | `exportImport.js` |
 
-## Logique métier — `src/services/`
+## Business logic — `src/services/`
 
-| Domaine | Fichiers |
+| Domain | Files |
 | --- | --- |
-| Création des programmes | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
-| Planification et durée | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
-| Progression et mémoire des exercices | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
-| Remplacement et contraintes | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
-| Bilans, allègement, stagnation | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
-| Matériel et calculs | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
-| Coach IA | `aiProvider.js`, `systemPromptBuilder.js`, `coachingAdvisor.js`, `adviceTextGenerator.js`, `actionStreamParser.js` |
-| Sécurité HTTP | `httpSecurity.js` : en-têtes, origine, limites et configuration du proxy |
-| Utilitaires et compatibilité | `date.js`, `validation.js`, `rotationEngine.js`, `catalogueCleanup.js` |
+| Program creation | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
+| Scheduling and duration | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
+| Progression and exercise memory | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
+| Replacement and constraints | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
+| Reviews, deload, plateaus | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
+| Equipment and calculations | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
+| AI Coach | `aiProvider.js`, `systemPromptBuilder.js`, `coachingAdvisor.js`, `adviceTextGenerator.js`, `actionStreamParser.js` |
+| HTTP security | `httpSecurity.js`: headers, origins, limits and proxy configuration |
+| Utilities and compatibility | `date.js`, `validation.js`, `rotationEngine.js`, `catalogueCleanup.js` |
 
-## Interface — `public/`
+## Frontend — `public/`
 
-| Domaine | Emplacement |
+| Domain | Location |
 | --- | --- |
-| Initialisation, navigation, état, API, traductions | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
-| Détection des versions, protection des saisies et retour au portail après expiration | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
-| Accueil équilibré, boutons sous le programme actif, objectif et fréquence | `js/views/DashboardView.js`, styles `.dashboard-view` dans `css/components.css` |
-| Calendrier de l’accueil avec sélection permanente, premier jour hors mois courant, aujourd’hui au retour et séances paginées | `js/components/calendar/CalendarView.js` ; priorité reprise/planifiées, liste complète sur le calendrier séparé |
-| Maintien de l’écran allumé, préférence enregistrée et renouvellement au retour | `js/utils/screenWakeLock.js`, initialisation dans `js/app.js`, état dans `js/store.js`, Général dans `SettingsView.js`, migration `017_screen_wake_lock.sql` |
-| Navigation et composants communs | `js/components/layout/`, `js/components/common/` |
-| Exercices, douleurs, filtres | `js/components/exercises/` (`ExerciseMotion.js` pour les photos animées) |
-| Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
-| Questionnaire, fiche titrée par objectif et rappel d’un seul programme actif | `js/components/programs/` |
-| Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
+| Initialization, navigation, state, API, translations | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
+| Version detection, input protection and return to portal after expiry | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
+| Balanced dashboard, buttons below the active program, goal and frequency | `js/views/DashboardView.js`, `.dashboard-view` styles in `css/components.css` |
+| Dashboard calendar with persistent selection, first day outside the current month, today on return and paginated workouts | `js/components/calendar/CalendarView.js`; resume/scheduled priority, full list on the separate calendar |
+| Keeping the screen awake, saved preference and renewal on return | `js/utils/screenWakeLock.js`, initialization in `js/app.js`, state in `js/store.js`, General in `SettingsView.js`, migration `017_screen_wake_lock.sql` |
+| Navigation and shared components | `js/components/layout/`, `js/components/common/` |
+| Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos) |
+| Inventory and equipment registry | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
+| Questionnaire, goal-titled card and single-active-program reminder | `js/components/programs/` |
+| Workout, sets, history and rest | `js/components/session/`, `js/timer-worker*.js` |
 
-### Écrans et interactions
+### Screens and interactions
 
-| Domaine | Emplacement |
+| Domain | Location |
 | --- | --- |
-| Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
-| Saisie du Coach ajustable jusqu’à 120 px, Entrée pour envoyer sur desktop, Maj+Entrée pour une ligne ; Entrée pour une ligne sur mobile | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
-| Chat conservé pendant la navigation, réponse hors écran et retour au dernier message | `KeepAlive` limité au Coach dans `js/components/layout/AppShell.js`, hooks d’activation et observation des dimensions dans `js/components/coach/CoachView.js` |
-| Indicateur de réflexion animé, mouvement réduit et bulles sans avatars | `js/components/coach/ChatMessage.js`, styles `.chat-msg` dans `css/components.css` |
-| Bouton seul de déconnexion Authelia avec confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, route Caddy `/auth/logout` |
-| RM, échauffement, douleurs, dates, dialogues | `js/utils/` |
-| Styles, traductions, bibliothèques, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
-| Zoom tactile désactivé, défilement natif et champs mobiles sans zoom au focus | viewport dans `index.html`, `css/main.css`, `css/components.css` ; parcours dans `tests/e2e/security.spec.js` |
-| Logo d’onglet et d’écran d’accueil | `icons/workoutbuddy.svg`, `favicon.ico`, `apple-touch-icon.png`, `icons/icon-*.png`, `manifest.json`, génération via `scripts/generate-icons.js` |
+| Calendar, statistics, coach, settings | `js/components/calendar/`, `stats/`, `coach/`, `settings/` under `js/components/` |
+| Coach input resizable up to 120 px, Enter to send on desktop, Shift+Enter for a newline; Enter for a newline on mobile | `js/components/coach/CoachView.js`, `.coach-view__input` in `css/components.css` |
+| Chat preserved during navigation, off-screen response and return to the latest message | `KeepAlive` limited to Coach in `js/components/layout/AppShell.js`, activation hooks and dimension observation in `js/components/coach/CoachView.js` |
+| Animated thinking indicator, reduced motion and bubbles without avatars | `js/components/coach/ChatMessage.js`, `.chat-msg` styles in `css/components.css` |
+| Single Authelia logout button with confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, Caddy `/auth/logout` route |
+| RM, warm-up, pain, dates, dialogs | `js/utils/` |
+| Styles, translations, libraries, cache | `css/`, `locales/`, `vendor/`, `sw.js` |
+| Touch zoom disabled, native scrolling and mobile fields without focus zoom | viewport in `index.html`, `css/main.css`, `css/components.css`; journeys in `tests/e2e/security.spec.js` |
+| Tab and home-screen logo | `icons/workoutbuddy.svg`, `favicon.ico`, `apple-touch-icon.png`, `icons/icon-*.png`, `manifest.json`, generation through `scripts/generate-icons.js` |
 
-## Tests et documentation
+## Tests and documentation
 
-Les guides sont regroupés dans [INDEX.md](INDEX.md) : utilisation, configuration, déploiement et
-tests. Les chemins de code ci-dessous partent de la racine du dépôt.
+Guides are collected in [INDEX.md](INDEX.md): usage, configuration, deployment and
+testing. Code paths below are relative to the repository root.
 
-| Emplacement | Contenu |
+| Location | Contents |
 | --- | --- |
-| `scripts/test-selection.js`, `test-affected.js` | Sélection Node par imports et domaines API, commande `test:affected`, fichiers explicites et aperçu `--list` |
-| `scripts/e2e-selection.js`, `test-e2e-affected.js`, `pre-push.js` | Domaines navigateur concernés, surcharge explicite après lecture du diff, numéro de cache seul ignoré, hook Node et navigateur ciblé ; tests `tests/unit/e2eSelection.test.js` |
-| `tests/unit/`, `tests/integration/` | Logique métier et API ; `reliabilityStress.test.js` pour les simulations de durée et incidents |
-| `tests/journeys/` | Parcours complets ; [guide](TESTS_JOURNEYS.md) |
-| `tests/helpers/` | Exécution isolée des requêtes |
-| `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](TESTS_E2E.md) |
+| `scripts/test-selection.js`, `test-affected.js` | Node selection by imports and API domains, `test:affected` command, explicit files and `--list` preview |
+| `scripts/e2e-selection.js`, `test-e2e-affected.js`, `pre-push.js` | Affected browser domains, explicit override after diff review, cache version alone ignored, targeted Node/browser hook; tests in `tests/unit/e2eSelection.test.js` |
+| `tests/unit/`, `tests/integration/` | Business logic and API; `reliabilityStress.test.js` for duration and incident simulations |
+| `tests/journeys/` | Complete journeys; [guide](TESTS_JOURNEYS.md) |
+| `tests/helpers/` | Isolated request execution |
+| `tests/e2e/` | Playwright journeys against isolated server and database; [guide](TESTS_E2E.md) |
 
-### Couverture de l’interface
+### Frontend coverage
 
-| Emplacement | Contenu |
+| Location | Contents |
 | --- | --- |
-| `tests/e2e/updates.spec.js` | Livraison sur copie isolée : rechargement, brouillon, panne réseau et proxy HTTP de session expirée, y compris ancien worker |
-| `tests/unit/screenWakeLock.test.js` | Acquisition unique, libération, arrière-plan/retour, requête en cours, refus du navigateur et absence de prise en charge |
-| `tests/e2e/authProxy.js`, `settings.spec.js` | Option écran allumé enregistrée, navigation/rechargement, désactivation, refus et incompatibilité ; proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
-| `tests/e2e/theme.spec.js`, `security.spec.js` | Contrastes du thème clair et séries validées ; liens et décodage des icônes, dimensions et opacité Apple/manifest |
-| `tests/e2e/dashboard.spec.js` | Accueil sur huit tailles/zones sûres, boutons sous le programme, zones agrandies et défilement sur les écrans courts, portrait/paysage, six semaines, tous les statuts, pagination, semaine complète ; cinq objectifs FR/EN |
-| `tests/e2e/coach.spec.js` | Saisie ajustable, Entrée desktop pour envoyer, Maj+Entrée et Entrée mobile pour une ligne, composition du clavier préservée, animation avec mouvement réduit, absence d’avatars ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
-| `tests/ui/` | Scénarios visuels Playwright complémentaires |
+| `tests/e2e/updates.spec.js` | Release on isolated copy: reload, draft, network failure and HTTP proxy for expired sessions, including old worker |
+| `tests/unit/screenWakeLock.test.js` | Single acquisition, release, background/foreground, pending request, browser denial and unsupported platform |
+| `tests/e2e/authProxy.js`, `settings.spec.js` | Saved screen-awake option, navigation/reload, disabling, denial and incompatibility; shared disposable HTTP proxy, confirmed logout and data preservation |
+| `tests/e2e/theme.spec.js`, `security.spec.js` | Light theme and completed-set contrast; icon links and decoding, Apple/manifest dimensions and opacity |
+| `tests/e2e/dashboard.spec.js` | Dashboard across eight sizes/safe areas, buttons below the program, enlarged areas and scrolling on short screens, portrait/landscape, six weeks, all statuses, pagination, completed week; five goals in French/English |
+| `tests/e2e/coach.spec.js` | Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newline, keyboard composition preserved, reduced-motion animation, no avatars; navigation before/during response, off-screen completion, immediate following of long responses, resizing, persistence and return to bottom after navigation/reload; local SSE provider, no external AI |
+| `tests/ui/` | Additional Playwright visual scenarios |
 
-### Déploiement et exploitation
+### Deployment and operations
 
-| Emplacement | Contenu |
+| Location | Contents |
 | --- | --- |
-| `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
-| `deploy/docker/`, `docs/DEPLOYMENT_DOCKER.md`, `.dockerignore` | Image Node 24, Compose local/production, volume SQLite, santé, sauvegarde/restauration et test isolé |
-| `docs/DEPLOYMENT_LINUX.md`, `docs/DEPLOYMENT_REDHAT.md`, `deploy/linux/redhat-based/` | Configuration Linux commune et variante Red Hat avec DNF 4/5 |
-| `docs/DEPLOYMENT_DEBIAN.md`, `deploy/linux/debian-based/` | Variante Debian/Ubuntu avec APT et needrestart |
-| `deploy/linux/test-deployment.py`, `deploy/linux/*/check-platform.py` | Contrôle des prérequis, rendu privé des configurations et parité des fichiers communs |
-| `deploy/linux/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Sauvegarde avant mises à jour DNF/APT, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
-| `deploy/linux/*/workoutbuddy-audit.*`, `test-maintenance.py` | Audit npm hebdomadaire et tests simulés de la maintenance, sans toucher au serveur |
-| `deploy/linux/*/workoutbuddy-deploy-assets` | Contrôle des photos obligatoires, publication atomique de l’interface et conservation de la version précédente |
-| `deploy/linux/*/workoutbuddy-sessions.*`, `authelia-sessions.conf`, `valkey-sessions.conf` | Stockage Redis/Valkey privé et persistant des sessions Authelia, par socket Unix |
-| `deploy/linux/*/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |
+| `docs/RELIABILITY_AUDIT.md` | Latest audit: fixes, coverage and limitations |
+| `deploy/docker/`, `docs/DEPLOYMENT_DOCKER.md`, `.dockerignore` | Node 24 image, local/production Compose, SQLite volume, health, backup/restore and isolated test |
+| `docs/DEPLOYMENT_LINUX.md`, `docs/DEPLOYMENT_REDHAT.md`, `deploy/linux/redhat-based/` | Shared Linux configuration and Red Hat variant with DNF 4/5 |
+| `docs/DEPLOYMENT_DEBIAN.md`, `deploy/linux/debian-based/` | Debian/Ubuntu variant with APT and needrestart |
+| `deploy/linux/test-deployment.py`, `deploy/linux/*/check-platform.py` | Requirement checks, private configuration rendering and shared-file parity |
+| `deploy/linux/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Backup before DNF/APT updates, conditional restart between 04:00 and 06:00 Paris time |
+| `deploy/linux/*/workoutbuddy-audit.*`, `test-maintenance.py` | Weekly npm audit and simulated maintenance tests without touching the server |
+| `deploy/linux/*/workoutbuddy-deploy-assets` | Mandatory photo checks, atomic frontend publication and previous-version retention |
+| `deploy/linux/*/workoutbuddy-sessions.*`, `authelia-sessions.conf`, `valkey-sessions.conf` | Private persistent Redis/Valkey storage for Authelia sessions over a Unix socket |
+| `deploy/linux/*/test-auth-sessions.py`, `test-auth-recovery.mjs` | Disposable full-stack Caddy/Authelia/Redis/Node test: TOTP, 60-day cookie, persistence, revocation through Settings button, public icons, headers and HTTPS worker activation |
 
-Sécurité des contenus et de l’historique Git :
+Content and Git history security:
 [docs/REPOSITORY_SECURITY.md](REPOSITORY_SECURITY.md).
 
-Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour
-chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Dans
-`public/js/components/session/ExerciseHelp.js`, la note de saisie est séparée des instructions
-(`exerciseInstructions(exercise, false)`), suivie de conseils concis sur la charge de départ avant
-le tableau RM.
+Shared instructions in `public/js/i18n.js` remind users to enter the weight of **one dumbbell**
+for every exercise using dumbbells, in exercise details and in-workout help, in French/English.
+In `public/js/components/session/ExerciseHelp.js`, the entry note is separate from instructions
+(`exerciseInstructions(exercise, false)`), followed by concise starting-weight advice before
+the RM table.
 
-Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en
-séance dans `motion.spec.js`.
+The entire catalog and both languages are checked in `tests/e2e/exercises.spec.js`;
+in-workout help is checked in `motion.spec.js`.

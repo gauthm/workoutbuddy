@@ -10,20 +10,20 @@ function createMemoryDb() {
 }
 
 describe('T1.2 — Migrations', () => {
-  it('applique les 17 migrations sur une DB vierge', () => {
+  it('applies all 17 migrations to a fresh DB', () => {
     const db = createMemoryDb()
     migrate(db)
     const versions = db.prepare('SELECT version FROM schema_version ORDER BY version').all()
     assert.deepEqual(versions.map(r => r.version), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
   })
 
-  it('est idempotent — re-exécuter migrate() ne génère pas d\'erreur', () => {
+  it('is idempotent — rerunning migrate() raises no error', () => {
     const db = createMemoryDb()
     migrate(db)
     assert.doesNotThrow(() => migrate(db))
   })
 
-  it('crée la table exercise', () => {
+  it('creates the exercise table', () => {
     const db = createMemoryDb()
     migrate(db)
     const row = db.prepare(
@@ -32,18 +32,18 @@ describe('T1.2 — Migrations', () => {
     assert.ok(row)
   })
 
-  it('insère les settings par défaut', () => {
+  it('inserts default settings', () => {
     const db = createMemoryDb()
     migrate(db)
     const row = db.prepare("SELECT value FROM settings WHERE key='unit'").get()
     assert.equal(JSON.parse(row.value), 'kg')
   })
 
-  it('active les foreign keys', () => {
+  it('enables foreign keys', () => {
     const db = createMemoryDb()
     db.pragma('foreign_keys = ON')
     migrate(db)
-    // Tenter d'insérer une session_exercise avec session_id invalide doit échouer
+    // Inserting a session_exercise with an invalid session_id must fail
     migrate(db)
     assert.throws(() => {
       db.prepare(

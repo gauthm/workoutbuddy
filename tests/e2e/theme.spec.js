@@ -18,7 +18,7 @@ async function contrast(page,selectors) {
   },selectors)
 }
 
-test('thème clair : contraste des textes, actions, alertes et champs, focus visible et préférence persistante',async({page,request},info)=>{
+test('light theme: text, action, alert and field contrast, visible focus and persisted preference',async({page,request},info)=>{
  await page.goto('/#/settings')
  await page.getByText(L('settings.section_general'),{exact:true}).click()
  await page.locator('#SettingsView-state-settings-theme').selectOption('light')
@@ -43,7 +43,7 @@ test('thème clair : contraste des textes, actions, alertes et champs, focus vis
  await page.screenshot({path:info.outputPath('home-light.png'),fullPage:true})
 })
 
-test('thème clair : les valeurs validées en séance restent lisibles',async({page,request},info)=>{
+test('light theme: completed workout values remain readable',async({page,request},info)=>{
  await call(request,'put','/settings',{theme:'light'})
  const program=await planned(request)
  await startThroughUI(page,program)

@@ -11,9 +11,9 @@ const domains=domainIndex>=0?args.splice(domainIndex,2)[1]:null
 if(domainIndex>=0&&(!domains||domains.split(',').some(s=>!SUITES.includes(s))))throw new Error('--domains requires known comma-separated domains')
 const relevant=filterReleaseBump(files,path=>execFileSync('git',['show',`${base||'HEAD'}:${path}`],{encoding:'utf8'}),path=>readFileSync(path,'utf8'))
 const suites=domains?domains.split(','):selectSuites(relevant)
-if(!suites.length)console.log('Aucun parcours navigateur concerné par ces fichiers.')
+if(!suites.length)console.log('No browser journeys affected by these files.')
 else{
- console.log('Parcours concernés : '+suites.join(', '))
+ console.log('Affected journeys: '+suites.join(', '))
  const result=spawnSync(process.execPath,['scripts/test-e2e.js',...suites.map(s=>s+'.spec.js'),...args],{stdio:'inherit'})
  process.exitCode=result.status??1
 }

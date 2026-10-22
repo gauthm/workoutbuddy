@@ -1,130 +1,121 @@
-# Séances et progression
+# Sessions and progression
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Planification et séance sautée](#planification-et-séance-sautée)
-- [Saisir et reprendre une séance](#saisir-et-reprendre-une-séance)
-- [Terminer, abandonner ou réinitialiser](#terminer-abandonner-ou-réinitialiser)
-- [Aide à l’exercice](#aide-à-lexercice)
-- [Comparer les performances](#comparer-les-performances)
-- [Calcul de la progression](#calcul-de-la-progression)
-- [Débuter et ajuster les charges](#débuter-et-ajuster-les-charges)
-- [Repères de programmation](#repères-de-programmation)
-- [Matériel et choix des variantes](#matériel-et-choix-des-variantes)
-- [Historique et acquis](#historique-et-acquis)
-- [Requêtes répétées et interruptions réseau](#requêtes-répétées-et-interruptions-réseau)
-- [Statistiques](#statistiques)
+- [Scheduling and skipped sessions](#scheduling-and-skipped-sessions)
+- [Log and resume a session](#log-and-resume-a-session)
+- [Finish, abandon, or reset](#finish-abandon-or-reset)
+- [Exercise help](#exercise-help)
+- [Compare performance](#compare-performance)
+- [Progression calculation](#progression-calculation)
+- [Starting and adjusting loads](#starting-and-adjusting-loads)
+- [Programming guidelines](#programming-guidelines)
+- [Equipment and variation selection](#equipment-and-variation-selection)
+- [History and retained progress](#history-and-retained-progress)
+- [Repeated requests and network interruptions](#repeated-requests-and-network-interruptions)
+- [Statistics](#statistics)
 
-## Planification et séance sautée
+## Scheduling and skipped sessions
 
-Une séance peut être démarrée un autre jour que celui prévu. Elle apparaît alors au jour réel de son
-démarrage ; sa date prévue d’origine reste enregistrée, sans recréer de séance à cette date ni
-déplacer les autres séances. Reprendre une séance en cours conserve son jour de démarrage.
+A session can start on a different day from the planned date. It then appears on its actual start
+day; its original planned date remains stored, without recreating a session on that date or moving
+other sessions. Resuming a session in progress preserves its start day.
 
-Une séance marquée « Sautée » peut être remise en planifiée depuis le calendrier, puis démarrée ou
-déplacée ; elle conserve sa date et ses données.
+A session marked “Skipped” can be returned to planned status from the calendar, then started or
+moved; it retains its date and data.
 
-## Saisir et reprendre une séance
+## Log and resume a session
 
-Pendant une séance, saisir la charge et les répétitions des séries proposées, puis les valider. Une
-série validée par erreur peut être annulée. Si tu quittes une séance sans la terminer, elle reste en
-cours et les séries validées sont conservées. Une saisie non validée peut être perdue au
-rechargement. L’onglet Séance permet de reprendre ; une autre séance ne peut pas démarrer tant que
-la première reste en cours.
+During a session, enter the load and repetitions for the proposed sets, then confirm them. A set
+confirmed by mistake can be undone. Leaving a session without finishing keeps it in progress and
+preserves confirmed sets. Unconfirmed input may be lost on reload. The Session tab lets you resume;
+another session cannot start while the first remains in progress.
 
-Le chronomètre mesure le temps depuis le démarrage, y compris lorsque l’application est fermée, et
-la progression attend la fin de la séance. Le bouton Échauffement affiche les consignes sans ajouter
-de série au programme.
+The timer measures time since the start, including while the app is closed, and progression waits
+until the session ends. The Warm-up button displays instructions without adding a set to the program.
 
-## Terminer, abandonner ou réinitialiser
+## Finish, abandon, or reset
 
-Le bouton Terminer propose **Continuer la séance**, **Quitter sans enregistrer** et **Terminer et
-enregistrer**. Quitter sans enregistrer efface les séries de cet essai et remet la même séance en
-planifiée, à sa date prévue d’origine. Terminer enregistre les séries validées et met à jour la
-progression.
+The Finish button offers **Continue session**, **Quit without saving**, and **Finish and save**.
+Quitting without saving deletes sets from this attempt and returns the same session to planned
+status on its original planned date. Finishing saves confirmed sets and updates progression.
 
-Depuis la fiche d’une séance terminée dans l’historique, **Réinitialiser la séance** efface ses
-résultats et la remet en planifiée ; les records et les acquis sont recalculés sur les séances
-restantes. Une confirmation et une sauvegarde précèdent la réinitialisation. Les anciennes requêtes
-de saisie de séries sont rejetées pour empêcher leur réapparition après remise à zéro.
+From a completed session's history details, **Reset session** deletes its results and returns it
+to planned status; records and retained progress are recalculated from remaining sessions.
+Confirmation and a backup precede the reset. Old set-entry requests are rejected to prevent sets
+from reappearing after a reset.
 
-## Aide à l’exercice
+## Exercise help
 
-L’aide d’un exercice en séance sépare les instructions numérotées, la charge à saisir, les conseils
-pour trouver sa charge de départ et le tableau RM lorsqu’il est disponible. Les conseils invitent à
-commencer léger, garder 2 à 3 répétitions en réserve et ajuster par petits paliers ; sans matériel,
-commencer sans lest et choisir une variante plus facile si nécessaire.
+Exercise help during a session separates numbered instructions, the load to enter, advice for
+finding a starting load, and the RM table when available. Advice encourages starting light,
+keeping 2–3 repetitions in reserve, and adjusting in small increments; without equipment, start
+without added weight and choose an easier variation if needed.
 
-## Comparer les performances
+## Compare performance
 
-La dernière séance du même exercice est présentée dans un tableau séparé. Une colonne 10RM compare
-les performances selon la formule sélectionnée ; les formules sont expliquées dans les réglages
-avancés.
+The most recent session for the same exercise appears in a separate table. A 10RM column compares
+performance using the selected formula; formulas are explained in advanced settings.
 
-## Calcul de la progression
+## Progression calculation
 
-La progression utilise les performances réellement enregistrées. Elle ajuste les cibles de charge et
-de répétitions tout en gardant une continuité des exercices ; les bilans peuvent proposer une
-semaine allégée. Le Coach IA ne décide pas de ces changements. La fin de séance et l’enregistrement
-des progrès forment une seule transaction : en cas d’échec du calcul, la séance reste en cours et
-peut être terminée à nouveau.
+Progression uses actual recorded performance. It adjusts load and repetition targets while
+maintaining continuity between exercises; reviews may suggest a lighter week. The AI Coach does
+not decide these changes. Finishing a session and saving progress form a single transaction: if
+calculation fails, the session remains in progress and can be finished again.
 
-## Débuter et ajuster les charges
+## Starting and adjusting loads
 
-Pour débuter, le moteur limite chaque exercice à trois séries et utilise la double progression, y
-compris pour un objectif de force, avec une plage initiale de 8–12 répétitions. Les poids des
-haltères sont exprimés par haltère. Les consignes le rappellent sur la fiche et dans l’aide en
-séance (2 haltères de 10 kg → saisir 10 kg). Le calcul de départ distingue un mouvement à deux
-haltères d’un mouvement à un bras.
+For beginners, the engine limits each exercise to three sets and uses double progression,
+including for strength goals, with an initial range of 8–12 repetitions. Dumbbell weights are
+expressed per dumbbell. Instructions repeat this on the details page and in session help
+(2 dumbbells of 10 kg → enter 10 kg). Starting-load calculation distinguishes a two-dumbbell
+movement from a one-arm movement.
 
-Les hausses automatiques restent limitées à 10 % de la charge ou 1 kg pour les petites charges ; si
-le matériel impose un saut supérieur, la charge est maintenue. Une série menée à l’échec (RPE ≥ 9,5
-ou RIR = 0) bloque une nouvelle hausse immédiate. Les cibles s’ajustent au matériel actuel sans
-effacer les performances passées.
+Automatic increases remain limited to 10% of the load or 1 kg for small loads; if equipment
+requires a larger jump, the load stays unchanged. A set taken to failure (RPE ≥ 9.5 or RIR = 0)
+blocks another immediate increase. Targets adapt to current equipment without erasing past performance.
 
-## Repères de programmation
+## Programming guidelines
 
-Ces règles sont des choix de programmation, avec des repères issus des recommandations [ACSM
-2026](https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/) : entraînement progressif des grands
-groupes musculaires, volume adapté et absence d’obligation d’aller à l’échec. Elles ne constituent
-pas une validation individuelle des charges de départ.
+These rules are programming choices informed by [ACSM
+2026](https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/) recommendations: progressive training of
+major muscle groups, appropriate volume, and no requirement to train to failure. They do not
+provide individual validation of starting loads.
 
-## Matériel et choix des variantes
+## Equipment and variation selection
 
-À la création, le moteur privilégie les exercices utilisant le matériel disponible et répartit les
-variantes entre les séances, par exemple développé à plat en A et incliné en B avec un banc
-réglable. La sélection inclut notamment le squat et le soulevé de terre avec haltères, le développé
-au sol et le rowing avec une kettlebell.
+During creation, the engine favors exercises using available equipment and distributes variations
+across sessions, such as flat presses in A and incline presses in B with an adjustable bench.
+Selection includes dumbbell squats and deadlifts, floor presses, and kettlebell rows.
 
-Les exigences matérielles restent propres à chaque mouvement du catalogue : un haltère ne remplace
-pas automatiquement une kettlebell. Des exercices au poids du corps restent possibles quand ils sont
-pertinents ou que le matériel manque. L’estimation du temps compte les deux côtés des exercices
-unilatéraux.
+Equipment requirements remain specific to each catalog movement: a dumbbell does not automatically
+replace a kettlebell. Body-weight exercises remain possible when appropriate or when equipment is
+unavailable. Time estimation counts both sides of unilateral exercises.
 
-Une charge ajoutée manuellement à un exercice au poids du corps est enregistrée ; le moteur ne
-propose pas encore automatiquement de lest optionnel.
+A load manually added to a body-weight exercise is saved; the engine does not yet automatically
+suggest optional added weight.
 
-## Historique et acquis
+## History and retained progress
 
-Les acquis d’un exercice sont conservés indépendamment du programme : supprimer un programme puis en
-créer un autre permet de reprendre la progression des mouvements déjà pratiqués. Corriger, annuler
-ou supprimer une série historique, retirer son exercice ou supprimer sa séance recalcule les acquis
-à partir de l’historique restant et invalide le bilan hebdomadaire concerné. Les semaines suivent le
-calendrier local.
+Exercise progress is retained independently of the program: deleting a program and creating
+another allows progression to resume for previously practiced movements. Editing, undoing, or
+deleting a historical set, removing its exercise, or deleting its session recalculates retained
+progress from remaining history and invalidates the relevant weekly review. Weeks follow the
+local calendar.
 
-Son créneau est conservé comme supprimé pour empêcher la planification automatique de la recréer, y
-compris pour une ancienne séance de test complétée à une date future. Pour les anciennes séances
-sans contexte de calcul enregistré, la récupération s’appuie conservativement sur leurs performances
-réelles.
+A deleted session's slot remains marked as deleted to prevent automatic scheduling from recreating
+it, including an old test session completed on a future date. For older sessions without saved
+calculation context, recovery conservatively uses their actual performance.
 
-## Requêtes répétées et interruptions réseau
+## Repeated requests and network interruptions
 
-Une série déjà enregistrée peut être renvoyée à l’identique sans doublon ; un renvoi avec des
-valeurs différentes est refusé pour éviter un écrasement silencieux. La fin de séance attend les
-sauvegardes en cours. Si la réponse réseau de fin ou d’annulation est perdue, l’interface vérifie
-l’état réellement enregistré avant de poursuivre.
+An already saved set can be submitted again identically without duplication; resubmission with
+different values is rejected to avoid silent overwrites. Finishing a session waits for pending
+saves. If the network response to finishing or cancellation is lost, the interface checks the
+actual saved state before continuing.
 
-## Statistiques
+## Statistics
 
-L’accueil donne accès à l’historique. Les statistiques présentent le volume, la progression, les
-records et le suivi du poids corporel.
+The home screen provides access to history. Statistics show volume, progression, records, and
+body-weight tracking.

@@ -54,11 +54,11 @@ async function main(){
     }
    }
    if(complete)processed++
-   if(processed && processed%100===0)console.log(`${processed}/${paths.length} images disponibles`)
+   if(processed && processed%100===0)console.log(`${processed}/${paths.length} images available`)
   }
  }
  await Promise.all(Array.from({length:4},worker))
- if(failures.length)throw new Error(`${failures.length} images manquantes ou invalides:\n${failures.join('\n')}`)
- console.log(`${paths.length} images vérifiées ; ${downloaded} téléchargées, ${existing} déjà présentes. Aucun catalogue ni base modifié.`)
+ if(failures.length)throw new Error(`${failures.length} missing or invalid images:\n${failures.join('\n')}`)
+ console.log(`${paths.length} images checked; ${downloaded} downloaded, ${existing} already present. No catalog or database changed.`)
 }
 main().catch(error=>{console.error(error.message);process.exitCode=1})

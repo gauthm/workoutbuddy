@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { programWeeklyProgress } from '../services/programWeeklyProgress.js'
 import { programDates } from '../services/programLifecycle.js'
 import express from 'express'
@@ -155,7 +156,7 @@ router.delete('/:id', (req, res) => {
       "SELECT COUNT(*) as n FROM session WHERE program_id = ? AND status = 'in_progress'"
     ).get(req.params.id)
     if (inProgress.n > 0) {
-      return res.status(409).json({ error: 'CONFLICT', detail: 'Une séance est en cours.' })
+      return res.status(409).json({ error: 'CONFLICT', detail: message('session.in_progress') })
     }
 
     db.transaction(() => {
@@ -185,10 +186,10 @@ router.post('/:id/activate', (req, res) => {
     })()
 
     const created = scheduleWeeks(db, parseInt(req.params.id))
-    console.log(`[scheduler] ${created} séance(s) planifiée(s) à l'activation`)
+    console.log(`[scheduler] ${created} session(s) scheduled on activation`)
 
     res.json({
-      message:            'Programme activé',
+      message:            message('program.activated'),
       program_id:         parseInt(req.params.id),
       sessions_scheduled: created,
     })
@@ -237,8 +238,8 @@ router.get('/:id/next-session', (req, res) => {
       const targetWeight  = currentWeight
 
       const explanation = currentWeight === 0
-        ? 'Premier entraînement — commencez léger pour trouver votre charge.'
-        : `Dernière charge : ${currentWeight} kg.`
+        ? message('program.first_workout')
+        : message('program.last_load', { currentWeight: currentWeight })
 
       return {
         template_exercise_id: te.id,
@@ -269,7 +270,7 @@ router.get('/:id/next-session', (req, res) => {
   }
 })
 
-// ── POST /programs/:id/deload (déclenchement manuel) ─────────────────
+// ── POST /programs/:id/deload (manual trigger) ─────────────────
 router.post('/:id/deload', (req, res) => {
   try {
     const program = db.prepare('SELECT id FROM program WHERE id = ?').get(req.params.id)
@@ -282,7 +283,7 @@ router.post('/:id/deload', (req, res) => {
     `).run(req.params.id)
 
     res.json({
-      message: 'Deload activé manuellement.',
+      message: message('deload.activated'),
       program_id: parseInt(req.params.id),
     })
   } catch (err) {
@@ -304,7 +305,7 @@ router.post('/:id/end-deload', (req, res) => {
     `).run(req.params.id)
 
     res.json({
-      message: 'Deload terminé.',
+      message: message('deload.finished'),
       program_id: parseInt(req.params.id),
     })
   } catch (err) {

@@ -61,14 +61,14 @@ router.get('/streaks', (req, res) => {
 })
 
 // ── GET /stats/volume ─────────────────────────────────────────
-// Query: weeks=12 (défaut 12), group_by='week'|'muscle' (défaut 'week')
+// Query: weeks=12 (default 12), group_by='week'|'muscle' (default 'week')
 router.get('/volume', (req, res) => {
   try {
     const weeks   = Math.min(parseInt(req.query.weeks) || 12, 52)
     const groupBy = req.query.group_by === 'muscle' ? 'muscle' : 'week'
 
     if (groupBy === 'week') {
-      // Volume total par semaine ISO
+      // Total volume per ISO week
       const rows = db.prepare(`
         SELECT
           strftime('%Y', s.scheduled_date)                      AS year,
@@ -86,7 +86,7 @@ router.get('/volume', (req, res) => {
         ORDER BY year ASC, week_num ASC
       `).all(`-${weeks * 7}`)
 
-      // Formater en "YYYY-Www"
+      // Format as "YYYY-Www"
       const data = rows.map(r => ({
         period:    `${r.year}-W${String(r.week_num).padStart(2, '0')}`,
         volume_kg: Math.round(r.volume_kg * 100) / 100,
@@ -96,7 +96,7 @@ router.get('/volume', (req, res) => {
     }
 
     // group_by = 'muscle'
-    // Récupérer les séries récentes avec l'exercice associé
+    // Fetch recent sets with the associated exercise
     const rows = db.prepare(`
       SELECT
         e.primary_muscles,
@@ -116,7 +116,7 @@ router.get('/volume', (req, res) => {
       ORDER BY year ASC, week_num ASC
     `).all(`-${weeks * 7}`)
 
-    // Éclater par muscle primaire
+    // Split by primary muscle
     const data = []
     for (const row of rows) {
       const muscles = JSON.parse(row.primary_muscles || '[]')
@@ -136,7 +136,7 @@ router.get('/volume', (req, res) => {
 })
 
 // ── GET /stats/exercises/:id/progress ────────────────────────
-// Query: days=180 (défaut 180)
+// Query: days=180 (default 180)
 router.get('/exercises/:id/progress', (req, res) => {
   try {
     const exercise = db.prepare('SELECT id FROM exercise WHERE id = ?').get(req.params.id)
@@ -162,7 +162,7 @@ router.get('/exercises/:id/progress', (req, res) => {
       ORDER BY date ASC, sl.id ASC
     `).all(req.params.id, `-${days}`)
 
-    // Choisir une vraie série, plutôt que combiner deux MAX indépendants.
+    // Choose an actual set instead of combining two independent MAX values.
     const bestByDate = new Map()
     for (const row of rows) {
       const estimated = estimate1RM(row.weight_kg, row.reps, formula)
@@ -181,7 +181,7 @@ router.get('/exercises/:id/progress', (req, res) => {
 })
 
 // ── GET /stats/personal-records ──────────────────────────────
-// Query: exercise_id=... (optionnel)
+// Query: exercise_id=... (optional)
 router.get('/personal-records', (req, res) => {
   try {
     let sql = `

@@ -38,7 +38,7 @@ export default {
       try {
         await api.delete(props.id)
         store.showToast(t('session.deleted'), 'success')
-        // Retirer le détail supprimé de l'entrée courante de navigation.
+        // Remove the deleted details from the current navigation entry.
         router.replace('#/session/history')
       } catch (err) {
         store.showToast(err.message, 'error')

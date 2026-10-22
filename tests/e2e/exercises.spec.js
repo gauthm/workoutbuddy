@@ -13,7 +13,7 @@ async function language(page,lang){
  await expect(pending(page)).toHaveCount(0)
  await expect(page.locator('html')).toHaveAttribute('lang',lang)
 }
-test('recherche et filtres conservés en revenant de la fiche, catalogue seul et matériel respecté',async({page,request})=>{
+test('search and filters preserved after returning from details, catalog-only and equipment constraints respected',async({page,request})=>{
  await homeGym(request)
  await page.goto('/#/exercises')
  await page.getByRole('searchbox',{name:L('exercises.search'),exact:true}).fill('haltères')
@@ -32,7 +32,7 @@ test('recherche et filtres conservés en revenant de la fiche, catalogue seul et
  expect((await get(request,'/exercises')).exercises.every(e=>!e.is_custom)).toBe(true)
 })
 
-test('traductions FR et EN : recherche, consignes, aide et langue conservée au redémarrage',async({page,request,app})=>{
+test('French and English translations: search, instructions, help and language preserved after restart',async({page,request,app})=>{
  const ex=await get(request,'/exercises/dumbbell_bench_press')
  await page.goto('/#/exercises/dumbbell_bench_press')
  await expect(page.getByRole('heading',{name:'Développé couché avec haltères',exact:true})).toBeVisible()
@@ -61,7 +61,7 @@ test('traductions FR et EN : recherche, consignes, aide et langue conservée au 
  await expect(page.locator('.instruction-list li').last()).toHaveText(L('exercises.dumbbell_weight_entry'))
 })
 
-test('changer de langue traduit les noms du programme, de la séance et des records sans changer les performances',async({page,request})=>{
+test('language changes translate program, workout and record names without altering performance',async({page,request})=>{
  const p=await planned(request)
  const completed=await trainThroughUI(page,request,p)
  const ex=completed.exercises.find(ex=>ex.name_fr!==ex.name_en)
@@ -99,11 +99,11 @@ test('changer de langue traduit les noms du programme, de la séance et des reco
  await expect(page.getByRole('heading',{name:ex.name_en,exact:true})).toBeVisible()
  const after=await get(request,`/sessions/${completed.id}`)
  expect(after).toEqual(before)
- // Le même composant déjà monté suit la locale sans recharger ses données.
+ // The same mounted component follows the locale without reloading its data.
  await page.evaluate(async()=>{const {i18n}=await import('/js/i18n.js');await i18n.setLocale('fr')})
  await expect(page.getByRole('heading',{name:ex.name_fr,exact:true})).toBeVisible()
 })
-test('exclure un exercice persiste après rechargement et met à jour le compteur',async({page,request})=>{
+test('excluding an exercise persists after reload and updates the counter',async({page,request})=>{
  await page.goto('/#/exercises')
  const available=(await get(request,'/exercises?excluded=0')).exercises.length
  const badge=page.locator('.exercise-tabs__badge')
@@ -117,7 +117,7 @@ test('exclure un exercice persiste après rechargement et met à jour le compteu
  expect((await get(request,'/exercises?excluded=1')).exercises.some(e=>e.name_fr===name)).toBe(true)
 })
 
- test('consigne de charge sur tous les haltères, sans ajout pour les autres équipements',async({page,request})=>{
+ test('load instructions for every dumbbell exercise, without additions for other equipment',async({page,request})=>{
   const catalog=(await get(request,'/exercises')).exercises
   await page.goto('/#/exercises/dumbbell_bench_press')
   const failures=await page.evaluate(async(catalog)=>{

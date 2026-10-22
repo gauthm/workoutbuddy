@@ -1,132 +1,132 @@
-# Installation Linux : configuration commune
+# Linux installation: common configuration
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-Architecture gratuite : **Caddy → Authelia (mot de passe + TOTP) → Node 24 / SQLite**. Les sessions
-Authelia sont conservées dans une instance Redis privée et persistante. Les modèles sont dans
-`deploy/linux/redhat-based/` et `deploy/linux/debian-based/`. Exécuter les opérations système comme root.
+Free architecture: **Caddy → Authelia (password + TOTP) → Node 24 / SQLite**. Authelia sessions
+are stored in a private, persistent Redis instance. Templates are in
+`deploy/linux/redhat-based/` and `deploy/linux/debian-based/`. Run system operations as root.
 
-Pour une installation conteneurisée, utiliser le [guide Docker](DEPLOYMENT_DOCKER.md).
+For a containerized installation, use the [Docker guide](DEPLOYMENT_DOCKER.md).
 
-Choisir d’abord les paquets et protections du guide [Red Hat](DEPLOYMENT_REDHAT.md) ou
-[Debian/Ubuntu](DEPLOYMENT_DEBIAN.md), puis suivre cette procédure commune.
-Définir `WB_DEPLOY_DIR=deploy/linux/redhat-based` ou `WB_DEPLOY_DIR=deploy/linux/debian-based`
-dans le terminal utilisé pour les commandes.
+First choose the packages and protections from the [Red Hat](DEPLOYMENT_REDHAT.md) or
+[Debian/Ubuntu](DEPLOYMENT_DEBIAN.md) guide, then follow this common procedure.
+Set `WB_DEPLOY_DIR=deploy/linux/redhat-based` or `WB_DEPLOY_DIR=deploy/linux/debian-based`
+in the terminal used for these commands.
 
-## Préparation
+## Preparation
 
-- Lire `AGENTS.md`, `README.md`, `package.json`, `.env.example`. Examiner
+- Read `AGENTS.md`, `README.md`, `package.json`, and `.env.example`. Inspect
   `systemd-detect-virt`, `free -m`, `df -h /`, `ss -lntup`,
-  `sshd -t`, `sshd -T` et le pare-feu de la distribution. Garder une session SSH ouverte.
-- Conserver SELinux enforcing si le noyau le fournit. Dans certains LXC, il est
-  indisponible : ses paquets ne suffisent pas à l'activer ; cela dépend de l'hôte.
-- DNS : `DOMAINE` et `auth.DOMAINE` doivent pointer vers le VPS (A/AAAA cohérents).
-  `duckdns.org` est un suffixe public ; utiliser `nom.duckdns.org` pour le cookie,
-  et `auth.nom.duckdns.org` pour le portail. Deux domaines DuckDNS indépendants
-  ne partagent pas ce cookie. Vérifier la Public Suffix List avant changement.
-- Sauvegarder toute base existante **avant migration** avec l'API SQLite backup
-  (incluant le WAL), jamais avec une copie brute d'une base ouverte. Garder cet
-  instantané antérieur aux migrations hors de la rétention automatique.
+  `sshd -t`, `sshd -T`, and the distribution's firewall. Keep an SSH session open.
+- Keep SELinux enforcing if the kernel provides it. In some LXC containers it is
+  unavailable: installing its packages is insufficient to enable it; this depends on the host.
+- DNS: `DOMAIN` and `auth.DOMAIN` must point to the VPS (consistent A/AAAA records).
+  `duckdns.org` is a public suffix; use `name.duckdns.org` for the cookie,
+  and `auth.name.duckdns.org` for the portal. Two independent DuckDNS domains
+  do not share this cookie. Check the Public Suffix List before changing it.
+- Back up any existing database **before migration** using the SQLite backup API
+  (including the WAL), never a raw copy of an open database. Keep this
+  pre-migration snapshot outside automatic retention.
 
 ## Installation
 
-### Comptes et répertoires
+### Accounts and directories
 
-Créer les comptes `workoutbuddy` et `authelia` avec `useradd --system --shell /usr/sbin/nologin
---home-dir /var/lib/NOM NOM`. Créer `/var/lib/NOM` en 0700, appartenant au compte correspondant ;
-`/etc/authelia` en 0750 root:authelia, `/etc/workoutbuddy` en 0750 root:workoutbuddy,
-`/var/backups/workoutbuddy` en 0700 root:root, `/var/log/caddy` en 0750 caddy:caddy.
+Create the `workoutbuddy` and `authelia` accounts with `useradd --system --shell /usr/sbin/nologin
+--home-dir /var/lib/NAME NAME`. Create `/var/lib/NAME` with mode 0700, owned by the corresponding account;
+`/etc/authelia` as 0750 root:authelia, `/etc/workoutbuddy` as 0750 root:workoutbuddy,
+`/var/backups/workoutbuddy` as 0700 root:root, and `/var/log/caddy` as 0750 caddy:caddy.
 
-Créer aussi `groupadd --system workoutbuddy-sessions` ; le paquet Redis fournit son compte système.
-Sur cette installation dédiée, rendre le dossier de configuration accessible au groupe privé :
+Also run `groupadd --system workoutbuddy-sessions`; the Redis package provides its system account.
+On this dedicated installation, make the configuration directory accessible to the private group:
 
 ```sh
 install -d -o root -g workoutbuddy-sessions -m 0750 /etc/redis
 ```
 
-Le fichier `workoutbuddy-sessions.conf` est root:workoutbuddy-sessions, 0640.
-Désactiver l’instance générique du paquet (`redis.service`, `redis-server.service` ou
-`valkey.service` suivant la distribution) si elle n’a aucun autre usage. Le service privé
-`workoutbuddy-sessions` reste indépendant.
+The `workoutbuddy-sessions.conf` file is root:workoutbuddy-sessions, 0640.
+Disable the package's generic instance (`redis.service`, `redis-server.service`, or
+`valkey.service`, depending on the distribution) if nothing else uses it. The private
+`workoutbuddy-sessions` service remains independent.
 
-Avec Valkey, installer `valkey-sessions.conf` en
-`/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf`. Ce drop-in choisit
-le compte `valkey` et `/usr/bin/valkey-server` ; le groupe privé reste
-`workoutbuddy-sessions`. Créer `/etc/redis` avec les droits requis même si Redis
-n’est pas installé : ce chemin commun est utilisé aussi par les sauvegardes et Authelia.
+With Valkey, install `valkey-sessions.conf` as
+`/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf`. This drop-in selects
+the `valkey` account and `/usr/bin/valkey-server`; the private group remains
+`workoutbuddy-sessions`. Create `/etc/redis` with the required permissions even if Redis
+is not installed: backups and Authelia also use this shared path.
 
-### Installer l’application
+### Install the application
 
-Copier le code validé dans `/usr/local/lib/workoutbuddy`, root:root, sans écriture pour le service.
-Y lancer `npm ci --omit=dev`, `node scripts/download-vendors.js` et `node
-scripts/download-exercise-images.js`. Les données restent exclusivement dans
+Copy the validated code to `/usr/local/lib/workoutbuddy`, root:root, without service write access.
+Run `npm ci --omit=dev`, `node scripts/download-vendors.js`, and `node
+scripts/download-exercise-images.js` there. Data remains exclusively in
 `/var/lib/workoutbuddy`.
 
-### Configuration et droits
+### Configuration and permissions
 
-Définir le domaine non secret dans `$DOMAINE`, puis rendre les modèles hors dépôt : `python3 "$WB_DEPLOY_DIR/render.py" "$DOMAINE" /root/wb-config`. **Ne pas régénérer les clés d'une installation
-existante**, notamment celle qui chiffre les secrets TOTP. Installer les fichiers ainsi :
+Set the non-secret domain in `$DOMAIN`, then render templates outside the repository: `python3 "$WB_DEPLOY_DIR/render.py" "$DOMAIN" /root/wb-config`. **Do not regenerate keys for an existing
+installation**, especially the key encrypting TOTP secrets. Install files as follows:
 
-| Source | Destination / droits |
+| Source | Destination / permissions |
 | --- | --- |
-| rendu `authelia.yml`, `users.yml` | `/etc/authelia/configuration.yml`, `/etc/authelia/users.yml`, 0640 root:authelia |
-| rendu `environment` | `/etc/workoutbuddy/environment`, 0600 root:root |
-| rendu `Caddyfile` | `/etc/caddy/Caddyfile`, 0644 root:root |
-| rendu `workoutbuddy-auth-setup` | `/usr/local/sbin/`, 0700 root:root |
-| rendu `workoutbuddy-sessions.conf` | `/etc/redis/workoutbuddy-sessions.conf`, 0640 root:workoutbuddy-sessions |
-| modèle `workoutbuddy-backup` | `/usr/local/sbin/`, 0750 root:root |
+| rendered `authelia.yml`, `users.yml` | `/etc/authelia/configuration.yml`, `/etc/authelia/users.yml`, 0640 root:authelia |
+| rendered `environment` | `/etc/workoutbuddy/environment`, 0600 root:root |
+| rendered `Caddyfile` | `/etc/caddy/Caddyfile`, 0644 root:root |
+| rendered `workoutbuddy-auth-setup` | `/usr/local/sbin/`, 0700 root:root |
+| rendered `workoutbuddy-sessions.conf` | `/etc/redis/workoutbuddy-sessions.conf`, 0640 root:workoutbuddy-sessions |
+| `workoutbuddy-backup` template | `/usr/local/sbin/`, 0750 root:root |
 | `workoutbuddy-deploy-assets`, `workoutbuddy-maintenance` | `/usr/local/sbin/`, 0750 root:root |
-| modèles `*.service`, `*.timer` | `/etc/systemd/system/`, 0644 root:root |
+| `*.service`, `*.timer` templates | `/etc/systemd/system/`, 0644 root:root |
 | `caddy-hardening.conf` | `/etc/systemd/system/caddy.service.d/zzz-lxc-service.conf` |
-| `valkey-sessions.conf` (si Valkey) | `/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf` |
-| `service-hardening.conf` | même nom pour les services workoutbuddy, authelia et workoutbuddy-sessions |
+| `valkey-sessions.conf` (if using Valkey) | `/etc/systemd/system/workoutbuddy-sessions.service.d/valkey.conf` |
+| `service-hardening.conf` | same name for the workoutbuddy, authelia, and workoutbuddy-sessions services |
 | `workoutbuddy-isolation.conf` | `/etc/systemd/system/workoutbuddy.service.d/zzzz-isolation.conf` |
 | `authelia-sessions.conf` | `/etc/systemd/system/authelia.service.d/workoutbuddy-sessions.conf` |
 
-### Vérifier les prérequis
+### Check requirements
 
 ```sh
 python3 "$WB_DEPLOY_DIR/check-platform.py"
 ```
 
-Ce contrôle en lecture vérifie la famille Linux, Python 3.9+, Node 24, systemd 247+,
-les exécutables et le gestionnaire de paquets. Il ne valide pas une installation complète.
+This read-only check verifies the Linux family, Python 3.9+, Node 24, systemd 247+,
+executables, and package manager. It does not validate a complete installation.
 
-### Démarrer et valider les services
+### Start and validate services
 
-Valider `authelia config validate --config /etc/authelia/configuration.yml` et `caddy validate
---config /etc/caddy/Caddyfile`, puis `systemctl daemon-reload` et `systemctl enable --now
-workoutbuddy workoutbuddy-sessions authelia caddy workoutbuddy-backup.timer`. Vérifier le démarrage
-complet avant la première sauvegarde.
+Validate `authelia config validate --config /etc/authelia/configuration.yml` and `caddy validate
+--config /etc/caddy/Caddyfile`, then run `systemctl daemon-reload` and `systemctl enable --now
+workoutbuddy workoutbuddy-sessions authelia caddy workoutbuddy-backup.timer`. Verify complete
+startup before the first backup.
 
-Node écoute uniquement sur 127.0.0.1:3000, Authelia sur 127.0.0.1:9091, l'administration Caddy sur
+Node listens only on 127.0.0.1:3000, Authelia on 127.0.0.1:9091, and Caddy administration on
 127.0.0.1:2019.
 
-### En-têtes HTTP et CSP
+### HTTP headers and CSP
 
-Caddy applique HSTS (un an, `includeSubDomains`), `nosniff`, `X-Frame-Options: DENY`,
-`Referrer-Policy: no-referrer`, supprime `Server` et `X-Powered-By` et fournit une Permissions
-Policy par défaut. Les CSP de l’application (Vue) et d’Authelia (avec nonce) sont conservées ; une
-CSP restrictive de secours est prévue pour les réponses sans politique.
+Caddy applies HSTS (one year, `includeSubDomains`), `nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, removes `Server` and `X-Powered-By`, and provides a default Permissions
+Policy. The application (Vue) and Authelia (with nonce) CSPs are preserved; a restrictive
+fallback CSP is provided for responses without a policy.
 
-Vérifier les en-têtes réellement reçus, pas seulement le Caddyfile, après chaque modification.
+Check the headers actually received, beyond the Caddyfile, after every change.
 
-La CSP de secours utilise le préfixe Caddy `?` : elle ne remplace ni la CSP Vue (qui exige encore
-`unsafe-eval`) ni celle d’Authelia avec nonce. `{remote_host}` transmet l’adresse sans port ; ce
-n’est pas `{remote}`. La politique `no-referrer` est compatible avec le flux testé : le retour
-utilise une URL explicite.
+The fallback CSP uses Caddy's `?` prefix: it replaces neither the Vue CSP (which still requires
+`unsafe-eval`) nor Authelia's nonce-based CSP. `{remote_host}` forwards the address without a port;
+it differs from `{remote}`. The `no-referrer` policy is compatible with the tested flow:
+the return uses an explicit URL.
 
-Références : [en-têtes Caddy](https://caddyserver.com/docs/caddyfile/directives/header),
+References: [Caddy headers](https://caddyserver.com/docs/caddyfile/directives/header),
 [placeholders](https://caddyserver.com/docs/caddyfile/concepts#placeholders).
 
-## Guides complémentaires
+## Additional guides
 
-- [Compte, MFA et sessions](AUTHENTIFICATION.md)
-- [Sauvegardes, administration et maintenance nocturne](DEPLOYMENT_OPERATIONS.md)
-- [Livraison de l’interface](DEPLOYMENT_RELEASES.md)
-- [Résultats de validation du déploiement](DEPLOYMENT_VALIDATION.md)
+- [Account, MFA, and sessions](AUTHENTIFICATION.md)
+- [Backups, administration, and nightly maintenance](DEPLOYMENT_OPERATIONS.md)
+- [Frontend releases](DEPLOYMENT_RELEASES.md)
+- [Deployment validation results](DEPLOYMENT_VALIDATION.md)
 
-## Vérifications des variantes
+## Variant checks
 
 ```sh
 python3 deploy/linux/redhat-based/test-maintenance.py
@@ -134,17 +134,17 @@ python3 deploy/linux/debian-based/test-maintenance.py
 python3 deploy/linux/test-deployment.py
 ```
 
-Les tests de maintenance simulent les transactions, erreurs de sauvegarde, redémarrages
-et limites horaires sans exécuter DNF/APT ni systemctl. Le test commun vérifie le rendu
-privé des configurations, la détection de famille et la parité des fichiers partagés.
+Maintenance tests simulate transactions, backup failures, restarts, and time limits
+without running DNF/APT or systemctl. The common test checks private configuration
+rendering, family detection, and parity between shared files.
 
-Le test TLS/MFA peut être lancé avec la variante choisie :
+The TLS/MFA test can run with the chosen variant:
 
 ```sh
 python3 "$WB_DEPLOY_DIR/test-auth-sessions.py"
 ```
 
-Il démarre de vrais services sur des ports et bases temporaires. Avec `WB_PLAYWRIGHT_PATH`,
-il ajoute le contrôle navigateur mobile de récupération du worker et de déconnexion.
-Les prérequis des tests sont décrits dans [Authentification](AUTHENTIFICATION.md).
-Ces tests ne remplacent pas un essai d’installation sur chaque distribution cible.
+It starts real services on temporary ports and databases. With `WB_PLAYWRIGHT_PATH`,
+it adds the mobile browser check for worker recovery and logout.
+Test requirements are described in [Authentication](AUTHENTIFICATION.md).
+These tests do not replace an installation trial on each target distribution.

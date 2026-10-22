@@ -135,7 +135,7 @@ test('unlimited program duration stays null in preview, persisted program and st
   } finally { db.close() }
 })
 
-test('poids de création : aperçu sans écriture, mesure du jour et référence indépendante du suivi',()=>{
+test('creation weight: preview without writes, same-day measurement and reference independent of tracking',()=>{
  const db=database()
  try {
   const input={...params,weight_kg:75,height_cm:175}
@@ -154,7 +154,7 @@ test('poids de création : aperçu sans écriture, mesure du jour et référence
  } finally {db.close()}
 })
 
-test('une mesure existante du jour est conservée, sans doublon ni remplacement silencieux',()=>{
+test('an existing same-day measurement is preserved without duplicate or silent replacement',()=>{
  const db=database()
  try {
   createPlannedProgram(db,{...params,weight_kg:76})
@@ -168,7 +168,7 @@ test('une mesure existante du jour est conservée, sans doublon ni remplacement 
  } finally {db.close()}
 })
 
-test('la création et sa mesure sont atomiques en cas d’échec de l’enregistrement du poids',()=>{
+test('creation and its measurement are atomic if weight recording fails',()=>{
  const db=database()
  try {
   db.exec("CREATE TRIGGER fail_creation_weight BEFORE INSERT ON body_weight BEGIN SELECT RAISE(ABORT,'TEST_WEIGHT_FAILURE'); END")

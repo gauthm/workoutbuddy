@@ -14,7 +14,7 @@ test('docs alone select no browser tests and several domains combine without dup
  assert.deepEqual(selectSuites(['src/routes/settings.js','public/js/components/settings/AIProviderForm.js']),['settings','data'])
 })
 
-test('coach, accueil et modification de parcours restent dans leur domaine',()=>{
+test('coach, dashboard and journey changes remain in their domains',()=>{
  assert.deepEqual(selectSuites(['public/js/components/coach/ChatMessage.js']),['coach'])
  assert.deepEqual(selectSuites(['public/js/views/DashboardView.js']),['dashboard'])
  assert.deepEqual(selectSuites(['tests/e2e/exercises.spec.js']),['exercises'])
@@ -25,13 +25,13 @@ test('coach, accueil et modification de parcours restent dans leur domaine',()=>
 
 import {filterReleaseBump} from '../../scripts/e2e-selection.js'
 import {selectNodeTests,NODE_TESTS} from '../../scripts/test-selection.js'
-test('la version seule du cache ne relance pas tous les parcours',()=>{
+test('cache version alone does not rerun all journeys',()=>{
  const old="const CACHE_NAME = 'workoutbuddy-v81'"
  assert.deepEqual(filterReleaseBump(['public/sw.js','README.md'],()=>old,()=>old.replace('81','82')),['README.md'])
  assert.deepEqual(filterReleaseBump(['public/sw.js'],()=>old,()=>old+'; changed()'),['public/sw.js'])
  assert.deepEqual(filterReleaseBump(['public/sw.js'],()=>{throw Error('missing')},()=>old),['public/sw.js'])
 })
-test('sélection Node : documentation, interface, imports transitifs et fichier explicite',()=>{
+test('Node selection: documentation, frontend, transitive imports and explicit file',()=>{
  assert.deepEqual(selectNodeTests(['AGENTS.md','tests/e2e/coach.spec.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/views/DashboardView.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/components/coach/CoachView.js']),['tests/integration/apiExports.test.js'])
@@ -40,7 +40,7 @@ test('sélection Node : documentation, interface, imports transitifs et fichier 
  assert.ok(selectNodeTests(['public/js/utils/rm.js']).includes('tests/unit/rmCalculator.test.js'))
  assert.deepEqual(selectNodeTests(['scripts/pre-push.js']),['tests/unit/e2eSelection.test.js'])
 })
-test('sélection Node : domaines API et repli prudent pour les dépendances globales',()=>{
+test('Node selection: API domains and conservative global dependency fallback',()=>{
  const equipment=selectNodeTests(['src/routes/equipment.js'])
  assert.ok(equipment.includes('tests/integration/equipmentEnhancements.test.js'))
  assert.ok(equipment.includes('tests/journeys/app.test.js'))

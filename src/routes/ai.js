@@ -10,7 +10,7 @@ const db     = getDb()
 
 // ── Conversations ─────────────────────────────────────────────
 
-// GET /ai/conversations — liste complète, tri par activité récente
+// GET /ai/conversations — complete list, sorted by recent activity
 router.get('/conversations', (req, res) => {
   try {
     const conversations = db.prepare(`
@@ -29,7 +29,7 @@ router.get('/conversations', (req, res) => {
   }
 })
 
-// POST /ai/conversations — crée ET active (déactive les autres)
+// POST /ai/conversations — create AND activate (deactivate others)
 router.post('/conversations', (req, res) => {
   try {
     const raw = typeof req.body?.title === 'string' ? req.body.title.trim() : ''
@@ -47,7 +47,7 @@ router.post('/conversations', (req, res) => {
   }
 })
 
-// GET /ai/conversations/:id/messages — détail d'un fil
+// GET /ai/conversations/:id/messages — thread details
 router.get('/conversations/:id/messages', (req, res) => {
   try {
     const conversation = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(req.params.id)
@@ -62,8 +62,8 @@ router.get('/conversations/:id/messages', (req, res) => {
   }
 })
 
-// PATCH /ai/conversations/:id — renommage et/ou activation
-// Body : { title?: string, is_active?: boolean } — au moins une clé
+// PATCH /ai/conversations/:id — rename and/or activate
+// Body : { title?: string, is_active?: boolean } — at least one key
 router.patch('/conversations/:id', (req, res) => {
   try {
     const conv = db.prepare('SELECT * FROM coach_conversation WHERE id = ?').get(req.params.id)
@@ -102,7 +102,7 @@ router.patch('/conversations/:id', (req, res) => {
   }
 })
 
-// DELETE /ai/conversations/:id — supprime le fil + ses messages (cascade)
+// DELETE /ai/conversations/:id — delete the thread + its messages (cascade)
 router.delete('/conversations/:id', (req, res) => {
   try {
     const conv = db.prepare('SELECT id FROM coach_conversation WHERE id = ?').get(req.params.id)
@@ -118,7 +118,7 @@ router.delete('/conversations/:id', (req, res) => {
 // ── POST /ai/chat ─────────────────────────────────────────────
 router.post('/chat', async (req, res) => {
   const { message, conversation_id } = req.body
-  // Le champ "history" du body est volontairement ignoré (contexte depuis la DB)
+  // The request body's "history" field is intentionally ignored (context comes from the database)
   if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'MISSING_MESSAGE' })
 
   const aiSettings = getAiSettings(db)
@@ -126,7 +126,7 @@ router.post('/chat', async (req, res) => {
     return res.status(503).json({ error: 'AI_NOT_CONFIGURED' })
   }
 
-  // ── 1. Résolution de la conversation ──────────────────────
+  // ── 1. Resolve the conversation ──────────────────────
   let conversation
   try {
     conversation = db.transaction(() => {
@@ -149,16 +149,16 @@ router.post('/chat', async (req, res) => {
       return c
     })()
   } catch (err) {
-    console.error('[POST /ai/chat] résolution conversation', err.message)
+    console.error('[POST /ai/chat] conversation resolution', err.message)
     return res.status(500).json({ error: 'INTERNAL_ERROR' })
   }
   if (!conversation) return res.status(404).json({ error: 'CONVERSATION_NOT_FOUND' })
 
-  // ── 2. Insertion du message utilisateur ───────────────────
+  // ── 2. Insert the user message ───────────────────
   const userMsg = db.prepare('INSERT INTO coach_message (conversation_id, role, content) VALUES (?,\'user\',?)')
     .run(conversation.id, message.trim())
 
-  // Titre dérivé de la première question (si jamais renommée)
+  // Title derived from the first question (unless previously renamed)
   const msgCount = db.prepare('SELECT COUNT(*) n FROM coach_message WHERE conversation_id = ?').get(conversation.id).n
   if (msgCount === 1 && /^Conversation( \d+)?$/.test(conversation.title)) {
     const derived = message.trim().slice(0, 60)
@@ -166,7 +166,7 @@ router.post('/chat', async (req, res) => {
       .run(message.trim().length > 60 ? derived + '…' : derived, conversation.id)
   }
 
-  // ── 3. Contexte LLM construit depuis la DB ────────────────
+  // ── 3. LLM context built from the database ────────────────
   const history = db.prepare(`
     SELECT role, content FROM coach_message
     WHERE conversation_id = ? AND id < ?
@@ -216,7 +216,7 @@ router.post('/chat', async (req, res) => {
     sendEvent({ type: 'error', message: err.message })
   } finally {
     res.off('close', onClose)
-    // Persistance de la réponse (brute, blocs ```action inclus)
+    // Persist the response (raw, including ```action blocks)
     try {
       if (fullContent.trim()) {
         db.prepare('INSERT INTO coach_message (conversation_id, role, content) VALUES (?,\'assistant\',?)')
@@ -225,8 +225,8 @@ router.post('/chat', async (req, res) => {
       db.prepare("UPDATE coach_conversation SET updated_at = datetime('now') WHERE id = ?")
         .run(conversation.id)
     } catch (err) {
-      console.error('[POST /ai/chat] persistance assistant', err.message)
-      // Non bloquant : le client a déjà reçu le stream
+      console.error('[POST /ai/chat] assistant persistence', err.message)
+      // Non-blocking : the client has already received the stream
     }
     res.end()
   }
@@ -283,7 +283,7 @@ router.post('/generate-equipment-advice', async (req, res) => {
     for (const r of settingsRows) settings[r.key] = JSON.parse(r.value)
     const generated = runAllSignalChecks(db, settings)
 
-    // Générer les textes LLM en arrière-plan
+    // Generate LLM text in the background
     import('../services/adviceTextGenerator.js').then(m =>
       m.generatePendingAdviceTexts(db).catch(e => console.warn('[advice]', e.message))
     ).catch(() => {})

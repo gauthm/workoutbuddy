@@ -1,6 +1,6 @@
 import { requiredExerciseEquipment } from '../src/services/exerciseEquipment.js'
 // Usage: node scripts/import-exercises.js <path-to-free-exercise-db-dist-exercises.json>
-// Exemple: node scripts/import-exercises.js /tmp/free-exercise-db/dist/exercises.json
+// Example: node scripts/import-exercises.js /tmp/free-exercise-db/dist/exercises.json
 
 import fs from 'fs'
 import path from 'path'
@@ -125,7 +125,7 @@ function transform(ex) {
   const category = mapCategory(ex.category)
   return {
     id,
-    name_fr:            ex.name,   // traduction FR = EN par défaut
+    name_fr:            ex.name,   // French translation defaults to English
     name_en:            ex.name,
     category,
     force:              ex.force || null,
@@ -145,7 +145,7 @@ function transform(ex) {
   }
 }
 
-// ── Script principal ────────────────────────────────────────
+// ── Main script ────────────────────────────────────────
 
 const inputPath = process.argv[2]
 if (!inputPath) {
@@ -154,31 +154,31 @@ if (!inputPath) {
 }
 
 if (!fs.existsSync(inputPath)) {
-  console.error(`Fichier introuvable : ${inputPath}`)
+  console.error(`File not found: ${inputPath}`)
   process.exit(1)
 }
 
 const raw = JSON.parse(fs.readFileSync(inputPath, 'utf8'))
-console.log(`Exercices source : ${raw.length}`)
+console.log(`Source exercises: ${raw.length}`)
 
-// Déduplication par ID
+// Deduplicate by ID
 const seen = new Set()
 const transformed = []
 for (const ex of raw) {
   const t = transform(ex)
   if (seen.has(t.id)) {
-    t.id = t.id + '_2'  // suffixe si collision
+    t.id = t.id + '_2'  // suffix on collision
   }
   seen.add(t.id)
   transformed.push(t)
 }
 
-// Écriture du JSON
+// Write JSON
 const outPath = path.join(__dirname, '..', 'src', 'seed', 'exercises.json')
 fs.writeFileSync(outPath, JSON.stringify(transformed, null, 2), 'utf8')
-console.log(`Écrit : ${outPath} (${transformed.length} exercices)`)
+console.log(`Written: ${outPath} (${transformed.length} exercises)`)
 
-// Copie des images
+// Copy images
 const srcImagesDir = path.join(path.dirname(inputPath), '..', 'exercises')
 const destImagesDir = path.join(__dirname, '..', 'public', 'exercises', 'images')
 
@@ -195,9 +195,9 @@ if (fs.existsSync(srcImagesDir)) {
       copied++
     }
   }
-  console.log(`Images copiées : ${copied} fichiers`)
+  console.log(`Images copied: ${copied} files`)
 } else {
-  console.warn('Dossier images source introuvable — images non copiées.')
+  console.warn('Source image directory not found — images not copied.')
 }
 
-console.log('Import terminé.')
+console.log('Import complete.')

@@ -1,5 +1,5 @@
-// Formules de RM estimé — source de vérité côté serveur
-// Le client (utils/rm.js) en est un miroir pour l'affichage uniquement.
+// Estimated RM formulas — server-side source of truth
+// The client (utils/rm.js) mirrors this for display only.
 
 export const FORMULAS = {
   epley:    (w, r) => r === 1 ? w : w * (1 + r / 30),
@@ -10,11 +10,11 @@ export const FORMULAS = {
 }
 
 /**
- * Estime le 1RM depuis un poids et un nombre de répétitions.
- * @param {number} weightKg  - poids soulevé
- * @param {number} reps      - répétitions effectuées
- * @param {string} formula   - clé de FORMULAS (défaut: 'epley')
- * @returns {number} 1RM estimé, arrondi à 2 décimales
+ * Estimate 1RM from weight and repetition count.
+ * @param {number} weightKg  - weight lifted
+ * @param {number} reps      - repetitions performed
+ * @param {string} formula   - FORMULAS key (default: 'epley')
+ * @returns {number} estimated 1RM, rounded to 2 decimal places
  */
 export function estimate1RM(weightKg, reps, formula = 'epley') {
   if (!weightKg || weightKg <= 0) return 0

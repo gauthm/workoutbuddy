@@ -1,89 +1,89 @@
-# Déploiement sur Debian, Ubuntu et dérivées
+# Deployment on Debian, Ubuntu, and derivatives
 
-[Documentation](INDEX.md) · [Installation commune](DEPLOYMENT_LINUX.md) · [Red Hat](DEPLOYMENT_REDHAT.md)
+[Documentation](INDEX.md) · [Common installation](DEPLOYMENT_LINUX.md) · [Red Hat](DEPLOYMENT_REDHAT.md)
 
-## Périmètre
+## Scope
 
-Modèles : `deploy/linux/debian-based/`. Prérequis : distribution Debian/Ubuntu maintenue,
-**systemd 247+, Python 3.9+, Node 24**, APT/dpkg, Caddy, Authelia et Redis ou Valkey.
-Les dérivées doivent déclarer leur filiation via `ID`/`ID_LIKE` dans `/etc/os-release`
-et fournir ces mêmes outils. Les systèmes sans systemd ne sont pas couverts.
+Templates: `deploy/linux/debian-based/`. Requirements: a maintained Debian/Ubuntu distribution,
+**systemd 247+, Python 3.9+, Node 24**, APT/dpkg, Caddy, Authelia, and Redis or Valkey.
+Derivatives must declare their lineage through `ID`/`ID_LIKE` in `/etc/os-release`
+and provide the same tools. Systems without systemd are not covered.
 
-Cette variante dispose de tests isolés des scripts et des configurations ; elle n’a pas
-encore été validée de bout en bout sur une VM Debian ou Ubuntu. Le dossier Red Hat
-reste distinct : aucun paquet RPM, module DNF ou configuration firewalld n’est requis ici.
+This variant has isolated script and configuration tests; it has not yet been validated
+end to end on a Debian or Ubuntu VM. The Red Hat directory remains separate:
+no RPM package, DNF module, or firewalld configuration is required here.
 
-## Paquets
+## Packages
 
 ```sh
 apt-get update
 apt-get install build-essential python3 sqlite3 redis-server needrestart tzdata curl ca-certificates gnupg
 ```
 
-Installer Node.js **24.x** et npm depuis une source signée fournissant cette branche,
-puis vérifier `/usr/bin/node --version` et `/usr/bin/npm --version`. Ne pas supposer
-que la version Node proposée par défaut par chaque version Debian/Ubuntu convient.
-Conserver une source/politique APT qui reste sur Node 24 ; à défaut, utiliser
-`apt-mark hold nodejs` puis mettre Node à jour manuellement après tests.
+Install Node.js **24.x** and npm from a signed source providing that branch,
+then check `/usr/bin/node --version` and `/usr/bin/npm --version`. Do not assume
+that the default Node version in every Debian/Ubuntu release is suitable.
+Keep an APT source/policy that stays on Node 24; otherwise use
+`apt-mark hold nodejs` and update Node manually after testing.
 
-Installer Caddy depuis le [dépôt stable officiel Debian/Ubuntu](https://caddyserver.com/docs/install#debian-ubuntu-raspbian),
-en suivant ses instructions de clé de signature et de dépôt. Son paquet installe
-l’unité `caddy.service`. Installer Authelia depuis ses releases officielles, avec
-vérification de `checksums.sha256`, dans `/usr/local/bin/authelia` (root:root, 0755).
+Install Caddy from the [official stable Debian/Ubuntu repository](https://caddyserver.com/docs/install#debian-ubuntu-raspbian),
+following its signing-key and repository instructions. Its package installs
+`caddy.service`. Install Authelia from its official releases, after verifying
+`checksums.sha256`, in `/usr/local/bin/authelia` (root:root, 0755).
 
-Si la distribution fournit Valkey, installer son paquet serveur à la place de Redis,
-puis utiliser le drop-in `valkey-sessions.conf` décrit dans le guide commun.
+If the distribution provides Valkey, install its server package instead of Redis,
+then use the `valkey-sessions.conf` drop-in described in the common guide.
 
-## Configuration de l’application
+## Application configuration
 
-Suivre l’[installation commune](DEPLOYMENT_LINUX.md) avec :
+Follow the [common installation](DEPLOYMENT_LINUX.md) with:
 
 ```sh
 WB_DEPLOY_DIR=deploy/linux/debian-based
 ```
 
-Les comptes, chemins et unités privés WorkoutBuddy sont les mêmes que pour Red Hat.
-Le compte Redis est `redis`, son binaire `/usr/bin/redis-server`. Le service par défaut
-Debian/Ubuntu est généralement `redis-server.service` : le désactiver s’il n’a pas d’autre
-usage, sans désactiver `workoutbuddy-sessions.service`.
+The private WorkoutBuddy accounts, paths, and units are the same as for Red Hat.
+The Redis account is `redis`, and its binary is `/usr/bin/redis-server`. The default
+Debian/Ubuntu service is usually `redis-server.service`: disable it if nothing else
+uses it, without disabling `workoutbuddy-sessions.service`.
 
-## Pare-feu et isolation
+## Firewall and isolation
 
-Conserver AppArmor si activé et les protections systemd fournies. Vérifier les refus
-effectifs dans le journal ; adapter uniquement les règles nécessaires sur cet hôte.
-Les drop-ins SELinux de l’installation Red Hat ne sont pas des prérequis Debian.
+Keep AppArmor if enabled, along with the supplied systemd protections. Check actual
+denials in the journal; adjust only the rules needed on this host.
+The SELinux drop-ins from the Red Hat installation are not Debian requirements.
 
-Avec UFW, autoriser le port SSH réel, puis 80/tcp et 443/tcp avant d’activer le pare-feu.
-Avec nftables ou un pare-feu de l’hébergeur, appliquer les règles équivalentes.
-Ne pas ouvrir 3000, 9091 ou Redis au réseau. Garder une session SSH ouverte et un moyen
-de retour arrière ; ne pas changer le port SSH dans cette opération.
+With UFW, allow the actual SSH port, then 80/tcp and 443/tcp before enabling the firewall.
+With nftables or a hosting-provider firewall, apply equivalent rules.
+Do not expose 3000, 9091, or Redis to the network. Keep an SSH session open and a way
+to roll back; do not change the SSH port during this operation.
 
-Le modèle `sshd-jail.local` utilise `nftables-multiport`, pas `firewallcmd`.
-Pour l’utiliser, installer `fail2ban` et `nftables`, adapter le port SSH puis vérifier
-`fail2ban-client -t` avant activation. Si une autre action est nécessaire pour le
-pare-feu choisi, l’adapter explicitement.
+The `sshd-jail.local` template uses `nftables-multiport`, not `firewallcmd`.
+To use it, install `fail2ban` and `nftables`, adjust the SSH port, then check
+`fail2ban-client -t` before enabling it. If the selected firewall requires another
+action, adapt it explicitly.
 
-## Maintenance APT
+## APT maintenance
 
-Les unités `workoutbuddy-maintenance.*` lancent la sauvegarde avant `apt-get update`
-et `apt-get -y upgrade` (avec conservation des fichiers de configuration locaux par dpkg). Elles n’exécutent ni `dist-upgrade`, ni migration de release.
-`needrestart -b -r l` signale les services périmés sans les redémarrer lui-même.
-Le script relance seulement les services de l’application concernés.
+The `workoutbuddy-maintenance.*` units run a backup before `apt-get update`
+and `apt-get -y upgrade` (with dpkg preserving local configuration files). They run neither `dist-upgrade` nor release upgrades.
+`needrestart -b -r l` reports outdated services without restarting them itself.
+The script restarts only the affected application services.
 
-La décision de redémarrage utilise `/run/reboot-required` et le statut du noyau de
-`needrestart`, car le marqueur Ubuntu peut être absent sur Debian. Un statut inconnu
-(par exemple le noyau de l’hôte LXC) ne déclenche pas de reboot automatique.
-Voir le [format batch de needrestart](https://sources.debian.org/src/needrestart/3.4-5%2Bdeb10u1/README.batch.md/).
+The reboot decision uses `/run/reboot-required` and the kernel status from
+`needrestart`, because the Ubuntu marker may be absent on Debian. An unknown status
+(for example the LXC host kernel) does not trigger an automatic reboot.
+See the [needrestart batch format](https://sources.debian.org/src/needrestart/3.4-5%2Bdeb10u1/README.batch.md/).
 
-Installer la politique APT fournie après avoir choisi ce planificateur :
+Install the supplied APT policy after choosing this scheduler:
 
 ```sh
 install -o root -g root -m 0644 deploy/linux/debian-based/apt-periodic.conf /etc/apt/apt.conf.d/99workoutbuddy-maintenance
 ```
 
-Elle désactive l’exécution périodique APT et le reboot autonome d’unattended-upgrades.
+It disables periodic APT execution and autonomous unattended-upgrades reboots.
 
-Suivre la [procédure de maintenance](DEPLOYMENT_OPERATIONS.md) pour désactiver les
-planificateurs APT concurrents. Les scripts de paquets peuvent relancer leurs propres
-services pendant la transaction ; la fenêtre 04 h–06 h encadre son démarrage et la
-décision de reboot, pas toute action interne à un paquet très long à installer.
+Follow the [maintenance procedure](DEPLOYMENT_OPERATIONS.md) to disable competing
+APT schedulers. Package scripts can restart their own services during the
+transaction; the 04:00–06:00 window governs its start and the reboot decision,
+not every internal action of a package that takes a long time to install.

@@ -1,13 +1,13 @@
-# Installer WorkoutBuddy
+# Installing WorkoutBuddy
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-## Prérequis
+## Requirements
 
-Prérequis : Node.js 24.x LTS (version sélectionnée dans `.nvmrc`) et npm. Sur macOS, installer les
-Xcode Command Line Tools si nécessaires à la compilation de SQLite : `xcode-select --install`.
+Requirements: Node.js 24.x LTS (selected in `.nvmrc`) and npm. On macOS, install the
+Xcode Command Line Tools if needed to compile SQLite: `xcode-select --install`.
 
-## Installer et démarrer
+## Install and start
 
 ```sh
 git clone https://github.com/gauthm/workoutbuddy.git
@@ -18,17 +18,17 @@ node scripts/download-exercise-images.js
 npm start
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000). `npm start` lance le serveur et applique les
-migrations et le catalogue intégré. Aucun build frontend n’est nécessaire. Les bibliothèques Vue et
-Chart.js sont téléchargées une fois, puis servies localement.
+Open [http://localhost:3000](http://localhost:3000). `npm start` starts the server and applies
+migrations and the bundled catalog. No frontend build is required. Vue and Chart.js libraries
+are downloaded once, then served locally.
 
-## Photos des exercices
+## Exercise photos
 
-Les photos sont téléchargées une fois depuis
-[free-exercise-db](https://github.com/yuhonas/free-exercise-db), à une révision figée, puis servies
-localement avec l’application.
+Photos are downloaded once from
+[free-exercise-db](https://github.com/yuhonas/free-exercise-db), at a pinned revision, then served
+locally with the application.
 
-Le script récupère uniquement les 1 746 JPEG référencés par le catalogue : il reprend les fichiers
-manquants, vérifie leur format et ne modifie ni le catalogue ni SQLite. `node
-scripts/download-exercise-images.js --check` vérifie l’installation sans réseau. Ces fichiers
-régénérables sont exclus de Git et doivent être installés sur chaque nouvelle machine.
+The script fetches only the 1,746 JPEGs referenced by the catalog: it resumes missing downloads,
+checks their format and changes neither the catalog nor SQLite. `node
+scripts/download-exercise-images.js --check` verifies the installation without network access.
+These reproducible files are excluded from Git and must be installed on each new machine.

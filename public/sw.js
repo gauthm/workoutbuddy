@@ -1,12 +1,13 @@
-const CACHE_NAME = 'workoutbuddy-v86'
+const CACHE_NAME = 'workoutbuddy-v87'
 
-// Assets à mettre en cache immédiatement lors de l'installation.
-// ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
-// Règle complète : AGENTS.md §4.
+// Assets to cache immediately during installation.
+// ⚠️ Every change to public/ requires a CACHE_NAME bump (vN → vN+1).
+// Full rule: AGENTS.md §4.
 const PRECACHE_URLS = [
   '/css/main.css',
   '/css/components.css',
   '/js/app.js',
+  '/js/offline.js',
   '/js/appUpdates.js',
   '/js/router.js',
   '/js/store.js',

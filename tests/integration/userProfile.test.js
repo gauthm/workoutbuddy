@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (ce test remet le user_profile à NULL → ne doit pas toucher la DB utilisateur)
+// Isolated DB (this test resets user_profile to NULL → must not touch the user DB)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t52-')), 'test.db')
 
 const { migrate } = await import('../../src/db/migrate.js')
@@ -31,7 +31,7 @@ describe('T5.2 — User Profile', () => {
     `).run()
   })
 
-  it('GET /user-profile retourne le profil singleton', async () => {
+  it('GET /user-profile returns the singleton profile', async () => {
     const res = await request(app).get('/api/v1/user-profile')
     assert.equal(res.status, 200)
     assert.equal(res.body.id, 1)
@@ -39,7 +39,7 @@ describe('T5.2 — User Profile', () => {
     assert.equal(res.body.onboarding_completed, false)
   })
 
-  it('PUT /user-profile met à jour les champs de base', async () => {
+  it('PUT /user-profile updates basic fields', async () => {
     const res = await request(app).put('/api/v1/user-profile').send({
       age: 28, sex: 'male', weight_kg: 80, height_cm: 178,
       fitness_level: 'intermediate', primary_goal: 'hypertrophy',
@@ -51,7 +51,7 @@ describe('T5.2 — User Profile', () => {
     assert.equal(res.body.primary_goal, 'hypertrophy')
   })
 
-  it('PUT /user-profile avec secondary_goals tableau', async () => {
+  it('PUT /user-profile with secondary_goals array', async () => {
     const res = await request(app).put('/api/v1/user-profile')
       .send({ secondary_goals: ['strength','endurance'] })
     assert.equal(res.status, 200)
@@ -59,13 +59,13 @@ describe('T5.2 — User Profile', () => {
     assert.ok(res.body.secondary_goals.includes('strength'))
   })
 
-  it('PUT /user-profile avec champ inconnu → 400', async () => {
+  it('PUT /user-profile with unknown field → 400', async () => {
     const res = await request(app).put('/api/v1/user-profile')
       .send({ unknown_field: 'test' })
     assert.equal(res.status, 400)
   })
 
-  it('PUT /user-profile avec age hors plage → 400', async () => {
+  it('PUT /user-profile with out-of-range age → 400', async () => {
     const res = await request(app).put('/api/v1/user-profile')
       .send({ age: 150 })
     assert.equal(res.status, 400)

@@ -30,82 +30,82 @@ async (page) => {
   })
   try {
     await page.setViewportSize({width:390,height:844})
-    await check('Accueil réel : raccourcis et création via le coach', async()=>{
+    await check('Live home: shortcuts and creation through the coach', async()=>{
       await go('#/')
-      for(const name of ['Programmes','Calendrier','Historique']) assert(await page.getByRole('button',{name,exact:true}).count()===1,'Raccourci absent : '+name)
+      for(const name of ['Programmes','Calendrier','Historique']) assert(await page.getByRole('button',{name,exact:true}).count()===1,'Shortcut missing: '+name)
       await page.getByRole('button',{name:'Créer un programme avec le coach IA',exact:true}).click()
       await page.locator('.coach-view').waitFor()
     })
-    await check('Exercices réels : recherche et filtres API',async()=>{
+    await check('Live exercises: search and API filters',async()=>{
       await go('#/exercises')
       await page.getByRole('searchbox').fill('Ab Roller')
       await page.waitForTimeout(350)
       await page.locator('.loading-spinner').waitFor({state:'hidden'})
-      assert(await page.locator('.exercise-list .exercise-card').count()>0,'Recherche sans résultats')
-      assert((await page.locator('.exercise-list').innerText()).includes('Ab Roller'),'Résultat incohérent')
+      assert(await page.locator('.exercise-list .exercise-card').count()>0,'Search without results')
+      assert((await page.locator('.exercise-list').innerText()).includes('Ab Roller'),'Inconsistent result')
       await page.getByRole('combobox',{name:'Muscle',exact:true}).selectOption('core')
       await page.waitForTimeout(250)
       await page.locator('.loading-spinner').waitFor({state:'hidden'})
       await page.getByRole('button',{name:'Effacer les filtres',exact:true}).click()
       await page.locator('.loading-spinner').waitFor({state:'hidden'})
-      assert(await page.getByRole('searchbox').inputValue()==='','Recherche non effacée')
+      assert(await page.getByRole('searchbox').inputValue()==='','Search not cleared')
     })
-    await check('Exercice réel : fiche et images',async()=>{
+    await check('Live exercise: details and images',async()=>{
       await go('#/exercises/'+initial.exerciseId)
       await page.locator('.exercise-detail__img').waitFor()
       assert(await page.locator('.exercise-detail__img').evaluate(img=>img.complete&&img.naturalWidth>0),'Image introuvable')
       assert(await page.locator('.instruction-list li').count()>0,'Instructions absentes')
       if(await page.locator('.exercise-detail__dot').count()>1){
         await page.locator('.exercise-detail__dot').nth(1).click()
-        assert(await page.locator('.exercise-detail__dot').nth(1).getAttribute('aria-pressed')==='true','Image non sélectionnée')
+        assert(await page.locator('.exercise-detail__dot').nth(1).getAttribute('aria-pressed')==='true','Image not selected')
       }
     })
-    await check('Formulaire exercice : validation sans écriture',async()=>{
+    await check('Exercise form: validation without writes',async()=>{
       await go('#/exercises/new')
       const input=page.getByLabel('Nom (français) *',{exact:true})
-      assert(await input.evaluate(e=>!e.checkValidity()),'Nom obligatoire non validé')
-      await input.fill('Vérification sans enregistrement')
+      assert(await input.evaluate(e=>!e.checkValidity()),'Required name not validated')
+      await input.fill('Check without saving')
       await page.locator('.muscle-chips').first().getByRole('button',{name:'Abdominaux',exact:true}).click()
-      assert(await page.locator('.muscle-chips').first().locator('.chip--active').count()===1,'Muscle non sélectionné')
+      assert(await page.locator('.muscle-chips').first().locator('.chip--active').count()===1,'Muscle not selected')
     })
-    await check('Calendrier réel : navigation et sélection au clavier',async()=>{
+    await check('Live calendar: navigation and keyboard selection',async()=>{
       await go('#/calendar')
       const before=await page.locator('.calendar-nav__label').innerText()
       await page.locator('.calendar-nav__btn').last().click()
       await page.locator('.loading-spinner').waitFor({state:'hidden'})
-      assert(await page.locator('.calendar-nav__label').innerText()!==before,'Mois inchangé')
+      assert(await page.locator('.calendar-nav__label').innerText()!==before,'Month unchanged')
       const cell=page.locator('.calendar-cell').nth(12)
       const date=await cell.getAttribute('aria-label')
       await cell.focus();await page.keyboard.press('Enter')
-      assert(await page.locator('.calendar-day-panel__date').innerText()===date,'Jour incohérent')
+      assert(await page.locator('.calendar-day-panel__date').innerText()===date,'Inconsistent day')
     })
-    await check('Matériel réel : ouverture, clavier et fermeture',async()=>{
+    await check('Live equipment: opening, keyboard, and closing',async()=>{
       await go('#/equipment')
       await page.locator('.page-header__actions button').click()
       await page.getByRole('dialog').waitFor()
       await page.keyboard.press('Shift+Tab')
-      assert(await page.evaluate(()=>document.querySelector('[role="dialog"]').contains(document.activeElement)),'Focus hors dialogue')
+      assert(await page.evaluate(()=>document.querySelector('[role="dialog"]').contains(document.activeElement)),'Focus outside dialog')
       await page.keyboard.press('Escape')
-      assert(await page.getByRole('dialog').count()===0,'Dialogue non fermé')
+      assert(await page.getByRole('dialog').count()===0,'Dialog not closed')
     })
-    await check('Paramètres réels : accordéons et formulaires',async()=>{
+    await check('Live settings: accordions and forms',async()=>{
       await go('#/settings')
       const sections=page.locator('.settings-section__toggle')
       for(let i=1;i<await sections.count();i++)await sections.nth(i).click()
-      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Débordement des paramètres')
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Settings overflow')
       await page.getByRole('button',{name:'Réinitialiser mon profil',exact:true}).click()
       await page.getByRole('dialog').waitFor()
       assert(await page.getByRole('button',{name:'Effacer mon profil',exact:true}).isDisabled(),'Confirmation obligatoire absente')
       await page.keyboard.press('Escape')
     })
-    await check('Coach réel : historique et saisie sans envoi',async()=>{
+    await check('Live coach: history and input without sending',async()=>{
       await go('#/coach')
       await page.getByRole('button',{name:'Historique des conversations',exact:true}).click()
       await page.getByRole('dialog').waitFor()
       await page.keyboard.press('Escape')
-      await page.locator('.coach-view__input').fill('Vérification\navec plusieurs lignes\nsans envoi')
+      await page.locator('.coach-view__input').fill('Check\nwith multiple lines\nwithout sending')
       await page.locator('.coach-view__input').dispatchEvent('input')
-      assert(await page.evaluate(()=>document.querySelector('.coach-view__input-area').getBoundingClientRect().bottom<=document.querySelector('.bottom-nav').getBoundingClientRect().top+1),'Zone de saisie recouverte')
+      assert(await page.evaluate(()=>document.querySelector('.coach-view__input-area').getBoundingClientRect().bottom<=document.querySelector('.bottom-nav').getBoundingClientRect().top+1),'Input area obscured')
     })
     const routes=['#/','#/session','#/session/history','#/exercises','#/exercises/new','#/exercises/'+initial.exerciseId,'#/programs','#/programs/new','#/programs/generate','#/stats','#/stats/exercise/'+initial.exerciseId,'#/stats/bodyweight','#/calendar','#/equipment','#/settings','#/coach']
     if(initial.customId)routes.push('#/exercises/'+initial.customId+'/edit')

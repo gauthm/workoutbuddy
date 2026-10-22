@@ -1,7 +1,7 @@
 import {test,expect} from './fixtures.js'
 import {L,get,homeGym,planned} from './helpers.js'
 
-test('questionnaire → aperçu → création → activation, puis persistance après rechargement',async({page,request})=>{
+test('questionnaire → preview → creation → activation, then persistence after reload',async({page,request})=>{
  await homeGym(request)
  await page.goto('/#/programs')
  await expect(page.locator('.program-activation-hint')).toHaveText(L('programs.single_active_hint'))
@@ -36,7 +36,7 @@ test('questionnaire → aperçu → création → activation, puis persistance a
  expect((await get(request,'/sessions?active_program=1')).sessions.length).toBeGreaterThan(0)
 })
 
-test('priorité haut du corps : avertissements jaunes et jambes conservées, puis focus mieux couvert avec plus de temps',async({page,request})=>{
+test('upper-body priority: yellow warnings and legs retained, then better focus coverage with more time',async({page,request})=>{
  await homeGym(request)
  await page.goto('/#/programs')
  await page.getByRole('button',{name:L('programs.new'),exact:true}).click()
@@ -75,7 +75,7 @@ test('priorité haut du corps : avertissements jaunes et jambes conservées, pui
  await expect(page.getByText(/Travail direct régulier prévu/)).toBeVisible()
 })
 
-test('modifier les jours exige la fréquence initiale et conserve objectif, exercices et durée de séance',async({page,request})=>{
+test('changing days requires original frequency and preserves goal, exercises and workout duration',async({page,request})=>{
  const p=await planned(request)
  await page.goto(`/#/programs/${p.id}`)
  await page.getByRole('button',{name:L('programs.edit_program'),exact:true}).click()
@@ -93,7 +93,7 @@ test('modifier les jours exige la fréquence initiale et conserve objectif, exer
  expect(after.templates.map(t=>t.exercises)).toEqual(p.templates.map(t=>t.exercises))
 })
 
-test('remplacer un exercice par une alternative réelle conserve le changement après rechargement',async({page,request})=>{
+test('replacing an exercise with a real alternative persists after reload',async({page,request})=>{
  const p=await planned(request)
  const slot=p.templates[0].exercises[0]
  await page.goto(`/#/programs/${p.id}`)

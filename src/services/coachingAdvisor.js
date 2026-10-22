@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { calculateAchievableLoads } from './equipmentCalc.js'
 import { detectPlateau }            from './plateauDetector.js'
 
@@ -7,14 +8,14 @@ const ALL_MUSCLES = [
 ]
 
 /**
- * Lance tous les contrôles de signaux pour le programme actif.
- * Retourne le nombre de nouveaux conseils créés en DB.
+ * Run all signal checks for the active program.
+ * Return the number of new advice entries created in the database.
  *
- * Signaux détectés :
- * Équipement : max_load_reached, min_increment_too_large, no_exercise_available,
+ * Detected signals:
+ * Equipment: max_load_reached, min_increment_too_large, no_exercise_available,
  *              no_rotation_possible, persistent_plateau
- * Coaching   : performance_plateau (plateau multi-exercices), high_fatigue (RPE élevé),
- *              low_volume (volume insuffisant)
+ * Coaching   : performance_plateau (plateau across multiple exercises), high_fatigue (high RPE),
+ *              low_volume (insufficient volume)
  */
 export function runAllSignalChecks(db, settings) {
   const activeProgram = db.prepare("SELECT * FROM program WHERE is_active=1 LIMIT 1").get()
@@ -44,9 +45,9 @@ export function runAllSignalChecks(db, settings) {
 
   let created = 0
 
-  // ── SIGNAUX ÉQUIPEMENT ───────────────────────────────────────
+  // ── EQUIPMENT SIGNALS ───────────────────────────────────────
 
-  // Signal 1 : Charge max atteinte
+  // Signal 1 : Maximum load reached
   for (const te of templateExercises) {
     if (isOnCooldown('max_load_reached', te.exercise_id, null, activeAdvice, cooldownDays)) continue
     const loads = calculateAchievableLoads(equipmentItems, { equipment_required: te.equipment_required, is_unilateral: te.is_unilateral })
@@ -100,7 +101,7 @@ export function runAllSignalChecks(db, settings) {
     })) created++
   }
 
-  // Signal 2 : Incrément trop grand + plateau
+  // Signal 2 : Increment too large + plateau
   for (const te of templateExercises) {
     if (isOnCooldown('min_increment_too_large', te.exercise_id, null, activeAdvice, cooldownDays)) continue
     const state = db.prepare('SELECT * FROM progression_state WHERE template_exercise_id=?').get(te.id)
@@ -119,7 +120,7 @@ export function runAllSignalChecks(db, settings) {
     }
   }
 
-  // Signal 3 : Aucun exercice pour un muscle
+  // Signal 3 : No exercise available for a muscle
   for (const muscle of ALL_MUSCLES) {
     if (isOnCooldown('no_exercise_available', null, muscle, activeAdvice, cooldownDays)) continue
     const candidates = db.prepare("SELECT * FROM exercise WHERE primary_muscles LIKE ? AND category='strength' AND is_excluded = 0").all(`%"${muscle}"%`)
@@ -134,7 +135,7 @@ export function runAllSignalChecks(db, settings) {
     }
   }
 
-  // Signal 4 : Rotation impossible
+  // Signal 4 : Rotation unavailable
   if (activeProgram.use_exercise_rotation) {
     for (const te of templateExercises) {
       if (!te.rotation_group) continue
@@ -157,7 +158,7 @@ export function runAllSignalChecks(db, settings) {
     }
   }
 
-  // Signal 5 : Plateau persistant avec incrément trop grand
+  // Signal 5 : Persistent plateau with an oversized increment
   for (const te of templateExercises) {
     if (isOnCooldown('persistent_plateau', te.exercise_id, null, activeAdvice, cooldownDays)) continue
     const plateau = detectPlateau(te.exercise_id, activeProgram.id, plateauSessions, db)
@@ -175,9 +176,9 @@ export function runAllSignalChecks(db, settings) {
     created++
   }
 
-  // ── SIGNAUX COACHING ─────────────────────────────────────────
+  // ── COACHING SIGNALS ─────────────────────────────────────────
 
-  // Signal 6 : Fatigue élevée (RPE moyen > 9 sur 3 séances consécutives)
+  // Signal 6 : High fatigue (average RPE > 9 over 3 consecutive sessions)
   if (!isOnCooldown('high_fatigue', null, null, activeAdvice, 7)) {
     const recentRPE = db.prepare(`
       SELECT AVG(sl.rpe) as avg_rpe, COUNT(*) as n
@@ -190,7 +191,7 @@ export function runAllSignalChecks(db, settings) {
     if (recentRPE?.n >= 10 && recentRPE.avg_rpe >= 8.5) {
       insertAdvice(db, 'high_fatigue', null, null, null, {
         type: 'high_fatigue', avg_rpe: Math.round(recentRPE.avg_rpe * 10) / 10,
-        sets_analyzed: recentRPE.n, message: 'RPE moyen élevé sur les 3 dernières semaines.',
+        sets_analyzed: recentRPE.n, message: message('coaching.high_average_rpe'),
       })
       created++
     }

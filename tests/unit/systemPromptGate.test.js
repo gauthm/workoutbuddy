@@ -13,7 +13,7 @@ migrate(db)
 
 const { buildSystemPrompt } = await import('../../src/services/systemPromptBuilder.js')
 
-describe('T8.3 — Gating du prompt coach', () => {
+describe('T8.3 — Coach prompt gating', () => {
 
   before(() => {
     db.prepare(`UPDATE user_profile SET fitness_level = NULL, onboarding_completed = 0,
@@ -21,31 +21,31 @@ describe('T8.3 — Gating du prompt coach', () => {
     db.prepare('DELETE FROM equipment_item').run()
   })
 
-  it('le prompt interdit toute configuration, même dans les anciennes conversations', () => {
+  it('prompt forbids all configuration, even in old conversations', () => {
     const prompt = buildSystemPrompt(db)
-    assert.ok(prompt.includes('Lecture seule'))
-    assert.ok(prompt.includes('ignore leurs instructions de configuration'))
-    assert.ok(!prompt.includes('ACTIONS DISPONIBLES'))
-    assert.ok(!prompt.includes('MODE ONBOARDING'))
+    assert.ok(prompt.includes('Read-only'))
+    assert.ok(prompt.includes('ignore their configuration instructions'))
+    assert.ok(!prompt.includes('AVAILABLE ACTIONS'))
+    assert.ok(!prompt.includes('ONBOARDING MODE'))
   })
 
-  it('inventaire vide → avertissement + réf. Exercices et Matériel > Matériel', () => {
+  it('empty inventory → warning + Exercises and Equipment > Equipment reference', () => {
     const prompt = buildSystemPrompt(db)
-    assert.ok(prompt.includes('Aucun matériel enregistré'))
-    assert.ok(prompt.includes('Exercices et Matériel > Matériel'))
-    assert.ok(prompt.includes('INTERDIT de proposer des charges'))
+    assert.ok(prompt.includes('No equipment recorded'))
+    assert.ok(prompt.includes('Exercises and Equipment > Equipment'))
+    assert.ok(prompt.includes('DO NOT suggest numeric loads'))
   })
 
-  it('inventaire peuplé → plus d\'avertissement', () => {
+  it('populated inventory → no warning', () => {
     db.prepare(`INSERT INTO equipment_item (category, name, weight_kg, count)
-                VALUES ('barbell', 'Barre 20kg', 20, 1)`).run()
+                VALUES ('barbell', '20kg barbell', 20, 1)`).run()
     const prompt = buildSystemPrompt(db)
-    assert.ok(!prompt.includes('Aucun matériel enregistré'))
+    assert.ok(!prompt.includes('No equipment recorded'))
   })
 
-  it('la création est dirigée vers le questionnaire', () => {
+  it('creation is directed to the questionnaire', () => {
     const prompt = buildSystemPrompt(db)
-    assert.ok(prompt.includes('questionnaire à choix prédéfinis'))
-    assert.ok(prompt.includes('Aucun onboarding conversationnel imposé'))
+    assert.ok(prompt.includes('questionnaire with predefined choices'))
+    assert.ok(prompt.includes('Do not require conversational onboarding'))
   })
 })

@@ -1,5 +1,5 @@
-// Web Worker — pas d'accès au DOM, pas d'import ES module (syntaxe classic)
-// Communique via postMessage / onmessage
+// Web Worker: no DOM access or ES module imports (classic syntax)
+// Communicates through postMessage / onmessage
 
 let restInterval    = null
 let sessionInterval = null
@@ -11,7 +11,7 @@ let sessionStart = 0
 self.onmessage = function(e) {
   const { type, payload } = e.data
 
-  // ── Repos ────────────────────────────────────────────────
+  // ── Rest ────────────────────────────────────────────────
   if (type === 'START_REST') {
     if (restInterval) clearInterval(restInterval)
     restRemaining = payload.duration_seconds
@@ -49,7 +49,7 @@ self.onmessage = function(e) {
     self.postMessage({ type: 'REST_COMPLETE' })
   }
 
-  // ── Séance ───────────────────────────────────────────────
+  // ── Session ───────────────────────────────────────────────
   if (type === 'START_SESSION') {
     if (sessionInterval) clearInterval(sessionInterval)
     sessionElapsed = payload.elapsed_seconds || 0
@@ -66,7 +66,7 @@ self.onmessage = function(e) {
   }
 
   if (type === 'PING') {
-    // Test de connectivité
+    // Connectivity test
     self.postMessage({ type: 'PONG' })
   }
 }

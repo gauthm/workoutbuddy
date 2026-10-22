@@ -1,13 +1,13 @@
--- Profil utilisateur singleton (id=1 toujours)
+-- Singleton user profile (always id=1)
 CREATE TABLE IF NOT EXISTS user_profile (
   id                        INTEGER PRIMARY KEY CHECK(id = 1),
-  -- Données personnelles
-  display_name              TEXT,                        -- prénom ou pseudo optionnel
+  -- Personal data
+  display_name              TEXT,                        -- optional first name or nickname
   age                       INTEGER,
   sex                       TEXT CHECK(sex IN ('male','female','other','prefer_not_to_say')),
-  weight_kg                 REAL,                        -- poids actuel
-  height_cm                 REAL,                        -- taille en cm
-  -- Niveau et objectifs
+  weight_kg                 REAL,                        -- current weight
+  height_cm                 REAL,                        -- height in cm
+  -- Level and goals
   fitness_level             TEXT CHECK(fitness_level IN (
                               'beginner','intermediate','advanced','athlete'
                             )),
@@ -15,16 +15,16 @@ CREATE TABLE IF NOT EXISTS user_profile (
                               'strength','hypertrophy','endurance',
                               'weight_loss','general_fitness','sport_performance'
                             )),
-  secondary_goals           TEXT NOT NULL DEFAULT '[]',  -- JSON array de primary_goal values
-  target_weight_kg          REAL,                        -- objectif poids (optionnel)
-  sport_practiced           TEXT,                        -- sport pratiqué (optionnel)
-  -- Contraintes d'entraînement
+  secondary_goals           TEXT NOT NULL DEFAULT '[]',  -- JSON array of primary_goal values
+  target_weight_kg          REAL,                        -- target weight (optional)
+  sport_practiced           TEXT,                        -- sport practiced (optional)
+  -- Training constraints
   sessions_per_week         INTEGER,
-  session_duration_min      INTEGER,                     -- durée cible par séance en minutes
-  prefers_exercise_variation INTEGER NOT NULL DEFAULT 1, -- 1=oui, varier les exos
-  -- Santé et limitations
-  injury_notes              TEXT,                        -- blessures/douleurs à noter
-  medical_notes             TEXT,                        -- contre-indications médicales
+  session_duration_min      INTEGER,                     -- target session duration in minutes
+  prefers_exercise_variation INTEGER NOT NULL DEFAULT 1, -- 1=yes, vary exercises
+  -- Health and limitations
+  injury_notes              TEXT,                        -- injuries/pain to note
+  medical_notes             TEXT,                        -- medical contraindications
   -- Onboarding
   onboarding_completed      INTEGER NOT NULL DEFAULT 0  CHECK(onboarding_completed IN (0,1)),
   onboarding_step           TEXT    NOT NULL DEFAULT 'not_started',
@@ -33,5 +33,5 @@ CREATE TABLE IF NOT EXISTS user_profile (
   updated_at                TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- Insérer la ligne singleton si absente
+-- Insert the singleton row if missing
 INSERT OR IGNORE INTO user_profile (id) VALUES (1);

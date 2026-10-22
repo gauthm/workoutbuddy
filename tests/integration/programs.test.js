@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (règle AGENTS.md §3 : ne jamais toucher data/workoutbuddy.db)
+// Isolated DB (AGENTS.md §3: never touch data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t21-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -16,14 +16,14 @@ seedExercises(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T2.1 — API Programmes', () => {
+describe('T2.1 — Programs API', () => {
   let programId
 
   before(() => {
     const db = getDb()
     const existing = db.prepare("SELECT COUNT(*) as n FROM equipment_item WHERE category IN ('barbell','bench','rack','pullup_bar')").get()
     if (existing.n === 0) {
-      db.prepare("INSERT INTO equipment_item (category, name) VALUES ('barbell','Barre olympique'), ('bench','Banc plat'), ('rack','Rack à squat'), ('pullup_bar','Barre de traction')")
+      db.prepare("INSERT INTO equipment_item (category, name) VALUES ('barbell','Olympic barbell'), ('bench','Flat bench'), ('rack','Squat rack'), ('pullup_bar','Pull-up bar')")
         .run()
     }
     const p = db.prepare(
@@ -32,47 +32,47 @@ describe('T2.1 — API Programmes', () => {
     programId = p.lastInsertRowid
   })
 
-  it('GET /programs retourne la liste', async () => {
+  it('GET /programs returns the list', async () => {
     const res = await request(app).get('/api/v1/programs')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.programs))
     assert.ok(res.body.programs.length >= 1)
   })
 
-  it('GET /programs/:id retourne le programme avec templates', async () => {
+  it('GET /programs/:id returns program with templates', async () => {
     const res = await request(app).get(`/api/v1/programs/${programId}`)
     assert.equal(res.status, 200)
     assert.equal(res.body.id, programId)
     assert.ok(Array.isArray(res.body.templates))
   })
 
-  it('POST /programs/:id/activate active le programme', async () => {
+  it('POST /programs/:id/activate activates the program', async () => {
     const res = await request(app).post(`/api/v1/programs/${programId}/activate`)
     assert.equal(res.status, 200)
     const check = await request(app).get(`/api/v1/programs/${programId}`)
     assert.equal(check.body.is_active, true)
   })
 
-  it('PUT /programs/:id verrouille les champs autres que la durée', async () => {
+  it('PUT /programs/:id locks fields other than duration', async () => {
     const res = await request(app).put(`/api/v1/programs/${programId}`).send({
-      description: 'Programme modifié'
+      description: 'Modified program'
     })
     assert.equal(res.status, 403)
     assert.equal(res.body.error, 'PROGRAM_FIELDS_LOCKED')
   })
 
-  it('POST /programs/:id/templates crée un template', async () => {
+  it('POST /programs/:id/templates creates a template', async () => {
     const res = await request(app).post(`/api/v1/programs/${programId}/templates`).send({
-      name: 'Séance A', order_index: 0
+      name: 'Workout A', order_index: 0
     })
     assert.equal(res.status, 201)
-    assert.equal(res.body.name, 'Séance A')
+    assert.equal(res.body.name, 'Workout A')
     assert.equal(res.body.program_id, programId)
   })
 
-  it('POST /templates/:id/exercises crée un template_exercise avec progression_state', async () => {
+  it('POST /templates/:id/exercises creates a template_exercise with progression_state', async () => {
     const tplRes = await request(app).post(`/api/v1/programs/${programId}/templates`).send({
-      name: 'Séance B', order_index: 1
+      name: 'Workout B', order_index: 1
     })
     const templateId = tplRes.body.id
 
@@ -88,7 +88,7 @@ describe('T2.1 — API Programmes', () => {
     assert.equal(state.current_weight_kg, 0)
   })
 
-  it('GET /programs/:id/next-session retourne le template suivant', async () => {
+  it('GET /programs/:id/next-session returns the next template', async () => {
     const res = await request(app).get(`/api/v1/programs/${programId}/next-session`)
     assert.equal(res.status, 200)
     assert.ok(res.body.template_id)
@@ -96,7 +96,7 @@ describe('T2.1 — API Programmes', () => {
     assert.ok(Array.isArray(res.body.exercises))
   })
 
-  it('DELETE /programs/:id échoue si séance en cours', async () => {
+  it('DELETE /programs/:id fails during an active workout', async () => {
     const db = getDb()
     db.prepare(
       "INSERT INTO session (program_id, name, scheduled_date, status) VALUES (?, 'Test', '2025-07-01', 'in_progress')"
@@ -106,7 +106,7 @@ describe('T2.1 — API Programmes', () => {
     assert.equal(res.status, 409)
   })
 
-  it('GET /programs/:id inexistant retourne 404', async () => {
+  it('GET /programs/:id with missing ID returns 404', async () => {
     const res = await request(app).get('/api/v1/programs/999999')
     assert.equal(res.status, 404)
     assert.equal(res.body.error, 'PROGRAM_NOT_FOUND')

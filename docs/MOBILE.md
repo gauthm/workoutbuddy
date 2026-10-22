@@ -1,42 +1,40 @@
-# Accès mobile et mises à jour
+# Mobile access and updates
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-## Accès sur le réseau local
+## Local network access
 
-Dans **Réglages → Réglages avancés**, configurer l’hôte réseau sur `0.0.0.0`, enregistrer et
-redémarrer le serveur. Depuis un téléphone sur le même réseau, ouvrir l’adresse IP locale de la
-machine, par exemple `http://192.168.1.10:3000`. Le pare-feu doit autoriser le port choisi.
+Under **Settings → Advanced settings**, set the network host to `0.0.0.0`, save, and restart the
+server. From a phone on the same network, open the machine's local IP address, for example
+`http://192.168.1.10:3000`. The firewall must allow the selected port.
 
-L’application est prévue pour un usage personnel sur un réseau de confiance : elle n’a pas
-d’authentification et ne doit pas être exposée directement à Internet.
+The app is intended for personal use on a trusted network: it has no built-in authentication and
+must not be exposed directly to the Internet.
 
-## Installation sur l’écran d’accueil
+## Home screen installation
 
-Le logo haltère apparaît dans l’onglet du navigateur et lors de **Partager → Sur l’écran d’accueil**
-dans Safari. Une icône Apple PNG 180×180 et les icônes du manifeste 192/512 complètent le favicon
-SVG/ICO.
+The dumbbell logo appears in the browser tab and when using **Share → Add to Home Screen** in
+Safari. A 180×180 Apple PNG icon and 192/512 manifest icons complement the SVG/ICO favicon.
 
-Leur source est `public/icons/workoutbuddy.svg` ; `node scripts/generate-icons.js` régénère les
-fichiers avec le Playwright déjà disponible pour les tests, sans dépendance ajoutée. iOS peut
-conserver l’ancienne icône d’un raccourci déjà installé : si nécessaire, retirer ce raccourci et
-l’ajouter à nouveau depuis Safari, sans effacer les données du site.
+Their source is `public/icons/workoutbuddy.svg`; `node scripts/generate-icons.js` regenerates the
+files using Playwright already available for tests, without adding a dependency. iOS may retain an
+old icon for an existing shortcut: if necessary, remove the shortcut and add it again from Safari,
+without clearing site data.
 
-## Gestes et saisie
+## Gestures and input
 
-Sur mobile, le pincement et le double tap ne zooment plus la page ; le défilement tactile reste
-natif et les champs compacts utilisent au moins 16 px pour éviter le zoom à la saisie de Safari. Les
-options d’accessibilité du navigateur ou du système peuvent toutefois primer sur ces règles.
+On mobile, pinch and double tap no longer zoom the page; touch scrolling remains native and
+compact fields use at least 16 px to prevent Safari input zoom. Browser or system accessibility
+settings can still override these rules.
 
-## Mises à jour et reconnexion
+## Updates and reconnection
 
-En HTTPS, Safari et l’application ajoutée à l’écran d’accueil vérifient les nouvelles versions à
-l’ouverture, au retour au premier plan et toutes les cinq minutes pendant l’utilisation. Une version
-complète se charge automatiquement sur un écran de consultation. Pendant une séance ou une saisie,
-une notification propose **Mettre à jour**, avec confirmation avant de perdre une saisie non
-enregistrée.
+Over HTTPS, Safari and the home-screen app check for new versions on opening, on returning to the
+foreground, and every five minutes during use. A complete release loads automatically on a
+read-only screen. During a session or data entry, a notification offers **Update**, with confirmation
+before losing unsaved input.
 
-Aucun hard refresh ni effacement des données du site n’est nécessaire. Le cache accélère les
-fichiers statiques, mais les navigations passent par le réseau : une session expirée renvoie vers le
-portail d’authentification, sans interface hors ligne trompeuse. Les appels API distinguent aussi
-une session expirée d’une panne réseau. Chaque livraison doit changer la version du cache.
+No hard refresh or clearing of site data is needed. The cache speeds up static files, but
+navigations use the network: an expired session redirects to the authentication portal without a
+misleading offline interface. API calls also distinguish an expired session from a network failure.
+Each release must change the cache version.

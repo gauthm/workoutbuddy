@@ -35,7 +35,7 @@ export default {
       conversations:  [],
       showHistory:    false,
       loadingHistory: false,
-      deleteTarget:   null,   // conversation à supprimer
+      deleteTarget:   null,   // conversation to delete
     })
 
     const inputRef       = ref(null)
@@ -56,7 +56,7 @@ export default {
     onActivated(() => {
       isActive = true
       scrollToBottom('instant')
-      // Le profil peut avoir changé dans les réglages pendant l'absence.
+      // The profile may have changed in Settings while away.
       if (!state.loadingInit) {
         profileApi.get().then(profile => { state.profile = profile }).catch(() => {})
       }
@@ -70,7 +70,7 @@ export default {
       content?.scrollTo({ top: content.scrollHeight, behavior })
     }
 
-    // ── Initialisation ─────────────────────────────────────────
+    // ── Initialization ─────────────────────────────────────────
     onMounted(async () => {
       try {
         const [profileData, adviceData] = await Promise.all([
@@ -80,7 +80,7 @@ export default {
         state.profile = profileData
         state.advice  = adviceData.advice
 
-        // Restauration du fil actif
+        // Restore the active thread
         const list = await coachApi.conversations()
         state.conversations = list.conversations
         const active = list.conversations.find(c => c.is_active === 1)
@@ -97,7 +97,7 @@ export default {
 
     })
 
-    // ── Envoi d'un message ─────────────────────────────────────
+    // ── Send a message ─────────────────────────────────────
     async function sendMessage(text, silent = false) {
       const trimmed = (text || state.input).trim()
       if (!trimmed || state.isStreaming || state.loadingInit) return
@@ -108,11 +108,11 @@ export default {
         nextTick(() => resizeInput(inputRef.value))
       }
 
-      // Message utilisateur
+      // User message
       state.messages.push({ role: 'user', content: trimmed })
       await scrollToBottom()
 
-      // Message assistant en cours de streaming
+      // Assistant message being streamed
       const assistantMsg = reactive({ role: 'assistant', content: '', isStreaming: true })
       state.messages.push(assistantMsg)
       await scrollToBottom()
@@ -180,7 +180,7 @@ export default {
       }
     }
 
-    // ── Historique des conversations ───────────────────────────
+    // ── Conversation history ───────────────────────────
     async function refreshConversations() {
       try { state.conversations = (await coachApi.conversations()).conversations } catch (_) {}
     }
@@ -299,12 +299,12 @@ export default {
 
         <template v-else>
           <p class="settings-notice coach-readonly">{{ t('coach.readonly') }}</p>
-          <!-- Profil (accordéon) -->
+          <!-- Profile (accordion) -->
           <div v-if="state.showProfile && state.profile">
             <UserProfileCard :profile="state.profile" />
           </div>
 
-          <!-- Conseils coaching -->
+          <!-- Coaching advice -->
           <div v-if="state.advice.length" class="coach-view__advice-section">
             <div class="detail-section__title" style="padding:0 1rem;margin-top:0.75rem">
               {{ t('coach.advice_section') }}
@@ -317,7 +317,7 @@ export default {
             />
           </div>
 
-          <!-- Provider non configuré -->
+          <!-- Provider not configured -->
           <div v-if="state.notConfigured && !state.messages.length"
             class="coach-view__not-configured">
             <p>{{ t('coach.not_configured') }}</p>
@@ -326,9 +326,9 @@ export default {
             </button>
           </div>
 
-          <!-- Zone de messages -->
+          <!-- Message area -->
           <div class="coach-view__messages">
-            <!-- Placeholder si vide et profil complet -->
+            <!-- Placeholder when empty and the profile is complete -->
             <div v-if="!state.messages.length"
               class="coach-view__empty">
               <p style="color:var(--color-text-muted);text-align:center;padding:0 2rem;font-size:0.9rem">
@@ -346,7 +346,7 @@ export default {
         </template>
       </div>
 
-      <!-- Panneau historique des conversations -->
+      <!-- Conversation history panel -->
       <ModalDialog v-if="state.showHistory" :title="t('coach.history_title')" @close="state.showHistory = false">
 
           <div v-if="!state.conversations.length && !state.loadingHistory"
@@ -381,7 +381,7 @@ export default {
         @cancel="state.deleteTarget = null"
       />
 
-      <!-- Zone de saisie -->
+      <!-- Input area -->
       <div class="coach-view__input-area">
         <textarea
           ref="inputRef"

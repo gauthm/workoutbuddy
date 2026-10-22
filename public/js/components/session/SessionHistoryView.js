@@ -28,7 +28,7 @@ export default {
       deleting:     false,
     })
 
-    // ── Chargement ────────────────────────────────────────────
+    // ── Loading ────────────────────────────────────────────
     async function load() {
       state.loading = true; state.error = null
       try {
@@ -45,14 +45,14 @@ export default {
       }
     }
 
-    // ── Filtrage local ─────────────────────────────────────────
+    // ── Local filtering ─────────────────────────────────────────
     const filteredSessions = computed(() => {
       if (!state.filterQ.trim()) return state.sessions
       const q = state.filterQ.trim().toLowerCase()
       return state.sessions.filter(s => s.name.toLowerCase().includes(q))
     })
 
-    // ── Stats globales ─────────────────────────────────────────
+    // ── Global stats ─────────────────────────────────────────
     const globalStats = computed(() => {
       const completed = state.sessions.filter(s => s.status === 'completed')
       const totalVol  = completed.reduce((sum, s) => sum + (s.total_volume_kg || 0), 0)
@@ -69,7 +69,7 @@ export default {
       }
     })
 
-    // ── Suppression ───────────────────────────────────────────
+    // ── Delete ───────────────────────────────────────────
     function askDelete(session) {
       state.deleteTarget = session
     }
@@ -89,7 +89,7 @@ export default {
       }
     }
 
-    // ── Couleur badge statut ──────────────────────────────────
+    // ── Status badge color ──────────────────────────────────
     function statusColor(status) {
       return {
         completed:   'var(--color-success)',
@@ -117,7 +117,7 @@ export default {
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else>
-          <!-- Stats globales -->
+          <!-- Global stats -->
           <div v-if="globalStats.count > 0" class="history-stats">
             <div class="history-stats__item">
               <span class="history-stats__value">{{ globalStats.count }}</span>
@@ -137,7 +137,7 @@ export default {
             </div>
           </div>
 
-          <!-- Filtres -->
+          <!-- Filters -->
           <div class="history-filters">
             <input
               class="form-input history-filters__search"
@@ -164,14 +164,14 @@ export default {
             </span>
           </div>
 
-          <!-- Liste vide -->
+          <!-- Empty list -->
           <EmptyState
             v-if="!filteredSessions.length"
             icon="📅"
             :message="state.filterQ ? t('session.history_no_results') : t('session.history_empty')"
           />
 
-          <!-- Liste des séances -->
+          <!-- Session list -->
           <div v-else class="history-list">
             <div
               v-for="s in filteredSessions"

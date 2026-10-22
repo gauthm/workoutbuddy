@@ -1,10 +1,10 @@
--- ── Versionnage ──────────────────────────────────────────────
+-- ── Versioning ──────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS schema_version (
   version    INTEGER PRIMARY KEY,
   applied_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ── Exercices ─────────────────────────────────────────────────
+-- ── Exercises ─────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS exercise (
   id                 TEXT    PRIMARY KEY,
   name_fr            TEXT    NOT NULL,
@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_exercise_movement  ON exercise(movement_pattern);
 CREATE INDEX IF NOT EXISTS idx_exercise_category  ON exercise(category);
 CREATE INDEX IF NOT EXISTS idx_exercise_is_custom ON exercise(is_custom);
 
--- ── Équipement ────────────────────────────────────────────────
+-- ── Equipment ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS equipment_item (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,
   category            TEXT    NOT NULL
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS equipment_item (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- ── Programmes ────────────────────────────────────────────────
+-- ── Programs ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS program (
   id                          INTEGER PRIMARY KEY AUTOINCREMENT,
   name                        TEXT    NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS program (
   updated_at                  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- ── Templates de séance ───────────────────────────────────────
+-- ── Workout templates ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS workout_template (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   program_id       INTEGER NOT NULL REFERENCES program(id) ON DELETE CASCADE,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS workout_template (
 );
 CREATE INDEX IF NOT EXISTS idx_wt_program ON workout_template(program_id);
 
--- ── Exercices dans un template ────────────────────────────────
+-- ── Exercises in a template ────────────────────────────────
 CREATE TABLE IF NOT EXISTS template_exercise (
   id                              INTEGER PRIMARY KEY AUTOINCREMENT,
   workout_template_id             INTEGER NOT NULL
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS template_exercise (
 CREATE INDEX IF NOT EXISTS idx_te_template ON template_exercise(workout_template_id);
 CREATE INDEX IF NOT EXISTS idx_te_exercise ON template_exercise(exercise_id);
 
--- ── État de progression ───────────────────────────────────────
+-- ── Progression state ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS progression_state (
   id                   INTEGER PRIMARY KEY AUTOINCREMENT,
   template_exercise_id INTEGER NOT NULL UNIQUE
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS progression_state (
   last_updated         TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- ── Séances ───────────────────────────────────────────────────
+-- ── Sessions ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS session (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,
   workout_template_id INTEGER REFERENCES workout_template(id),
@@ -158,7 +158,7 @@ CREATE INDEX IF NOT EXISTS idx_session_date    ON session(scheduled_date);
 CREATE INDEX IF NOT EXISTS idx_session_status  ON session(status);
 CREATE INDEX IF NOT EXISTS idx_session_program ON session(program_id);
 
--- ── Exercices dans une séance ─────────────────────────────────
+-- ── Exercises in a session ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS session_exercise (
   id                   INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id           INTEGER NOT NULL REFERENCES session(id) ON DELETE CASCADE,
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS session_exercise (
 CREATE INDEX IF NOT EXISTS idx_se_session  ON session_exercise(session_id);
 CREATE INDEX IF NOT EXISTS idx_se_exercise ON session_exercise(exercise_id);
 
--- ── Séries ────────────────────────────────────────────────────
+-- ── Sets ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS set_log (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,
   session_exercise_id INTEGER NOT NULL
@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS set_log (
 );
 CREATE INDEX IF NOT EXISTS idx_sl_session_exercise ON set_log(session_exercise_id);
 
--- ── Poids de corps ────────────────────────────────────────────
+-- ── Body weight ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS body_weight (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   date       TEXT    NOT NULL UNIQUE,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS body_weight (
 );
 CREATE INDEX IF NOT EXISTS idx_bw_date ON body_weight(date);
 
--- ── Records personnels ────────────────────────────────────────
+-- ── Personal records ────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS personal_record (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   exercise_id      TEXT    NOT NULL REFERENCES exercise(id),
@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS personal_record (
 CREATE INDEX IF NOT EXISTS idx_pr_exercise
   ON personal_record(exercise_id, reps, estimated_1rm_kg DESC);
 
--- ── Conseils d'achat équipement ───────────────────────────────
+-- ── Equipment purchase advice ───────────────────────────────
 CREATE TABLE IF NOT EXISTS equipment_advice (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   signal_type      TEXT    NOT NULL
@@ -240,7 +240,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_advice_unique
   ON equipment_advice(signal_type, exercise_id, muscle_group)
   WHERE status = 'active';
 
--- ── Paramètres ────────────────────────────────────────────────
+-- ── Settings ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS settings (
   key        TEXT PRIMARY KEY,
   value      TEXT NOT NULL,

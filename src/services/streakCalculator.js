@@ -1,14 +1,14 @@
 import { localIsoDate } from './date.js'
 /**
- * Calcule les streaks de l'utilisateur à partir des séances complétées.
+ * Calculate user streaks from completed sessions.
  *
- * Définitions :
- * - streak semaine : nombre de semaines ISO consécutives avec ≥1 séance complétée,
- *   en remontant à partir de la semaine courante.
- * - streak séance : non utilisé dans le MVP (remplacé par total_sessions).
- * - total_weeks   : nombre de semaines distinctes avec au moins une séance.
+ * Definitions:
+ * - weekly streak: number of consecutive ISO weeks with ≥1 completed session,
+ *   counting back from the current week.
+ * - session streak: unused in the MVP (replaced by total_sessions).
+ * - total_weeks   : number of distinct weeks with at least one session.
  *
- * @param {object} db - instance better-sqlite3
+ * @param {object} db - better-sqlite3 instance
  * @returns {{
  *   current_week_streak: number,
  *   longest_week_streak: number,
@@ -17,7 +17,7 @@ import { localIsoDate } from './date.js'
  * }}
  */
 export function calculateStreaks(db) {
-  // 1. Dates de toutes les séances complétées
+  // 1. Dates of all completed sessions
   const rows = db.prepare(`
     SELECT DISTINCT date(scheduled_date) AS d
     FROM session
@@ -38,11 +38,11 @@ export function calculateStreaks(db) {
     }
   }
 
-  // 2. Ensemble des semaines ISO avec au moins une séance
+  // 2. Set of ISO weeks with at least one session
   const weeksWithSession = new Set(rows.map(r => isoWeek(r.d)))
   const totalWeeks = weeksWithSession.size
 
-  // 3. Streak courant : remonter depuis la semaine courante
+  // 3. Current streak: count back from the current week
   const currentWeekStr = isoWeek(todayIso())
   let streakWeeks = 0
   let w = currentWeekStr
@@ -51,7 +51,7 @@ export function calculateStreaks(db) {
     w = previousIsoWeek(w)
   }
 
-  // 4. Streak le plus long
+  // 4. Longest streak
   const sortedWeeks = Array.from(weeksWithSession).sort()
   let longest = sortedWeeks.length > 0 ? 1 : 0
   let current = 1
@@ -72,18 +72,18 @@ export function calculateStreaks(db) {
   }
 }
 
-// ── Helpers date ─────────────────────────────────────────────────────────
+// ── Date helpers ─────────────────────────────────────────────────────────
 
 function todayIso() {
   return localIsoDate()
 }
 
 /**
- * Retourne la semaine ISO au format "YYYY-Www" (ex: "2025-W27").
+ * Return the ISO week in "YYYY-Www" format (e.g. "2025-W27").
  * @param {string} dateStr - "YYYY-MM-DD"
  */
 export function isoWeek(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00Z')  // midi UTC pour éviter les décalages
+  const d = new Date(dateStr + 'T12:00:00Z')  // noon UTC to avoid date shifts
   d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7))
   const week1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
   const weekNum = 1 + Math.round(
@@ -93,13 +93,13 @@ export function isoWeek(dateStr) {
 }
 
 /**
- * Retourne la semaine ISO précédente.
+ * Return the previous ISO week.
  * @param {string} weekStr - "YYYY-Www"
  */
 export function previousIsoWeek(weekStr) {
   const [year, w] = weekStr.split('-W').map(Number)
   if (w === 1) {
-    // Dernière semaine de l'année précédente : trouver le 28 décembre
+    // Last week of the previous year: find December 28
     const dec28 = new Date(Date.UTC(year - 1, 11, 28))
     return isoWeek(dec28.toISOString().slice(0, 10))
   }
@@ -107,12 +107,12 @@ export function previousIsoWeek(weekStr) {
 }
 
 /**
- * Retourne la semaine ISO suivante.
+ * Return the next ISO week.
  * @param {string} weekStr - "YYYY-Www"
  */
 export function nextIsoWeek(weekStr) {
   const [year, w] = weekStr.split('-W').map(Number)
-  // Trouver le nombre de semaines dans cette année
+  // Find the number of weeks in this year
   const dec28 = new Date(Date.UTC(year, 11, 28))
   const weeksInYear = isoWeek(dec28.toISOString().slice(0, 10)).split('-W')[1]
   if (w >= parseInt(weeksInYear)) {

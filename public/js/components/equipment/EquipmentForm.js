@@ -10,7 +10,7 @@ export default {
   props: {
     draft: { type: Boolean, default: false },
     custom: { type: Boolean, default: false },
-    item: { type: Object, default: null }  // null = création, objet = édition
+    item: { type: Object, default: null }  // null = create, object = edit
   },
   emits: ['saved','cancel'],
 
@@ -44,7 +44,7 @@ export default {
         return
       }
 
-      // Validation count pair pour plate et dumbbell_plate
+      // Validate even count for plate and dumbbell_plate
       if (['plate'].includes(form.category)) {
         const n = parseInt(form.count) || 0
         if (n < 2 || n % 2 !== 0) {
@@ -54,7 +54,7 @@ export default {
       }
 
 
-      // Validation haltère réglable
+      // Validate adjustable dumbbell
       if (form.category === 'dumbbell_adjustable') {
         if (!form.weight_min_kg || !form.weight_max_kg || !form.weight_step_kg) {
           store.showToast(t('equipment.adjustable_fields_error'), 'error')
@@ -68,7 +68,7 @@ export default {
 
       saving.value = true
       try {
-        // Nettoyer les champs vides → null
+        // Normalize empty fields → null
         const body = {}
         for (const [k, v] of Object.entries(form)) {
           body[k] = (v === '' ? null : v)
@@ -82,7 +82,7 @@ export default {
       }
     }
 
-    // Afficher les champs selon la catégorie
+    // Show fields according to the category
     const showWeight       = () => ['barbell','ez_bar','dumbbell_loadable','kettlebell'].includes(form.category)
     const showCount        = () => ['plate','kettlebell','dumbbell_loadable'].includes(form.category)
     const countMustBePair  = () => ['plate'].includes(form.category)
@@ -113,7 +113,7 @@ export default {
         <input id="EquipmentForm-form-name" class="form-input" v-model="form.name" required />
       </div>
 
-      <!-- Poids -->
+      <!-- Weight -->
       <div v-if="showWeight()" class="form-group">
         <label class="form-label">
           {{ t('equipment.weight_kg') }}
@@ -126,7 +126,7 @@ export default {
           v-model="form.weight_kg" placeholder="ex: 2.0" />
       </div>
 
-      <!-- Quantité normale -->
+      <!-- Standard quantity -->
       <div v-if="showCount()" class="form-group">
         <label class="form-label">
           {{ t('equipment.count_total') }}
@@ -141,36 +141,36 @@ export default {
           v-model="form.count" />
       </div>
 
-      <!-- Haltère réglable -->
+      <!-- Adjustable dumbbell -->
       <template v-if="showAdjustable()">
         <div class="form-group">
-          <label class="form-label" for="EquipmentForm-form-weight_min_kg">Poids minimum (kg)</label>
+          <label class="form-label" for="EquipmentForm-form-weight_min_kg">{{ t('equipment.weight_min_kg') }}</label>
           <input id="EquipmentForm-form-weight_min_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.weight_min_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="EquipmentForm-form-weight_max_kg">Poids maximum (kg)</label>
+          <label class="form-label" for="EquipmentForm-form-weight_max_kg">{{ t('equipment.weight_max_kg') }}</label>
           <input id="EquipmentForm-form-weight_max_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.weight_max_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="EquipmentForm-form-weight_step_kg">Incrément (kg)</label>
+          <label class="form-label" for="EquipmentForm-form-weight_step_kg">{{ t('equipment.weight_step_kg') }}</label>
           <input id="EquipmentForm-form-weight_step_kg" class="form-input" type="number" step="0.5" min="0.5"
             v-model="form.weight_step_kg" placeholder="ex: 2.5" />
         </div>
       </template>
 
-      <!-- Élastique -->
+      <!-- Resistance band -->
       <template v-if="showResistance()">
         <div class="form-group">
-          <label class="form-label" for="EquipmentForm-form-resistance_min_kg">Résistance min (kg équiv.)</label>
+          <label class="form-label" for="EquipmentForm-form-resistance_min_kg">{{ t('equipment.resistance_min_kg') }}</label>
           <input id="EquipmentForm-form-resistance_min_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_min_kg" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="EquipmentForm-form-resistance_max_kg">Résistance max (kg équiv.)</label>
+          <label class="form-label" for="EquipmentForm-form-resistance_max_kg">{{ t('equipment.resistance_max_kg') }}</label>
           <input id="EquipmentForm-form-resistance_max_kg" class="form-input" type="number" step="0.5" min="0" v-model="form.resistance_max_kg" />
         </div>
       </template>
 
-      <!-- Banc, rack, etc. : afficher un texte explicatif -->
+      <!-- Bench, rack, etc.: show explanatory text -->
       <div v-if="!custom && showNoNumericFields()" class="form-group">
         <p style="font-size:0.85rem;color:var(--color-text-muted)">
           <template v-if="form.category === 'bench_adjustable'">

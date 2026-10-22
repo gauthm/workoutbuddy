@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-// DB isolée (règle AGENTS.md §3 : ne jamais toucher data/workoutbuddy.db)
+// Isolated DB (AGENTS.md §3: never touch data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t73-')), 'test.db')
 
 const { migrate } = await import('../../src/db/migrate.js')
@@ -20,7 +20,7 @@ async function planifierSeance({ goal, level, exerciseId, targetSets, repsMin, r
   const db = getDb()
   const pRes = db.prepare(
     "INSERT INTO program (name, goal, level, days_per_week, progression_model) VALUES (?, ?, ?, 3, 'double_progression')"
-  ).run(`Programme ${exerciseId}`, goal, level)
+  ).run(`Program ${exerciseId}`, goal, level)
   const programId = pRes.lastInsertRowid
   const tRes = await request(app)
     .post(`/api/v1/programs/${programId}/templates`)
@@ -37,13 +37,13 @@ async function planifierSeance({ goal, level, exerciseId, targetSets, repsMin, r
   return { programId, templateId: tRes.body.id, teId: teRes.body.id, sessionId: sRes.body.id }
 }
 
-describe('T7.3 — Ajustements au lancement de séance', () => {
+describe('T7.3 — Adjustments at workout start', () => {
   beforeEach(() => {
-    // Une seule séance in_progress à la fois → on repart propre
+    // Only one in_progress workout at a time → start clean
     getDb().prepare("DELETE FROM session WHERE status = 'in_progress'").run()
   })
 
-  it('POST /sessions/:id/start retourne adjustments[]', async () => {
+  it('POST /sessions/:id/start returns adjustments[]', async () => {
     const { sessionId } = await planifierSeance({
       goal: 'hypertrophy', level: 'intermediate',
       exerciseId: 'barbell_bench_press_medium_grip', targetSets: 3, repsMin: 8, repsMax: 12
@@ -52,11 +52,11 @@ describe('T7.3 — Ajustements au lancement de séance', () => {
     const startRes = await request(app).post(`/api/v1/sessions/${sessionId}/start`)
 
     assert.equal(startRes.status, 200)
-    assert.ok('adjustments' in startRes.body, 'adjustments doit être dans la réponse')
+    assert.ok('adjustments' in startRes.body, 'response must include adjustments')
     assert.ok(Array.isArray(startRes.body.adjustments))
   })
 
-  it('premier essai → adjustment avec change_type=first_time', async () => {
+  it('first attempt → adjustment with change_type=first_time', async () => {
     const { sessionId } = await planifierSeance({
       goal: 'strength', level: 'beginner',
       exerciseId: 'barbell_squat', targetSets: 3, repsMin: 5, repsMax: 5
@@ -73,7 +73,7 @@ describe('T7.3 — Ajustements au lancement de séance', () => {
     assert.ok(typeof firstAdj.target_reps === 'number')
   })
 
-  it('séance sans template → adjustments = []', async () => {
+  it('workout without template → adjustments = []', async () => {
     const sRes = await request(app).post('/api/v1/sessions').send({
       name: 'Libre', scheduled_date: new Date().toISOString().slice(0, 10)
     })

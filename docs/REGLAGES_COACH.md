@@ -1,83 +1,76 @@
-# Réglages et Coach IA
+# Settings and AI Coach
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Réglages, profil et écran allumé](#réglages-profil-et-écran-allumé)
-- [Enregistrer les modifications](#enregistrer-les-modifications)
-- [Thème clair](#thème-clair)
-- [Déconnexion](#déconnexion)
-- [Configurer le Coach](#configurer-le-coach)
-- [Navigation pendant une réponse](#navigation-pendant-une-réponse)
-- [Affichage du chat](#affichage-du-chat)
-- [Saisie et raccourcis](#saisie-et-raccourcis)
-- [Clé API](#clé-api)
+- [Settings, profile, and keeping the screen awake](#settings-profile-and-keeping-the-screen-awake)
+- [Save changes](#save-changes)
+- [Light theme](#light-theme)
+- [Sign out](#sign-out)
+- [Configure the Coach](#configure-the-coach)
+- [Navigation during a response](#navigation-during-a-response)
+- [Chat appearance](#chat-appearance)
+- [Input and shortcuts](#input-and-shortcuts)
+- [API key](#api-key)
 
-## Réglages, profil et écran allumé
+## Settings, profile, and keeping the screen awake
 
-Les réglages regroupent Général, Profil, Séance, Coach IA et Réglages avancés. Général propose «
-Empêcher le téléphone de se verrouiller », désactivé par défaut et appliqué après enregistrement. Le
-maintien de l’écran reste actif pendant la navigation interne et est redemandé au retour dans
-l’application.
+Settings groups General, Profile, Session, AI Coach, and Advanced settings. General offers “Prevent
+phone from locking,” disabled by default and applied after saving. The screen stays awake during
+internal navigation and the lock is requested again when returning to the app.
 
-Il nécessite un navigateur compatible en contexte sécurisé et une page visible ; le navigateur peut
-le suspendre, notamment en économie d’énergie. Les réglages signalent les navigateurs incompatibles
-ou un maintien suspendu ; aucun texte de confirmation permanent n’est affiché quand le maintien est
-actif. Voir la [documentation Screen Wake
-Lock](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
+This requires a compatible browser in a secure context and a visible page; the browser may suspend
+it, especially in power-saving mode. Settings indicates incompatible browsers or a suspended lock;
+no persistent confirmation text appears while the lock is active. See the [Screen Wake Lock
+documentation](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
 
-Le profil conserve le prénom, le sexe et la date de naissance ; les paramètres d’entraînement sont
-propres au programme.
+The profile stores first name, sex, and date of birth; training settings belong to each program.
 
-## Enregistrer les modifications
+## Save changes
 
-Après une modification, une barre de sauvegarde apparaît au-dessus de la navigation. **Enregistrer**
-sauvegarde les changements de la page ensemble ; **Annuler** restaure les valeurs enregistrées. Un
-échec conserve les brouillons pour permettre de réessayer.
+After a change, a save bar appears above navigation. **Save** saves the page's changes together;
+**Cancel** restores saved values. Failure preserves drafts so you can retry.
 
-## Thème clair
+## Light theme
 
-Le thème clair distingue les sections sur fond blanc, renforce les contours des champs et conserve
-des textes, états et graphiques lisibles. Les valeurs des séries validées restent visibles sur
-mobile.
+The light theme distinguishes sections against a white background, strengthens field outlines, and
+keeps text, states, and charts readable. Confirmed set values remain visible on mobile.
 
-## Déconnexion
+## Sign out
 
-Sur le déploiement Authelia, **Réglages → Se déconnecter** ferme la session de cet appareil, même
-mémorisée. La section affiche uniquement le bouton. Une confirmation permet de conserver un
-brouillon en annulant. Les données sauvegardées et la séance en cours restent sur le serveur ; une
-reconnexion permet de les retrouver. Le bouton apparaît uniquement si le proxy fournit cette
-intégration.
+On the Authelia deployment, **Settings → Sign out** closes this device's session, including a
+remembered session. The section displays only the button. Confirmation lets you preserve a draft
+by cancelling. Saved data and the session in progress remain on the server; signing in again
+restores access. The button appears only when the proxy provides this integration.
 
-## Configurer le Coach
+## Configure the Coach
 
-Le Coach IA utilise une API compatible OpenAI, configurée avec une URL, un modèle et éventuellement
-une clé API. Le test de connexion et la liste des modèles peuvent utiliser la saisie avant sa
-sauvegarde. Le coach conseille et dialogue ; il ne configure pas l’application et ne crée pas les
-programmes.
+The AI Coach uses an OpenAI-compatible API, configured with a URL, model, and optional API key.
+Connection testing and model listing can use input before it is saved. The coach provides advice
+and conversation; it does not configure the app or create programs.
 
-## Navigation pendant une réponse
+## Navigation during a response
 
-Le chat reste actif pendant la navigation dans l’application : le coach continue sa réponse sur les
-autres écrans. Chaque retour au chat affiche la fin de la conversation, même si la réponse est
-encore en cours. À chaque ajout de texte, le chat défile immédiatement jusqu’en bas, sans retard
-d’animation ; il se réajuste également quand sa zone visible change de taille.
+Chat remains active during navigation within the app: the coach continues responding on other
+screens. Returning to chat always displays the end of the conversation, even while a response is
+still streaming. Each addition of text immediately scrolls chat to the bottom, without animation
+delay; it also readjusts when its visible area changes size.
 
-La création et la suppression de conversations sont bloquées pendant une réponse. Cette continuité
-concerne la navigation interne, pas la fermeture ou le rechargement de l’application.
+Creating and deleting conversations is blocked during a response. This continuity applies to
+internal navigation, not closing or reloading the app.
 
-## Affichage du chat
+## Chat appearance
 
-Pendant la réflexion, trois points s’animent en cascade ; l’animation respecte la préférence de
-mouvement réduit. Le chat affiche uniquement les bulles, sans emoji robot ni avatar utilisateur.
+While thinking, three dots animate in sequence; animation respects the reduced-motion preference.
+Chat displays only bubbles, without a robot emoji or user avatar.
 
-## Saisie et raccourcis
+## Input and shortcuts
 
-Le champ de message grandit avec le texte jusqu’à 120 px, puis permet de faire défiler les messages
-longs. Il rétrécit après effacement ou envoi ; aucune barre de défilement n’apparaît pour une saisie
-courte. Sur ordinateur, Entrée envoie le message et Majuscule + Entrée ajoute une ligne. Sur mobile,
-Entrée ajoute toujours une ligne ; le bouton d’envoi permet d’envoyer sur tous les appareils.
+The message field grows with its text up to 120 px, then allows scrolling through long messages.
+It shrinks after clearing or sending; no scrollbar appears for short input. On desktop, Enter sends
+the message and Shift + Enter adds a line. On mobile, Enter always adds a line; the send button
+sends on all devices.
 
-## Clé API
+## API key
 
-La clé est stockée côté serveur, masquée dans l’interface et absente des réponses API et de l’export
-JSON. Une clé existante est conservée lorsqu’une sauvegarde ne fournit pas de nouvelle clé.
+The key is stored server-side, masked in the interface, and excluded from API responses and JSON
+exports. An existing key is preserved when a save does not provide a new one.

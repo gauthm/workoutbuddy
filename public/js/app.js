@@ -9,22 +9,22 @@ import { startAppUpdates } from './appUpdates.js'
 import { createScreenWakeLock } from './utils/screenWakeLock.js'
 
 async function init() {
-  // Charger les settings depuis le serveur
+  // Load settings from the server
   try {
     const data = await migratePainPreferences(await settingsApi.get())
     store.setSettings(data)
-    // Appliquer la langue
+    // Apply the language
     const lang = data.language || 'fr'
     await i18n.setLocale(lang)
-    // Appliquer le thème
+    // Apply the theme
     document.documentElement.setAttribute('data-theme', data.theme || 'dark')
   } catch (e) {
     if (e.status === 401) return false // The proxy login redirect is already underway.
-    console.warn('[app] Impossible de charger les settings :', e.message)
+    console.warn('[app] Unable to load settings:', e.message)
     await i18n.setLocale('fr')
   }
 
-  // Créer et monter l'app Vue
+  // Create and mount the Vue app
   const screenWakeLock = createScreenWakeLock({ navigator, document,
     onChange: state => { store.screenWakeLock = state },
   })
@@ -40,7 +40,7 @@ async function init() {
   return true
 }
 
-// Debug — accès console au store (toast, settings)
+// Debug: console access to the store (toast, settings)
 window.__store = store
 
 init().then(loaded => { if (loaded) startAppUpdates() })

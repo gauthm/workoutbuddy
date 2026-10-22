@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (règle AGENTS.md §3 : ne jamais toucher data/workoutbuddy.db)
+// Isolated DB (AGENTS.md §3: never touch data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t14-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')
@@ -16,21 +16,21 @@ seedExercises(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T1.4 — API Exercices', () => {
-  it('GET /exercises retourne un tableau', async () => {
+describe('T1.4 — Exercises API', () => {
+  it('GET /exercises returns an array', async () => {
     const res = await request(app).get('/api/v1/exercises')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.exercises))
     assert.ok(res.body.exercises.length >= 5)
   })
 
-  it('GET /exercises?muscle=chest filtre correctement', async () => {
+  it('GET /exercises?muscle=chest filters correctly', async () => {
     const res = await request(app).get('/api/v1/exercises?muscle=chest')
     assert.equal(res.status, 200)
     assert.ok(res.body.exercises.every(e => e.primary_muscles.includes('chest')))
   })
 
-  it('cherche les deux langues, avec ou sans accents et quelle que soit la casse', async () => {
+  it('searches both languages, with or without accents and regardless of case', async () => {
     for (const q of ['développé couché avec haltères', 'DEVELOPPE COUCHE AVEC HALTERES', 'Dumbbell Bench Press']) {
       const res = await request(app).get('/api/v1/exercises?' + new URLSearchParams({ q, muscle: 'chest' }))
       assert.equal(res.status, 200)
@@ -43,20 +43,20 @@ describe('T1.4 — API Exercices', () => {
     assert.equal(wildcard.body.exercises.length, 0)
   })
 
-  it('GET /exercises/:id retourne un exercice', async () => {
+  it('GET /exercises/:id returns an exercise', async () => {
     const res = await request(app).get('/api/v1/exercises/barbell_bench_press_medium_grip')
     assert.equal(res.status, 200)
     assert.equal(res.body.id, 'barbell_bench_press_medium_grip')
     assert.ok(Array.isArray(res.body.primary_muscles))
   })
 
-  it('GET /exercises/inconnu retourne 404', async () => {
+  it('GET /exercises/unknown returns 404', async () => {
     const res = await request(app).get('/api/v1/exercises/exercice_qui_nexiste_pas')
     assert.equal(res.status, 404)
     assert.equal(res.body.error, 'EXERCISE_NOT_FOUND')
   })
 
-  it('POST /exercises interdit la création personnalisée', async () => {
+  it('POST /exercises forbids custom creation', async () => {
     const res = await request(app)
       .post('/api/v1/exercises')
       .send({
@@ -72,7 +72,7 @@ describe('T1.4 — API Exercices', () => {
     assert.equal(getDb().prepare('SELECT COUNT(*) AS n FROM exercise WHERE is_custom=1').get().n,0)
   })
 
-  it('POST /exercises reste interdit sans nom', async () => {
+  it('POST /exercises remains forbidden without a name', async () => {
     const res = await request(app)
       .post('/api/v1/exercises')
       .send({ name_en: 'Test', category: 'strength',
@@ -81,19 +81,19 @@ describe('T1.4 — API Exercices', () => {
     assert.equal(res.body.error, 'EXERCISE_CATALOG_READ_ONLY')
   })
 
-  it('DELETE builtin retourne 403', async () => {
+  it('DELETE builtin returns 403', async () => {
     const res = await request(app).delete('/api/v1/exercises/barbell_bench_press_medium_grip')
     assert.equal(res.status, 403)
     assert.equal(res.body.error, 'CANNOT_DELETE_BUILTIN_EXERCISE')
   })
 
-  it('GET /exercises/:id/history retourne un tableau vide si aucune séance', async () => {
+  it('GET /exercises/:id/history returns an empty array without workouts', async () => {
     const res = await request(app).get('/api/v1/exercises/barbell_bench_press_medium_grip/history')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.history))
   })
 
-  it('GET /exercises/:id/rm-history retourne un tableau', async () => {
+  it('GET /exercises/:id/rm-history returns an array', async () => {
     const res = await request(app).get('/api/v1/exercises/barbell_squat/rm-history')
     assert.equal(res.status, 200)
     assert.ok(Array.isArray(res.body.history))

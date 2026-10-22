@@ -82,7 +82,7 @@ async function train(program) {
 
 // These tests go through Express and its JSON parser, validation, database and real
 // algorithm. No mocked API responses or direct SQL writes set up the scenarios.
-test('programme : questionnaire → activation → jours modifiés → calendrier à jour', async () => {
+test('program: questionnaire → activation → days changed → calendar updated', async () => {
   const before = await exported()
   const preview = await post('/programs/preview', questionnaire)
   assert.deepEqual(await exported(), before, 'Preview must never persist a program')
@@ -112,7 +112,7 @@ test('programme : questionnaire → activation → jours modifiés → calendrie
   assert.deepEqual(await exported(), snapshot, 'Rejected edits must leave all data unchanged')
 })
 
-test('séance : démarrer → annuler une série → compléter → progression suivante et statistiques', async () => {
+test('workout: start → undo a set → complete → next progression and statistics', async () => {
   const program = await createProgram()
   await activate(program)
   const run = await train(program)
@@ -147,7 +147,7 @@ test('séance : démarrer → annuler une série → compléter → progression 
   assert.deepEqual(await exported(), snapshot, 'Double completion must not advance progression twice')
 })
 
-test('historique : supprimer le programme → recréer → reprendre les acquis → supprimer la performance', async () => {
+test('history: delete program → recreate → resume progress → delete performance', async () => {
   const old = await createProgram()
   await activate(old)
   const run = await train(old)
@@ -173,7 +173,7 @@ test('historique : supprimer le programme → recréer → reprendre les acquis 
   assert.equal((await get(`/stats/personal-records?exercise_id=${run.slot.exercise_id}`)).records.length, 0)
 })
 
-test('données : exporter → réinitialiser → importer → retrouver les mêmes données et poursuivre', async () => {
+test('data: export → reset → import → recover identical data and continue', async () => {
   const program = await createProgram()
   await activate(program)
   const run = await train(program)
@@ -194,7 +194,7 @@ test('données : exporter → réinitialiser → importer → retrouver les mêm
   assert.equal((await get('/stats/overview')).total_sessions, 1)
 })
 
-test('réglages : erreur atomique → correction → sauvegarde groupée → conservation de la clé', async () => {
+test('settings: atomic error → correction → batch save → key preserved', async () => {
   const before = await exported()
   const draft = { settings: { unit: 'lb', rm_formula: 'brzycki', ai_model: 'test-model', ai_base_url: 'http://unused.invalid/v1', ai_api_key: 'test-secret' }, profile: { display_name: 'Alex', date_of_birth: 'invalid' } }
   await post('/settings/save', draft, 400)
@@ -213,7 +213,7 @@ test('réglages : erreur atomique → correction → sauvegarde groupée → con
   assert.equal(JSON.stringify(await get('/export')).includes('test-secret'), false)
 })
 
-test('exercices : remplacement avant séance → historique préservé → remplacement bloqué pendant séance', async () => {
+test('exercises: replacement before workout → history preserved → replacement blocked during workout', async () => {
   const program = await createProgram()
   await activate(program)
   const run = await train(program)
@@ -244,7 +244,7 @@ test('exercices : remplacement avant séance → historique préservé → rempl
   await post(`/sessions/${next.id}/complete`)
 })
 
-test('import invalide : échec pendant la restauration → rollback complet → application encore utilisable', async () => {
+test('invalid import: failure during restore → full rollback → application still usable', async () => {
   const program = await createProgram()
   await activate(program)
   const run = await train(program)

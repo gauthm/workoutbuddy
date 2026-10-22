@@ -21,7 +21,7 @@ export function migrate(db) {
     const version = parseInt(file.slice(0, 3), 10)
     const existing = db.prepare('SELECT version FROM schema_version WHERE version = ?').get(version)
     if (existing) {
-      console.log(`Migration ${file.slice(0, 3)} déjà appliquée`)
+      console.log(`Migration ${file.slice(0, 3)} already applied`)
       continue
     }
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8')
@@ -29,6 +29,6 @@ export function migrate(db) {
       db.exec(sql)
       db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(version)
     })()
-    console.log(`Migration ${file.slice(0, 3)} appliquée`)
+    console.log(`Migration ${file.slice(0, 3)} applied`)
   }
 }

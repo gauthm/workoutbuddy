@@ -1,6 +1,7 @@
+import { message } from '../utils/messages.js'
 const OPEN = '```action'
 
-// Les frontières des chunks réseau ne correspondent pas aux blocs Markdown.
+// Network chunk boundaries do not match Markdown block boundaries.
 export function createActionStreamParser() {
   let buffer = '', inAction = false
   return function push(chunk = '', final = false) {
@@ -10,11 +11,11 @@ export function createActionStreamParser() {
       if (inAction) {
         const end = buffer.indexOf('```')
         if (end < 0) {
-          if (final) { events.push({type:'error',message:'Bloc action incomplet.'}); buffer=''; inAction=false }
+          if (final) { events.push({type:'error',message:message('action.incomplete_block')}); buffer=''; inAction=false }
           break
         }
         try { events.push({type:'action',action:JSON.parse(buffer.slice(0,end).trim())}) }
-        catch { events.push({type:'error',message:'Bloc action invalide — JSON malformé.'}) }
+        catch { events.push({type:'error',message:message('action.invalid_json')}) }
         buffer = buffer.slice(end + 3)
         inAction = false
       } else {
@@ -34,7 +35,7 @@ export function createActionStreamParser() {
       }
     }
     if (final && inAction && !buffer) {
-      events.push({type:'error',message:'Bloc action incomplet.'})
+      events.push({type:'error',message:message('action.incomplete_block')})
       inAction=false
     }
     return events

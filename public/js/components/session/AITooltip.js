@@ -4,8 +4,8 @@ import { t } from '../../i18n.js'
 export default {
   name: 'AITooltip',
   props: {
-    text:    { type: String,  required: true },   // texte de la bulle
-    isFirst: { type: Boolean, default: false },   // premier essai (style différent)
+    text:    { type: String,  required: true },   // tooltip text
+    isFirst: { type: Boolean, default: false },   // first attempt (different style)
   },
   setup() {
     const visible = ref(false)

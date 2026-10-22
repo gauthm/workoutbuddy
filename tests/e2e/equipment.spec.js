@@ -7,7 +7,7 @@ async function fixedRow(page){
  await group.getByRole('button').last().click()
  return group.locator('.dumbbell-row').last()
 }
-test('ajouter des haltères → sauvegarder → retrouver quantité et poids après redémarrage',async({page,request,app})=>{
+test('add dumbbells → save → recover count and weight after restart',async({page,request,app})=>{
  const row=await fixedRow(page)
  await row.locator('input').nth(0).fill('2');await row.locator('input').nth(1).fill('8')
  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
@@ -19,7 +19,7 @@ test('ajouter des haltères → sauvegarder → retrouver quantité et poids apr
  await expect(page.locator('[data-category="dumbbell_fixed"] input').nth(0)).toHaveValue('2')
  await expect(page.locator('[data-category="dumbbell_fixed"] input').nth(1)).toHaveValue('8')
 })
-test('une ligne invalide ne sauvegarde rien, puis Annuler retire tout le brouillon',async({page,request})=>{
+test('an invalid row saves nothing, then Cancel removes the entire draft',async({page,request})=>{
  const row=await fixedRow(page)
  await row.locator('input').nth(0).fill('0');await row.locator('input').nth(1).fill('8')
  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()

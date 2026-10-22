@@ -161,7 +161,7 @@ export default {
     <div class="view">
       <PageHeader :title="t('exercises.title')" />
 
-      <!-- Onglets -->
+      <!-- Tabs -->
       <div class="exercise-tabs">
         <button class="exercise-tabs__btn"
           :class="{ 'exercise-tabs__btn--active': state.activeTab === 'list' }"
@@ -185,7 +185,7 @@ export default {
         <div v-if="state.materialVisited" v-show="state.activeTab === 'material'" class="exercise-material-panel">
           <EquipmentEditor />
         </div>
-        <!-- ═══ Onglet Exercices ═══ -->
+        <!-- ═══ Exercises tab ═══ -->
         <template v-if="state.activeTab === 'list'">
           <ExerciseFilter :filters="state.filters" :expanded="state.filtersOpen" @toggle="state.filtersOpen=$event" @change="onFilterChange" />
 
@@ -272,7 +272,7 @@ export default {
           </div>
         </template>
 
-        <!-- ═══ Onglet Douleurs ═══ -->
+        <!-- ═══ Pain tab ═══ -->
         <template v-if="state.activeTab === 'pain'">
           <div class="pain-section">
             <p class="pain-section__hint">{{ t('exercises.pain_hint') }}</p>

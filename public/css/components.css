@@ -105,7 +105,7 @@
 .bottom-nav__icon { font-size: 1.1rem; line-height: 1; }
 .bottom-nav__label { line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── Boutons ────────────────────────────────────────────────── */
+/* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -265,7 +265,7 @@
   font-size: 0.7rem; padding: 1px 6px; border-radius: 4px;
 }
 
-/* ── Exclusion exercices (T7.5) ─────────────────────────────── */
+/* ── Exercise exclusions (T7.5) ─────────────────────────────── */
 .exercise-list--excluded {
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
@@ -308,7 +308,7 @@
   font-size: 0.8rem; cursor: pointer;
 }
 
-/* ── Exercise tabs (Exercices / Douleurs) ───────────────────── */
+/* ── Exercise tabs (Exercises / Pain) ───────────────────── */
 .exercise-tabs {
   display: flex; gap: 0; border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -364,7 +364,7 @@
 .pain-summary p { font-size: 0.88rem; color: var(--color-text-muted); }
 .pain-empty { margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--color-text-muted); }
 
-/* ── Programme unique (T7.5) ────────────────────────────────── */
+/* ── Single program (T7.5) ────────────────────────────────── */
 .program-list-notice {
   padding: 0.6rem 1rem; background: rgba(41,128,185,0.1);
   font-size: 0.82rem; color: var(--color-text-muted);
@@ -482,7 +482,7 @@
 }
 .equip-row__edit .form-input { flex: 1; min-width: 80px; }
 
-/* ── Programmes (T2.3) ─────────────────────────────────────── */
+/* ── Programs (T2.3) ─────────────────────────────────────── */
 .program-card {
   padding: 1rem; border-bottom: 1px solid var(--color-border);
   cursor: pointer; transition: background 0.1s;
@@ -510,7 +510,7 @@
 /* ── SetRow — layout # / KG / REPS / 10RM ─────────────────── */
 .set-row {
   display: grid;
-  /* colonnes : numéro | kg+bulle | reps | 10rm | [rpe] | btn */
+  /* columns: number | kg+tooltip | reps | 10rm | [rpe] | button */
   grid-template-columns: 24px minmax(0, 1fr) 52px 60px 40px;
   align-items: center; gap: 0.3rem;
   padding: 0.45rem 0.75rem;
@@ -683,7 +683,7 @@
   padding: 0.5rem;
 }
 
-/* ── Calendrier ───────────────────────────────────────────────── */
+/* ── Calendar ───────────────────────────────────────────────── */
 .calendar-nav {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.75rem 1rem; border-bottom: 1px solid var(--color-border);
@@ -758,7 +758,7 @@
 .calendar-day-session__skip { color: var(--color-text-muted); }
 .calendar-day-panel__empty { color: var(--color-text-muted); font-size: .9rem; padding: .5rem 0; }
 
-/* ── Poids de corps ────────────────────────────────────────── */
+/* ── Body weight ────────────────────────────────────────── */
 .bw-form {
   background: var(--color-surface-2);
   border-radius: var(--radius-md);
@@ -800,7 +800,7 @@
 .bw-list-row__date  { font-size: 0.85rem; color: var(--color-text-muted); }
 .bw-list-row__weight { font-weight: 500; }
 
-/* ── T4.3 — Écrans statistiques ─────────────────────────────── */
+/* ── T4.3 — Statistics screens ─────────────────────────────── */
 .streak-card {
   background: var(--color-surface-2);
   border-radius: var(--radius-lg);
@@ -1029,7 +1029,7 @@
   border: 1px solid var(--color-warning);
 }
 
-/* ── Mon profil (T8.3) ──────────────────────────────────────── */
+/* ── My profile (T8.3) ──────────────────────────────────────── */
 .profile-settings__loading {
   padding: 1rem; text-align: center;
   color: var(--color-text-muted); font-size: 0.9rem;
@@ -1041,7 +1041,7 @@
 .profile-settings__row-textarea .setting-row__label { margin-bottom: 0.4rem; }
 .profile-settings__reset { margin-top: 1rem; }
 
-/* ── Matériel : checklist catalogue (T8.4) ──────────────────── */
+/* ── Equipment: catalog checklist (T8.4) ──────────────────── */
 .equipment-settings__untagged-title {
   margin: 1.25rem 0 0.5rem; font-size: 0.9rem;
   color: var(--color-text-muted);
@@ -1160,7 +1160,7 @@
 }
 .adjustment-banner__dismiss:active { background: var(--color-surface-2); }
 
-/* ── Panneau historique coach (T8.2) ─────────────────────── */
+/* ── Coach history panel (T8.2) ─────────────────────── */
 .coach-history { max-height: 70vh; overflow-y: auto; }
 .coach-history__empty {
   padding: 1.5rem; text-align: center;

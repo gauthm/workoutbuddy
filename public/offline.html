@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorkoutBuddy — Hors ligne</title>
+  <title>WorkoutBuddy — Offline</title>
   <style>
     body {
       background: #1a1a1a; color: #e8e8e8;
@@ -24,7 +24,8 @@
 <body>
   <h1>🏋️</h1>
   <h2>WorkoutBuddy</h2>
-  <p>Vous êtes hors ligne. Reconnectez-vous au réseau local pour continuer.</p>
-  <button onclick="window.location.reload()">Réessayer</button>
+  <p id="offline-message">You are offline. Reconnect to the local network to continue.</p>
+  <button id="offline-retry">Retry</button>
+  <script src="/js/offline.js" defer></script>
 </body>
 </html>

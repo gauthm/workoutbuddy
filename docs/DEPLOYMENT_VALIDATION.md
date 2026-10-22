@@ -1,110 +1,110 @@
-# Validation du déploiement Rocky
+# Rocky deployment validation
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-### Résultats globaux
+### Overall results
 
-- 477 tests unitaires, intégration et parcours métier passent, bases isolées.
+- 477 unit, integration, and business journey tests pass, with isolated databases.
 
-### Interface et appareils
+### Interface and devices
 
-- Accueil : six formats iPhone simulés, portrait/paysage et zones de sécurité,
-  mois de six semaines, aucun programme, semaine accomplie et tous les statuts
-  du jour. Grille plafonnée à une hauteur compacte et boutons d’en-tête avec
-  fond et contour visibles en thèmes clair/sombre. Aucun défilement de page ni
-  action masquée ; pagination des séances,
-  reprise prioritaire et libellé exact des cinq objectifs en français/anglais
-  sur l’accueil et dans le titre de fiche ; rappel d’un seul programme actif.
-- Coach : saisie courte sans barre, croissance avec Majuscule + Entrée jusqu’à
-  120 px, défilement des textes longs, réduction après effacement et envoi.
-  Requête réelle sur API isolée sans fournisseur configuré, aucun appel externe.
-- Zoom mobile : gestes tactiles vérifiés avec Chromium (pincement, double tap,
-  balayage natif), échelle conservée à 1 et champ d’effort à 16 px avec saisie
-  sans débordement. Le comportement réel de Safari reste à confirmer sur iPhone.
-- 112 parcours navigateur passent, ordinateur et mobile, avec les 1 746 photos.
-  Alternance des deux positions des photos, pause/reprise,
-  réduction des animations, arrêt hors écran et aide en séance sont couverts.
-- Thème clair : contrastes mesurés dans les réglages, l’accueil et la séance,
-  textes contrôlés à 4,5:1 minimum, contours des champs à 3:1, focus visible,
-  préférence persistante et valeurs validées lisibles ; captures examinées.
-- Réglages : bouton de déconnexion seul, sans titre ni texte explicatif,
-  confirmation de déconnexion,
-  annulation avec brouillon intact,
-  retour au portail et données sauvegardées conservées. Bouton absent sans proxy
-  d’authentification. Icônes SVG/ICO décodées, dimensions et opacité des PNG
-  Apple/manifeste contrôlées ; fichiers publics limités aux chemins explicites.
+- Home: six simulated iPhone sizes, portrait/landscape and safe areas,
+  six-week months, no program, completed week, and all day statuses.
+  Grid capped at a compact height and header buttons with visible background
+  and outline in light/dark themes. No page scrolling or hidden action;
+  session pagination, prioritized resume, and exact wording of the five goals
+  in French/English on the home screen and detail title; reminder that only
+  one program is active.
+- Coach: short input without a scrollbar, growth with Shift + Enter up to
+  120 px, scrolling for long text, shrinking after clearing and sending.
+  Real request to isolated API without a configured provider, no external call.
+- Mobile zoom: touch gestures checked with Chromium (pinch, double tap,
+  native swipe), scale preserved at 1 and 16 px effort field with input
+  without overflow. Actual Safari behavior still needs confirmation on iPhone.
+- 112 browser journeys pass, desktop and mobile, with all 1,746 photos.
+  Alternating between both photo positions, pause/resume, reduced motion,
+  stopping offscreen, and in-workout help are covered.
+- Light theme: measured contrasts in settings, home, and workout,
+  text checked at a minimum of 4.5:1, field outlines at 3:1, visible focus,
+  persistent preference, and readable validated values; screenshots reviewed.
+- Settings: standalone logout button without a title or explanatory text,
+  logout confirmation, cancellation with draft intact, return to the portal,
+  and saved data preserved. Button absent without an authentication proxy.
+  SVG/ICO icons decoded, Apple/manifest PNG dimensions and opacity checked;
+  public files restricted to explicit paths.
 
-### Photos et publication
+### Photos and publishing
 
-- Photos : les 1 746 JPEG du catalogue sont présents, environ 101 Mio sur disque,
-  avec contrôle de format hors ligne. Installation reproductible à une révision
-  source figée, sans modifier le catalogue ni SQLite. Une publication avec photo
-  manquante est refusée avant tout échange de répertoire ; garde vérifiée sur
-  une copie synthétique, puis livraison complète validée.
+- Photos: all 1,746 catalog JPEGs present, about 101 MiB on disk,
+  with offline format checks. Reproducible installation at a pinned source
+  revision without changing the catalog or SQLite. A release with a missing
+  photo is rejected before any directory swap; guard checked on a synthetic
+  copy, then complete release validated.
 
-### Livraison, authentification et sécurité
+### Release, authentication, and security
 
-- Livraison et sécurité :
-  Publication sans hard refresh, API jamais cachée, vraie panne réseau distinguée
-  d’un 401, brouillon conservé, rejet des assets de connexion et retour au portail
-  après expiration sur navigation, API, premier plan ou ancien worker.
-- Test TLS intégral jetable Caddy/Authelia/Redis/Node : mot de passe seul refusé,
-  TOTP accepté, cookie Secure/HttpOnly de 60 jours, persistance après redémarrage
-  des deux services, reprise avec cookie conservé, déconnexion par le bouton
-  des réglages et révocation même avec une copie antérieure du cookie,
-  expiration des sessions ordinaires. CSP Vue et nonce Authelia préservés,
-  authentification avec no-referrer et IP pure transmise sans en-tête forgé.
-  Photos affichées derrière le véritable TLS, la CSP et le MFA, refusées sans
-  connexion ; icônes d’installation accessibles sans cookie partagé.
-- Site public vérifié sans identité personnelle : renvoi vers Authelia et case
-  Se souvenir de moi visible. Un navigateur à ancien cache synthétique atteint le
-  portail réel après installation du worker de réparation. Le worker, le manifeste,
-  les icônes listées et les renvois de connexion/déconnexion sont publics ;
-  les pages, photos d’exercices, autres assets et API restent protégés.
+- Release and security:
+  Publishing without a hard refresh, API never cached, real network failure
+  distinguished from a 401, draft preserved, login assets rejected, and return
+  to the portal after expiration during navigation, API requests, foregrounding,
+  or with an old worker.
+- Full disposable Caddy/Authelia/Redis/Node TLS test: password alone rejected,
+  TOTP accepted, 60-day Secure/HttpOnly cookie, persistence after restarting
+  both services, resume with retained cookie, logout through the settings
+  button and revocation even with an earlier cookie copy, ordinary session
+  expiration. Vue CSP and Authelia nonce preserved, authentication with
+  no-referrer and bare IP forwarded without forged headers.
+  Photos displayed behind real TLS, CSP, and MFA, rejected without login;
+  installation icons accessible without a shared cookie.
+- Public site checked without personal identity: redirect to Authelia and
+  visible Remember me checkbox. A browser with synthetic old cache reaches
+  the real portal after installing the repair worker. The worker, manifest,
+  listed icons, and login/logout redirects are public; pages, exercise photos,
+  other assets, and API remain protected.
 
-### Maintenance et exploitation
+### Maintenance and operations
 
-- Maintenance nocturne : configuration DNF parsée, timer en heure de Paris et
-  absence de rattrapage diurne contrôlés. Sept tests simulés vérifient le garde
-  horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node/Redis.
-  Lancement réel de l’unité en journée : aucune mutation ni aucun reboot.
-  Audit npm exécuté sans privilèges, aucun accès aux bases/secrets, aucune
-  vulnérabilité de production signalée. Aucun redémarrage réel du VPS effectué
-  pour ces tests ; le prochain créneau nocturne reste à observer dans les journaux.
+- Nightly maintenance: DNF configuration parsed, Paris-time timer and no
+  daytime catch-up checked. Seven simulated tests verify the time guard,
+  prior backup, postponed reboot, and Node/Redis restart.
+  Real daytime execution of the unit: no mutation or reboot.
+  npm audit run without privileges, no access to databases/secrets,
+  no production vulnerability reported. No actual VPS reboot performed
+  for these tests; the next nightly window still needs observation in logs.
 
-### Contrôles de sécurité et de données
+### Security and data checks
 
-- 12 parcours navigateur de sécurité passent (ordinateur et mobile) : icônes, zone sûre iOS, CSP,
-  service worker, origines étrangères, JSON, limitations IA et import interrompu.
-- HTTPS public, redirection HTTP, UI/API/export/IA protégés, en-têtes d'identité
-  forgés refusés ; mot de passe seul insuffisant, TOTP accepté, déconnexion et
-  expirations vérifiées avec une identité jetable.
-- Import/export/sauvegarde derrière TLS testés avec une base jetable. Redémarrage
-  propre, reprise après incident, persistance, restauration depuis un instantané
-  et rétention de sept sauvegardes sur neuf essais synthétiques vérifiés.
-- Compte réel du processus vérifié : `workoutbuddy`, sans capacités effectives,
-  `NoNewPrivileges` et seccomp actifs. Protections `/proc`, noyau, horloge,
-  nom d’hôte, espaces de noms et core dumps vérifiées sur le service effectif.
-  Import/export, sauvegarde SQLite, redémarrage et DNS/HTTPS sortant testés
-  dans une instance à base jetable avec les mêmes restrictions.
-- Permissions contrôlées : répertoires privés 0700, bases et WAL/SHM 0600,
-  propriétaires dédiés ; archives de sauvegarde réservées à root. Les deux
-  bases passent `quick_check`, accès direct refusé à Caddy et aux comptes ordinaires.
-- En-têtes Caddy contrôlés sur HTTPS : HSTS, nosniff, DENY, no-referrer,
-  Permissions Policy et absence des en-têtes Server/X-Powered-By. CSP de Vue
-  et nonce Authelia préservés, CSP de secours testée sur une réponse sans politique.
-- Aucun appel réel au fournisseur du Coach IA validé lors de ces contrôles.
+- 12 security browser journeys pass (desktop and mobile): icons, iOS safe area, CSP,
+  service worker, foreign origins, JSON, AI limits, and interrupted import.
+- Public HTTPS, HTTP redirect, protected UI/API/export/AI, forged identity
+  headers rejected; password alone insufficient, TOTP accepted, logout and
+  expiration checked with a disposable identity.
+- Import/export/backup behind TLS tested with a disposable database. Clean
+  restart, crash recovery, persistence, snapshot restore, and retention of
+  seven backups over nine synthetic attempts checked.
+- Actual process account checked: `workoutbuddy`, no effective capabilities,
+  `NoNewPrivileges` and seccomp active. `/proc`, kernel, clock, hostname,
+  namespace, and core dump protections checked on the effective service.
+  Import/export, SQLite backup, restart, and outbound DNS/HTTPS tested
+  in an instance with a disposable database under the same restrictions.
+- Permissions checked: private directories 0700, databases and WAL/SHM 0600,
+  dedicated owners; backup archives restricted to root. Both databases pass
+  `quick_check`, direct access denied to Caddy and ordinary accounts.
+- Caddy headers checked over HTTPS: HSTS, nosniff, DENY, no-referrer,
+  Permissions Policy, and absence of Server/X-Powered-By headers. Vue CSP
+  and Authelia nonce preserved, fallback CSP tested on a response without a policy.
+- No real AI Coach provider call validated during these checks.
 
-### Diagnostic des premiers essais
+### Initial trial diagnosis
 
-La première exécution navigateur était faussée par l'absence de polices système sur le serveur
-minimal : certains textes n'avaient pas de dimensions. Après installation des polices, les parcours
-de réglages/import, matériel et charges de séance précédemment signalés passent. Ce n'étaient pas
-des régressions de l'application démontrées par ces tests.
+The first browser run was distorted by missing system fonts on the minimal server:
+some text had no dimensions. After installing fonts, the previously reported
+settings/import, equipment, and workout load journeys pass. Those tests had not
+demonstrated application regressions.
 
-### Limites du navigateur de test
+### Test browser limitations
 
-Playwright utilise un Chromium headless de secours sur Rocky, qui ne fait pas partie de ses
-distributions officiellement prises en charge. La marge haute est testée avec les safe-area insets
-simulés au chargement, au défilement, après navigation et changement des insets ; le rendu réel
-d'une webapp Safari iPhone reste à confirmer sur un appareil Apple.
+Playwright uses a fallback headless Chromium on Rocky, which is not among its
+officially supported distributions. The top margin is tested with simulated safe-area
+insets at load, on scroll, after navigation, and after inset changes; actual rendering
+of an iPhone Safari web app still needs confirmation on an Apple device.

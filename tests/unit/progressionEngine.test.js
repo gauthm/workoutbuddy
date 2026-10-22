@@ -13,21 +13,21 @@ const SETTINGS = { progression_failure_threshold: 2, progression_weight_reductio
 
 // ── roundDownToAchievable ───────────────────────────────────────────────
 describe('roundDownToAchievable', () => {
-  it('retourne la charge exacte si disponible', () => {
+  it('returns the exact load if available', () => {
     assert.equal(roundDownToAchievable(80, LOADS), 80)
   })
-  it('arrondit vers le bas', () => {
+  it('rounds down', () => {
     assert.equal(roundDownToAchievable(81, LOADS), 80)
   })
-  it('retourne le minimum si cible < minimum', () => {
+  it('returns the minimum when target < minimum', () => {
     assert.equal(roundDownToAchievable(10, LOADS), 20)
   })
-  it('retourne 0 si liste vide', () => {
+  it('returns 0 for an empty list', () => {
     assert.equal(roundDownToAchievable(50, []), 0)
   })
 })
 
-// ── Linéaire ────────────────────────────────────────────────────────────
+// ── Linear ────────────────────────────────────────────────────────────
 describe('linear progression', () => {
   const te = {
     progression_model: 'linear', target_sets: 4, target_reps: 5,
@@ -36,21 +36,21 @@ describe('linear progression', () => {
   }
   const state = { current_weight_kg: 80, consecutive_failures: 0 }
 
-  it('succès → +2.5 kg', () => {
+  it('success → +2.5 kg', () => {
     const sets = Array(4).fill({ reps: 5, rpe: null })
     const r = computeNextState(state, sets, te, { progression_model: 'linear' }, LOADS, SETTINGS)
     assert.equal(r.current_weight_kg, 82.5)
     assert.equal(r.consecutive_failures, 0)
   })
 
-  it('1 échec < threshold → maintien', () => {
+  it('1 failure < threshold → maintain', () => {
     const sets = [{ reps: 4, rpe: null }]
     const r = computeNextState(state, sets, te, { progression_model: 'linear' }, LOADS, SETTINGS)
     assert.equal(r.current_weight_kg, 80)
     assert.equal(r.consecutive_failures, 1)
   })
 
-  it('2 échecs = threshold → -10%', () => {
+  it('2 failures = threshold → -10%', () => {
     const stateF = { current_weight_kg: 100, consecutive_failures: 1 }
     const sets = [{ reps: 3, rpe: null }]
     const r = computeNextState(stateF, sets, te, { progression_model: 'linear' }, LOADS, SETTINGS)
@@ -69,28 +69,28 @@ describe('double_progression', () => {
   }
   const state = { current_weight_kg: 60, current_target_reps: 8, consecutive_failures: 0 }
 
-  it('toutes séries ≥ max_reps → +poids, retour min_reps', () => {
+  it('all sets ≥ max_reps → increase weight, reset to min_reps', () => {
     const sets = Array(3).fill({ reps: 12, rpe: null })
     const r = computeNextState(state, sets, te, { progression_model: 'double_progression' }, LOADS, SETTINGS)
     assert.equal(r.current_weight_kg, 62.5)
     assert.equal(r.current_target_reps, 8)
   })
 
-  it('toutes séries dans la fourchette → +1 rep', () => {
+  it('all sets within range → +1 rep', () => {
     const sets = Array(3).fill({ reps: 10, rpe: null })
     const r = computeNextState(state, sets, te, { progression_model: 'double_progression' }, LOADS, SETTINGS)
     assert.equal(r.current_weight_kg, 60)
     assert.equal(r.current_target_reps, 9)
   })
 
-  it('current_target_reps = max-1, reps atteints → passe à max', () => {
+  it('current_target_reps = max-1, reps reached → moves to max', () => {
     const stateNear = { ...state, current_target_reps: 11 }
     const sets = Array(3).fill({ reps: 11, rpe: null })
     const r = computeNextState(stateNear, sets, te, { progression_model: 'double_progression' }, LOADS, SETTINGS)
     assert.equal(r.current_target_reps, 12)
   })
 
-  it('échec threshold → réduction poids', () => {
+  it('failure threshold → weight reduction', () => {
     const stateF = { current_weight_kg: 60, current_target_reps: 8, consecutive_failures: 1 }
     const sets = [{ reps: 5, rpe: null }]  // < min_reps
     const r = computeNextState(stateF, sets, te, { progression_model: 'double_progression' }, LOADS, SETTINGS)
@@ -109,13 +109,13 @@ describe('rpe_based', () => {
   }
   const state = { current_weight_kg: 80, consecutive_failures: 0 }
 
-  it('RPE << cible → augmentation', () => {
+  it('RPE << target → increase', () => {
     const sets = Array(3).fill({ reps: 8, rpe: 6.0 })  // all planned sets, diff -2 → +5%
     const r = computeNextState(state, sets, te, { progression_model: 'rpe_based' }, LOADS, SETTINGS)
     assert.ok(r.current_weight_kg > 80, `Attendu > 80, obtenu ${r.current_weight_kg}`)
   })
 
-  it('RPE >> cible → réduction', () => {
+  it('RPE >> target → reduction', () => {
     const sets = [{ reps: 8, rpe: 10.0 }]  // diff = +2 → pct = 5%
     const r = computeNextState(state, sets, te, { progression_model: 'rpe_based' }, LOADS, SETTINGS)
     assert.ok(r.current_weight_kg < 80, `Attendu < 80, obtenu ${r.current_weight_kg}`)
@@ -127,7 +127,7 @@ describe('rpe_based', () => {
     assert.equal(r.current_weight_kg, 80)
   })
 
-  it('RPE non renseigné → pas de changement', () => {
+  it('no RPE supplied → no change', () => {
     const sets = [{ reps: 8, rpe: null }]
     const r = computeNextState(state, sets, te, { progression_model: 'rpe_based' }, LOADS, SETTINGS)
     assert.equal(r.current_weight_kg, 80)
@@ -136,24 +136,24 @@ describe('rpe_based', () => {
 
 // ── resolveProgressionModel ─────────────────────────────────────────────
 describe('resolveProgressionModel', () => {
-  it('inherit → utilise le modèle du programme', () => {
+  it('inherit → uses program model', () => {
     const te = { progression_model: 'inherit' }
     const prog = { progression_model: 'linear' }
     assert.equal(resolveProgressionModel(te, prog), 'linear')
   })
-  it('modèle explicite → ignoré le programme', () => {
+  it('explicit model → ignores program', () => {
     const te = { progression_model: 'rpe_based' }
     const prog = { progression_model: 'linear' }
     assert.equal(resolveProgressionModel(te, prog), 'rpe_based')
   })
-  it('inherit + pas de programme → double_progression par défaut', () => {
+  it('inherit + no program → double_progression default', () => {
     const te = { progression_model: 'inherit' }
     assert.equal(resolveProgressionModel(te, null), 'double_progression')
   })
 })
 
-describe('Progression à charge fixe',()=>{
-  it('conserve les répétitions atteintes lorsque le matériel ne permet pas de monter la charge',()=>{
+describe('Fixed-load progression',()=>{
+  it('preserves achieved reps when equipment cannot increase weight',()=>{
     for(const weight of [0,20]){
       const result=computeNextState({current_weight_kg:weight,current_target_reps:12,consecutive_failures:0},
         Array.from({length:3},()=>({weight_kg:weight,reps:12})),

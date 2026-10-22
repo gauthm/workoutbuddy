@@ -117,8 +117,8 @@ export default {
           },
           scales: {
             x: {
-              // 'category' (fallback documenté du plan) : le bundle UMD
-              // de Chart.js 4 n'inclut pas d'adaptateur de date, 'time' échouerait
+              // 'category' is the documented fallback: the UMD bundle
+              // for Chart.js 4 has no date adapter, so 'time' would fail
               type:  'category',
               ticks: { color: mutedColor, maxTicksLimit: 8 },
               grid:  { color: gridColor },
@@ -151,7 +151,7 @@ export default {
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else>
-          <!-- Sélecteur de période -->
+          <!-- Period selector -->
           <div class="period-selector">
             <button
               v-for="p in PERIODS" :key="p.key"
@@ -162,7 +162,7 @@ export default {
             </button>
           </div>
 
-          <!-- Sélecteur de formule -->
+          <!-- Formula selector -->
           <div class="formula-selector">
             <span class="form-label" style="margin-right:0.5rem">
               {{ t('stats.formula_label') }} :
@@ -174,7 +174,7 @@ export default {
             </select>
           </div>
 
-          <!-- Graphique -->
+          <!-- Chart -->
           <EmptyState v-if="!state.data.length"
             icon="📈" :message="t('stats.no_data')" />
 
@@ -182,7 +182,7 @@ export default {
             <canvas id="exercise-progress-chart" />
           </div>
 
-          <!-- Tableau des données récentes -->
+          <!-- Recent data table -->
           <div v-if="state.data.length" class="progress-table">
             <div class="detail-section__title" style="margin-bottom:0.5rem">
               {{ t('stats.rm_estimated') }} — {{ t('stats.recent_sessions') }}

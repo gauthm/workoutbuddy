@@ -1,14 +1,14 @@
--- Migration 004 : nouvelles catégories équipement
--- SQLite ne supporte pas ALTER COLUMN CHECK — on recrée la table.
+-- Migration 004: new equipment categories
+-- SQLite does not support ALTER COLUMN CHECK — recreate the table.
 
--- 1. Sauvegarder les données existantes
+-- 1. Back up existing data
 CREATE TABLE IF NOT EXISTS equipment_item_backup AS
 SELECT * FROM equipment_item;
 
--- 2. Supprimer l'ancienne table
+-- 2. Drop the old table
 DROP TABLE IF EXISTS equipment_item;
 
--- 3. Recréer avec les nouvelles catégories dans le CHECK
+-- 3. Recreate with the new categories in the CHECK constraint
 CREATE TABLE IF NOT EXISTS equipment_item (
   id                  INTEGER PRIMARY KEY AUTOINCREMENT,
   category            TEXT    NOT NULL
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS equipment_item (
   created_at          TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
--- 4. Réinsérer les données existantes (toutes valides dans le nouveau schéma)
+-- 4. Reinsert existing data (all valid under the new schema)
 INSERT INTO equipment_item
   (id, category, name, weight_kg, count, weight_min_kg, weight_max_kg,
    weight_step_kg, resistance_min_kg, resistance_max_kg, notes, created_at)
@@ -51,5 +51,5 @@ SELECT
   weight_step_kg, resistance_min_kg, resistance_max_kg, notes, created_at
 FROM equipment_item_backup;
 
--- 5. Nettoyer la table temporaire
+-- 5. Clean up the temporary table
 DROP TABLE IF EXISTS equipment_item_backup;

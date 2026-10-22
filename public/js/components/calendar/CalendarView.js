@@ -8,28 +8,28 @@ import ErrorBanner   from '../common/ErrorBanner.js'
 import ConfirmModal  from '../common/ConfirmModal.js'
 import { isoDate } from '../../utils/date.js'
 
-// ── Helpers date ──────────────────────────────────────────────────────────
+// ── Date helpers ──────────────────────────────────────────────────────────
 
-// Retourne le lundi de la semaine contenant la date
+// Return the Monday of the week containing the date
 function mondayOf(date) {
   const d = new Date(date)
-  const day = d.getDay()  // 0=dimanche
+  const day = d.getDay()  // 0=Sunday
   const diff = day === 0 ? -6 : 1 - day
   d.setDate(d.getDate() + diff)
   return d
 }
 
-// Retourne toutes les cellules de la grille pour un mois donné
-// (peut inclure des jours du mois précédent/suivant pour compléter les semaines)
+// Return every grid cell for the given month
+// (may include previous/next month days to complete weeks)
 function buildGrid(year, month) {
-  // month : 0-indexé (0=janvier)
+  // month: zero-based (0=January)
   const firstDay  = new Date(year, month, 1)
   const startDate = mondayOf(firstDay)
 
   const cells = []
   const current = new Date(startDate)
 
-  // Générer jusqu'à 6 semaines × 7 jours = 42 cellules max
+  // Generate up to 6 weeks × 7 days = 42 cells maximum
   while (cells.length < 42) {
     cells.push({
       date:         isoDate(current),
@@ -38,10 +38,10 @@ function buildGrid(year, month) {
       isToday:      isoDate(current) === isoDate(new Date()),
     })
     current.setDate(current.getDate() + 1)
-    // Arrêter si on a passé le premier jour du mois suivant :
-    // compléter la semaine en cours puis sortir
+    // Stop after passing the first day of the next month:
+    // complete the current week, then exit
     if (current.getDate() === 1 && current.getMonth() !== month) {
-      // Compléter la semaine en cours
+      // Complete the current week
       while (current.getDay() !== 1) {
         cells.push({
           date:           isoDate(current),
@@ -58,18 +58,8 @@ function buildGrid(year, month) {
   return cells
 }
 
-const MONTH_NAMES_FR = [
-  'Janvier','Février','Mars','Avril','Mai','Juin',
-  'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
-]
-const MONTH_NAMES_EN = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
-]
-const DAY_HEADERS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']
-const DAY_HEADERS_EN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
-// Couleur des points par statut
+// Dot color by status
 const STATUS_COLORS = {
   completed:   'var(--color-success)',
   in_progress: 'var(--color-info)',
@@ -90,45 +80,43 @@ export default {
 
     const state = reactive({
       year:    today.getFullYear(),
-      month:   today.getMonth(),  // 0-indexé
+      month:   today.getMonth(),  // zero-based
       loading: false,
       error:   null,
-      sessions: [],               // Session[] du mois courant
+      sessions: [],               // Session[] for the current month
 
-      // Popup jour sélectionné
+      // Selected-day popup
       selectedDate:     props.embedded ? isoDate(today) : null,
       selectedSessions: [],
       selectedSessionIndex: 0,
 
-      // Modale replanification
+      // Rescheduling dialog
       showReschedule:   false,
       rescheduleSession: null,
       newDate:          '',
 
-      // Modale confirmation skip
+      // Skip confirmation dialog
       showSkip:         false,
       skipSession:      null,
       restoringId:      null,
     })
 
-    // ── Grille ────────────────────────────────────────────────────
+    // ── Grid ────────────────────────────────────────────────────
     const grid = computed(() => buildGrid(state.year, state.month))
     const visibleSessions = computed(() => props.embedded
       ? state.selectedSessions.slice(state.selectedSessionIndex, state.selectedSessionIndex + 1)
       : state.selectedSessions)
 
     const monthLabel = computed(() => {
-      const lang = store.getSetting('language', 'fr')
-      const names = lang === 'fr' ? MONTH_NAMES_FR : MONTH_NAMES_EN
+      const names = Array.from({ length: 12 }, (_, index) => t('calendar.month_' + index))
       return `${names[state.month]} ${state.year}`
     })
 
     const dayHeaders = computed(() => {
-      const lang = store.getSetting('language', 'fr')
-      return lang === 'fr' ? DAY_HEADERS_FR : DAY_HEADERS_EN
+      return Array.from({ length: 7 }, (_, index) => t('calendar.day_' + index))
     })
 
-    // Map date → sessions pour un accès O(1)
+    // Map date → sessions for O(1) access
     const sessionsByDate = computed(() => {
       const map = {}
       for (const s of state.sessions) {
@@ -145,7 +133,7 @@ export default {
       return [...sessions].sort((a,b) => priority[a.status] - priority[b.status])
     }
 
-    // ── Chargement ────────────────────────────────────────────────
+    // ── Loading ────────────────────────────────────────────────
     let loadRevision=0
     async function load() {
       const revision=++loadRevision
@@ -153,7 +141,7 @@ export default {
       state.error   = null
       state.sessions = []
 
-      // Charger le mois courant + un peu de marge (jours du mois adjacent visibles)
+      // Load the current month plus visible days from adjacent months
       const from = isoDate(new Date(state.year, state.month - 1, 20))
       const to   = isoDate(new Date(state.year, state.month + 1, 10))
 
@@ -195,7 +183,7 @@ export default {
       load()
     }
 
-    // ── Sélection d'un jour ───────────────────────────────────────
+    // ── Day selection ───────────────────────────────────────
     function selectDay(cell) {
       if (state.selectedDate === cell.date) {
         if (props.embedded) return
@@ -208,7 +196,7 @@ export default {
       state.selectedSessions = sessionsForDay(cell.date)
     }
 
-    // ── Actions séance ────────────────────────────────────────────
+    // ── Session actions ────────────────────────────────────────────
     async function startSession(session) {
       try {
         const startRes = await api.start(session.id)
@@ -298,14 +286,14 @@ export default {
         <ErrorBanner   v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else>
-          <!-- Navigation mois -->
+          <!-- Month navigation -->
           <div class="calendar-nav">
             <button class="calendar-nav__btn" :aria-label="t('calendar.previous_month')" @click="prevMonth()">‹</button>
             <span class="calendar-nav__label">{{ monthLabel }}</span>
             <button class="calendar-nav__btn" :aria-label="t('calendar.next_month')" @click="nextMonth()">›</button>
           </div>
 
-          <!-- En-têtes jours -->
+          <!-- Day headers -->
           <div class="calendar-grid" :style="{'--calendar-weeks': grid.length / 7}">
             <div
               v-for="h in dayHeaders" :key="h"
@@ -313,7 +301,7 @@ export default {
               {{ h }}
             </div>
 
-            <!-- Cellules -->
+            <!-- Cells -->
             <button
               v-for="cell in grid" :key="cell.date"
               class="calendar-cell"
@@ -329,7 +317,7 @@ export default {
 
               <span class="calendar-cell__day">{{ cell.day }}</span>
 
-              <!-- Points de statut -->
+              <!-- Status dots -->
               <div class="calendar-cell__dots">
                 <span
                   v-for="s in (sessionsByDate[cell.date] || [])"
@@ -341,7 +329,7 @@ export default {
             </button>
           </div>
 
-          <!-- Légende -->
+          <!-- Legend -->
           <div class="calendar-legend">
             <span v-for="(color, status) in STATUS_COLORS" :key="status"
               class="calendar-legend__item">
@@ -350,7 +338,7 @@ export default {
             </span>
           </div>
 
-          <!-- Panneau jour sélectionné -->
+          <!-- Selected-day panel -->
           <div v-if="state.selectedDate" class="calendar-day-panel">
             <div class="calendar-day-panel__heading">
               <div class="calendar-day-panel__date">{{ state.selectedDate }}</div>
@@ -380,7 +368,7 @@ export default {
                 </div>
               </div>
 
-              <!-- Actions selon statut -->
+              <!-- Actions by status -->
               <div class="calendar-day-session__actions">
                 <template v-if="session.status === 'completed'">
                   <button class="btn btn--secondary"
@@ -424,7 +412,7 @@ export default {
         </template>
       </div>
 
-      <!-- Modale replanification -->
+      <!-- Rescheduling dialog -->
       <ModalDialog v-if="state.showReschedule" :title="t('calendar.reschedule_title')" @close="state.showReschedule = false">
           <div class="form-group">
             <label class="form-label" for="CalendarView-state-newDate">{{ t('calendar.reschedule_date') }}</label>
@@ -441,7 +429,7 @@ export default {
 
       </ModalDialog>
 
-      <!-- Modale skip -->
+      <!-- Skip dialog -->
       <ConfirmModal
         v-if="state.showSkip"
         :title="t('calendar.mark_skipped')"

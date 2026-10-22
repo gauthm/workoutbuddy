@@ -1,7 +1,7 @@
 import { Readable, Duplex } from 'node:stream'
 import { ServerResponse } from 'node:http'
 
-// Exécute Express, son parseur JSON et ses routes sans ouvrir de port TCP.
+// Run Express, its JSON parser and routes without opening a TCP port.
 export default function request(app) {
   const builder = {}
   for (const method of ['get','post','put','patch','delete','options','head']) {

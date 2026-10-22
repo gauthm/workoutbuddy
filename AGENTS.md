@@ -1,212 +1,215 @@
 # AGENTS.md
 
-[Accueil de la documentation](docs/INDEX.md) · [README](README.md)
+[Documentation home](docs/INDEX.md) · [README](README.md)
 
-- [1. Projet](#1-projet)
-- [2. Stack — versions figées](#2-stack--versions-figées)
-- [3. Règles absolues](#3-règles-absolues)
-- [4. Conventions essentielles](#4-conventions-essentielles)
-- [5. Comment trouver l'information](#5-comment-trouver-linformation)
-- [6. Checklist avant de soumettre](#6-checklist-avant-de-soumettre)
-- [7. Parcours navigateur isolés](#7-parcours-navigateur-isolés)
-- [8. Déploiement après validation](#8-déploiement-après-validation)
-- [9. Déployer sur un nouvel hôte](#9-déployer-sur-un-nouvel-hôte)
-Lire ces consignes avant de travailler. Les instructions explicites de l’utilisateur priment sur les conventions du dépôt.
+- [1. Project](#1-project)
+- [2. Stack — pinned versions](#2-stack--pinned-versions)
+- [3. Absolute rules](#3-absolute-rules)
+- [4. Essential conventions](#4-essential-conventions)
+- [5. Finding information](#5-finding-information)
+- [6. Submission checklist](#6-submission-checklist)
+- [7. Isolated browser journeys](#7-isolated-browser-journeys)
+- [8. Deployment after validation](#8-deployment-after-validation)
+- [9. Deploying to a new host](#9-deploying-to-a-new-host)
 
----
-
-## 1. Projet
-
-**WorkoutBuddy** — SPA de musculation mono-utilisateur, utilisable en local ou auto-hébergée
-(Linux natif ou Docker), accessible depuis un navigateur sur ordinateur ou mobile.
-Express + SQLite + Vue 3, **aucun build frontend** ; après installation des dépendances et des
-ressources, `npm start` lance l’application.
+Read these instructions before working. Explicit user instructions take precedence over repository conventions.
 
 ---
 
-## 2. Stack — versions figées
+## 1. Project
 
-| Rôle | Techno | Version |
+**WorkoutBuddy** — a single-user strength-training SPA, usable locally or self-hosted
+(native Linux or Docker), accessible from desktop or mobile browsers.
+Express + SQLite + Vue 3, **no frontend build**; after installing dependencies and
+resources, `npm start` starts the application.
+
+---
+
+## 2. Stack — pinned versions
+
+| Role | Technology | Version |
 |---|---|---|
 | Runtime | Node.js | 24.x LTS |
 | HTTP | Express | 4.22.3 |
 | DB | better-sqlite3 | 13.0.3 |
-| UI | Vue 3 (fichier local) | 3.5.13 |
-| Graphiques | Chart.js (fichier local) | 4.4.4 |
-| Tests API | supertest | 7.3.1 |
-| Tests unit | node:test + assert | built-in |
+| UI | Vue 3 (local file) | 3.5.13 |
+| Charts | Chart.js (local file) | 4.4.4 |
+| API tests | supertest | 7.3.1 |
+| Unit tests | node:test + assert | built-in |
 
-**Ne jamais ajouter de paquet npm.** Implémenter à la main ou poser la question.
+**Never add an npm package.** Implement it manually or ask first.
 
-Le script natif de `better-sqlite3` est autorisé pour sa version verrouillée via
-`package.json#allowScripts`. Lors d’une mise à jour de cette dépendance, réviser aussi
-cette autorisation ; ne pas autoriser globalement tous les scripts d’installation.
+The native `better-sqlite3` script is allowed for its locked version through
+`package.json#allowScripts`. When updating this dependency, also review this
+permission; do not globally allow all installation scripts.
 
 ---
 
-## 3. Règles absolues
+## 3. Absolute rules
 
-| ❌ Interdit | ✅ À la place |
+| ❌ Forbidden | ✅ Instead |
 |---|---|
-| Fichier `.vue`, `.ts`, `.jsx` | Composant Vue 3 en `.js` pur |
-| `async/await` sur better-sqlite3 | `.get()` `.all()` `.run()` synchrones |
-| Concaténation SQL | Paramètres `?` ou `@param` |
-| `fetch()` dans un composant | Passer par `api.js` |
-| Retourner `ai_api_key` en HTTP | `ai_api_key_set: bool` uniquement |
-| Texte visible en dur dans un template | `t('clé')` + `locales/fr.json` + `locales/en.json` |
-| Modifier une migration existante | Nouveau fichier `NNN_description.sql` |
-| `data/workoutbuddy.db` dans un test | DB `:memory:` |
-| Deuxième instance better-sqlite3 | Singleton `getDb()` |
+| `.vue`, `.ts`, `.jsx` files | Plain `.js` Vue 3 components |
+| `async/await` on better-sqlite3 | Synchronous `.get()` `.all()` `.run()` |
+| SQL concatenation | `?` or `@param` parameters |
+| `fetch()` in a component | Go through `api.js` |
+| Returning `ai_api_key` over HTTP | `ai_api_key_set: bool` only |
+| Hardcoded visible text in a template | `t('key')` + `locales/fr.json` + `locales/en.json` |
+| Editing an existing migration | New `NNN_description.sql` file |
+| `data/workoutbuddy.db` in a test | `:memory:` DB |
+| Second better-sqlite3 instance | `getDb()` singleton |
 
 ---
 
-## 4. Conventions essentielles
+## 4. Essential conventions
 
-**DB** — tout champ JSON (`primary_muscles`, `equipment_required`, `signal_data`…) :
-`JSON.stringify()` avant INSERT, `JSON.parse()` après SELECT. Toujours.
+**Language** — English is the default for all repository documentation (including README,
+AGENTS and task files), source code, identifiers, comments, test descriptions and developer-facing
+messages, even when the user speaks French. Keep user-facing localization resources and language-specific
+test fixtures in their intended languages. Preserve existing API, database, migration and file-path
+compatibility; do not translate persisted values or public contracts without an explicit migration.
 
-**Migrations** — fichiers `src/db/migrations/NNN_*.sql`, numérotation croissante, idempotentes.
+**DB** — every JSON field (`primary_muscles`, `equipment_required`, `signal_data`…):
+`JSON.stringify()` before INSERT, `JSON.parse()` after SELECT. Always.
 
-**Réponses API** — JSON strict : `{ "error": "NOM" }` pour les erreurs. Codes : 200 OK · 201 Créé ·
-204 Supprimé · 400 Bad request · 404 Not found · 409 Conflict · 500 Server error.
+**Migrations** — files in `src/db/migrations/NNN_*.sql`, increasing numbering, idempotent.
 
-**Composants** — `{ name, props, template, setup() }`. Props déclarées avec types.
+**API responses** — strict JSON: `{ "error": "NAME" }` for errors. Codes: 200 OK · 201 Created ·
+204 Deleted · 400 Bad request · 404 Not found · 409 Conflict · 500 Server error.
 
-**i18n** — chaque nouveau texte visible : clé dans `fr.json` + `en.json` + `t('clé')` dans le
+**Components** — `{ name, props, template, setup() }`. Declare typed props.
+
+**i18n** — every new visible string: a key in `fr.json` + `en.json` + `t('key')` in the
 template.
 
-**Cache SW** — toute modification de `public/` : bumper `CACHE_NAME` dans `public/sw.js`
-(`workoutbuddy-vN` → `vN+1`) et ajouter les nouveaux fichiers `.js` dans `PRECACHE_URLS`.
+**SW cache** — every change to `public/`: bump `CACHE_NAME` in `public/sw.js`
+(`workoutbuddy-vN` → `vN+1`) and add new `.js` files to `PRECACHE_URLS`.
 
 ---
 
-## 5. Comment trouver l'information
+## 5. Finding information
 
-- [INDEX.md](docs/INDEX.md) : guides par thème ; [README.md](README.md) : démarrage rapide.
-- [INSTALLATION.md](docs/INSTALLATION.md), [DEVELOPPEMENT.md](docs/DEVELOPPEMENT.md) : installation et commandes de test.
-- [CODEBASE.md](docs/CODEBASE.md) : index pour trouver les fichiers concernés.
-- [TASKS.md](docs/TASKS.md) : travail en cours ou restant à faire.
-- [Tests navigateur](docs/TESTS_E2E.md) et [Parcours métier](docs/TESTS_JOURNEYS.md) : guides des tests.
+- [INDEX.md](docs/INDEX.md): guides by topic; [README.md](README.md): quick start.
+- [INSTALLATION.md](docs/INSTALLATION.md), [DEVELOPPEMENT.md](docs/DEVELOPPEMENT.md): installation and test commands.
+- [CODEBASE.md](docs/CODEBASE.md): index for finding relevant files.
+- [TASKS.md](docs/TASKS.md): work in progress or remaining tasks.
+- [Browser tests](docs/TESTS_E2E.md) and [User journeys](docs/TESTS_JOURNEYS.md): testing guides.
 
-Pour chaque demande : lire les tâches en cours, identifier les fichiers concernés dans l’index, puis
-charger seulement les sources utiles. Implémenter, exécuter les contrôles adaptés et retirer les
-tâches terminées après validation. Ne pas recréer les anciens plans ni dupliquer le fonctionnement
-dans des comptes rendus.
+For each request: read current tasks, identify relevant files in the index, then load only the
+sources needed. Implement, run appropriate checks and remove completed tasks after validation.
+Do not recreate old plans or duplicate descriptions of application behavior in reports.
 
-Si aucune tâche n’est en attente, travailler uniquement sur la demande explicite de l’utilisateur.
-L’historique des changements et anciennes tâches se trouve dans Git. Chercher les informations
-manquantes dans les guides puis les sources avant de poser une question.
+If no tasks are pending, work only on the user's explicit request. Change history and previous
+tasks are in Git. Look for missing information in guides and then sources before asking a question.
 
-Tous les chemins de code et commandes de cette documentation se lisent depuis la racine du dépôt.
-Les liens Markdown sont relatifs au document. Conserver les guides Markdown dans `docs/`. Le README, la licence et ce fichier
-`AGENTS.md` restent à la racine pour rendre les consignes du dépôt découvrables.
+All code paths and commands in this documentation are relative to the repository root.
+Markdown links are relative to their document. Keep Markdown guides in `docs/`. The README,
+license and this `AGENTS.md` file stay at the root to make repository instructions discoverable.
 
-**Taille cible par session :** `AGENTS.md` + tâche en cours + fichiers source concernés = **< 30
-k tokens**. Si un fichier source dépasse 500 lignes, copier seulement les sections pertinentes.
+**Target size per session:** `AGENTS.md` + current task + relevant source files = **< 30
+k tokens**. If a source file exceeds 500 lines, copy only the relevant sections.
 
 ---
 
-## 6. Checklist avant de soumettre
+## 6. Submission checklist
 
-- [ ] Aucune dépendance npm ajoutée
-- [ ] Les tests ciblés des parties touchées passent ; ne pas lancer systématiquement `npm test` ou tous les parcours
-- [ ] Chaînes visibles dans `fr.json` ET `en.json`
-- [ ] Aucune clé API dans les réponses HTTP
-- [ ] Colonnes JSON sérialisées/désérialisées correctement
-- [ ] Pas de concaténation SQL
-- [ ] Si `public/` modifié → `CACHE_NAME` bumpé dans `sw.js`
-- [ ] Après développement et tests, mettre les guides concernés dans `docs/`, le sommaire `README.md` et l’index `docs/CODEBASE.md` à jour pour refléter le fonctionnement et les fichiers actuels
-- [ ] Une fois les vérifications terminées, committer les changements et les pousser sur `main`
-- [ ] Pour un changement applicatif, déployer en production après validation, puis vérifier la version servie et le bon fonctionnement du service (§8)
+- [ ] No npm dependency added
+- [ ] Targeted tests for affected areas pass; do not routinely run `npm test` or all journeys
+- [ ] Visible strings in BOTH `fr.json` and `en.json`
+- [ ] No API key in HTTP responses
+- [ ] JSON columns correctly serialized/deserialized
+- [ ] No SQL concatenation
+- [ ] If `public/` changed → `CACHE_NAME` bumped in `sw.js`
+- [ ] After development and testing, update affected guides in `docs/`, the `README.md` overview and `docs/CODEBASE.md` index to reflect current behavior and files
+- [ ] Once checks are complete, commit changes and push them to `main`
+- [ ] For an application change, deploy to production after validation, then verify the served version and service health (§8)
 
-## 7. Parcours navigateur isolés
+## 7. Isolated browser journeys
 
-Pour chaque modification, lire le diff et tester uniquement les comportements touchés et leurs
-dépendances. **Ne pas relancer toutes les suites après chaque petite modification, ni répéter une
-validation déjà réussie sans nouvelle raison.**
+For each change, read the diff and test only affected behavior and its dependencies.
+**Do not rerun all suites after every small change or repeat successful validation
+without a new reason.**
 
-- Tests Node ciblés : `npm run test:affected` sélectionne les fichiers concernés (imports des tests unitaires, domaines API et parcours métier dépendants). `npm run test:affected -- --list` affiche la sélection sans exécuter. Pour préciser les fichiers après lecture du diff : `npm run test:affected -- tests/unit/equipmentCalc.test.js tests/integration/equipmentEnhancements.test.js`. Les options Node, par exemple `--test-name-pattern=...`, permettent aussi de cibler un scénario des parcours métier.
-- Interface : lancer les domaines concernés, par exemple `npm run test:e2e -- coach` ou `npm run test:e2e -- exercises motion`. `npm run test:e2e:affected` fait une sélection automatique, y compris pour l’accueil, le chat et un fichier de parcours modifié. Un simple changement de numéro de cache ne déclenche pas de parcours supplémentaire.
-- Pour les fichiers partagés (styles, traductions, i18n, etc.), inspecter les lignes modifiées : si la portée est locale, choisir explicitement les domaines avec `npm run test:e2e:affected -- --domains exercises,motion`. Ne pas employer cette option pour contourner une modification réellement globale. Si nécessaire, cibler aussi un cas avec `--grep`, en conservant ordinateur et mobile pour les changements d’interface.
-- Ajouter ou adapter le test du domaine si le comportement utilisateur change. Une modification purement documentaire n’exige pas de tests. Une modification de la sélection des tests se vérifie avec `tests/unit/e2eSelection.test.js` et les commandes de sélection, sans lancer tous les parcours de l’application.
-- Réserver `npm test` et `npm run test:e2e` complets aux changements transversaux (serveur, schéma, dépendances, navigation globale…), aux impacts incertains ou à une demande explicite. Les sélecteurs gardent un repli complet pour les sources inconnues et les dépendances globales. Mettre à jour les règles quand un nouveau domaine ou test est ajouté.
-- En cas d’échec, analyser la cause, puis relancer le cas concerné après correction. Ne pas recommencer toute la suite par défaut.
+- Targeted Node tests: `npm run test:affected` selects affected files (unit test imports, API domains and dependent user journeys). `npm run test:affected -- --list` previews selection without running tests. To specify files after reviewing the diff: `npm run test:affected -- tests/unit/equipmentCalc.test.js tests/integration/equipmentEnhancements.test.js`. Node options, such as `--test-name-pattern=...`, can also target a user journey scenario.
+- Interface: run affected domains, for example `npm run test:e2e -- coach` or `npm run test:e2e -- exercises motion`. `npm run test:e2e:affected` selects automatically, including the dashboard, chat and modified journey files. A cache version change alone does not trigger an additional journey.
+- For shared files (styles, translations, i18n, etc.), inspect changed lines: if the scope is local, explicitly choose domains with `npm run test:e2e:affected -- --domains exercises,motion`. Do not use this option to bypass a genuinely global change. If necessary, also target a case with `--grep`, keeping desktop and mobile coverage for interface changes.
+- Add or adapt the domain test when user behavior changes. Documentation-only changes require no tests. Changes to test selection are checked with `tests/unit/e2eSelection.test.js` and selection commands, without running all application journeys.
+- Reserve full `npm test` and `npm run test:e2e` runs for cross-cutting changes (server, schema, dependencies, global navigation…), uncertain impact or explicit requests. Selectors retain a full-suite fallback for unknown sources and global dependencies. Update the rules when adding a new domain or test.
+- On failure, analyze the cause, then rerun the affected case after fixing it. Do not restart the full suite by default.
 
-Les tests de `tests/e2e/` utilisent Playwright déjà installé, le vrai serveur et une base SQLite
-**temporaire créée par la fixture**, sur un port local libre. Cette base fichier est nécessaire aux
-tests de redémarrage ; ne jamais leur fournir la base personnelle, une URL externe ou un serveur
-déjà lancé. Les autres tests conservent leurs règles d’isolation existantes. Guide :
+Tests in `tests/e2e/` use the already installed Playwright, the real server and a
+**temporary SQLite database created by the fixture**, on a free local port. This file-based
+database is required for restart tests; never supply a personal database, external URL or
+already running server. Other tests retain their existing isolation rules. Guide:
 `docs/TESTS_E2E.md`.
 
-Le hook local `.githooks/pre-push`, installable avec `npm run hooks:install`, lance uniquement les
-fichiers Node et les domaines navigateur concernés par les commits poussés : tests Node sans ports
-TCP éphémères, puis navigateur contre de vrais serveurs HTTP.
+The local `.githooks/pre-push` hook, installed with `npm run hooks:install`, runs only Node files
+and browser domains affected by pushed commits: Node tests without ephemeral TCP ports,
+then browsers against real HTTP servers.
 
-## 8. Déploiement après validation
+## 8. Deployment after validation
 
-L’utilisateur est le seul utilisateur de l’application et autorise durablement le déploiement direct
-en production des changements demandés. **Ne pas attendre un nouveau « go » ni demander une
-confirmation de déploiement**, sauf instruction explicite contraire de sa part pour la demande en
-cours.
+The user is the application's only user and grants ongoing authorization to deploy requested
+changes directly to production. **Do not wait for another “go” or request deployment
+confirmation**, unless the user explicitly instructs otherwise for the current request.
 
-Après chaque changement applicatif :
+After every application change:
 
-1. Terminer le développement et relire le diff.
-2. Exécuter les tests ciblés du code modifié et vérifier les comportements de l’interface touchés, sur ordinateur et mobile si concernés, selon le §7. Corriger les échecs avant livraison.
-3. Actualiser la documentation concernée, committer et pousser sur `main`.
-4. Déployer directement la version validée selon les guides `docs/DEPLOYMENT_LINUX.md` et de la famille du serveur (`docs/DEPLOYMENT_REDHAT.md` ou `docs/DEPLOYMENT_DEBIAN.md`), ou `docs/DEPLOYMENT_DOCKER.md` pour une installation Docker. Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
-5. Vérifier les fichiers ou la version réellement servis en production et l’état du service. Indiquer explicitement dans la réponse finale que le déploiement a été effectué, ou expliquer le blocage si la livraison n’a pas abouti.
+1. Complete development and review the diff.
+2. Run targeted tests for modified code and check affected interface behavior, on desktop and mobile where relevant, following §7. Fix failures before delivery.
+3. Update affected documentation, commit and push to `main`.
+4. Deploy the validated version directly using `docs/DEPLOYMENT_LINUX.md` and the server family guide (`docs/DEPLOYMENT_REDHAT.md` or `docs/DEPLOYMENT_DEBIAN.md`), or `docs/DEPLOYMENT_DOCKER.md` for Docker installations. For frontend-only changes, use `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. For backend changes or migrations, follow the corresponding procedure, with a SQLite backup before migration.
+5. Verify the files or version actually served in production and service health. Explicitly state in the final response that deployment was completed, or explain the blocker if delivery did not succeed.
 
-Une modification purement documentaire ne nécessite ni tests applicatifs ni redéploiement de
-l’application.
+A documentation-only change requires neither application tests nor application redeployment.
 
-## 9. Déployer sur un nouvel hôte
+## 9. Deploying to a new host
 
-### Source des fichiers et choix de la variante
+### File sources and variant selection
 
-**Toujours partir du contenu versionné de `deploy/` dans ce dépôt Git.** Le dossier de travail
-voisin contient des rendus, sauvegardes de configuration et rapports propres à l’hôte ; il ne
-remplace jamais les modèles du dépôt. Ne pas réutiliser les secrets d’un autre serveur.
+**Always start from versioned `deploy/` contents in this Git repository.** The neighboring
+working directory contains host-specific rendered files, configuration backups and reports;
+it never replaces repository templates. Do not reuse another server's secrets.
 
-1. Inspecter l’hôte : `uname -s`, `uname -m`, `/etc/os-release`, gestionnaire de paquets,
-   services déjà présents et mode d’hébergement existant. Une application déjà installée
-   conserve son mode natif ou Docker ; ne pas la migrer implicitement.
-2. Pour une installation Linux native, choisir d’après `ID` et `ID_LIKE` : famille RHEL/Fedora
-   → `deploy/linux/redhat-based/` ; Debian/Ubuntu → `deploy/linux/debian-based/`.
-   Vérifier les prérequis et paquets dans le guide de cette famille, puis exécuter son
-   `check-platform.py`. Ne pas forcer une variante pour un OS incompatible.
-3. Pour Docker, partir de `deploy/docker/` et du guide `docs/DEPLOYMENT_DOCKER.md`.
-   Ne pas installer les unités systemd de l’application dans les conteneurs. Sur macOS/Windows,
-   utiliser Docker ou l’installation locale documentée ; les scripts Linux natifs n’y sont pas applicables.
+1. Inspect the host: `uname -s`, `uname -m`, `/etc/os-release`, package manager,
+   existing services and hosting mode. An installed application retains its native or Docker
+   mode; do not migrate it implicitly.
+2. For a native Linux installation, choose based on `ID` and `ID_LIKE`: RHEL/Fedora family
+   → `deploy/linux/redhat-based/`; Debian/Ubuntu → `deploy/linux/debian-based/`.
+   Check requirements and packages in that family's guide, then run its `check-platform.py`.
+   Do not force a variant onto an incompatible OS.
+3. For Docker, start from `deploy/docker/` and `docs/DEPLOYMENT_DOCKER.md`.
+   Do not install application systemd units inside containers. On macOS/Windows,
+   use Docker or the documented local installation; native Linux scripts do not apply.
 
-### Emplacement Linux et permissions
+### Linux locations and permissions
 
-La disposition native de référence est la suivante :
+The reference native layout is:
 
-| Emplacement | Rôle | Propriétaire et droits |
+| Location | Role | Owner and permissions |
 | --- | --- | --- |
-| `/usr/local/src/workoutbuddy` | Clone Git, développement, tests et construction | Administrateur du déploiement ; `0700` sur ce serveur mono-administrateur |
-| `/usr/local/src/workoutbuddy-deploy` | Travail privé de déploiement, voisin du clone | Même administrateur, `0700` ; jamais versionné ni servi en HTTP |
-| `/usr/local/lib/workoutbuddy` | Copie exécutée du code validé | `root:root`, dossiers `0755`, fichiers ordinaires `0644`, exécutables seuls `0755` ; aucun droit d’écriture pour le service |
-| `/var/lib/workoutbuddy` | SQLite, journaux et sauvegardes internes | `workoutbuddy:workoutbuddy`, dossiers `0700`, bases et journaux `0600` |
-| `/etc/workoutbuddy` | Configuration de l’instance | Dossier `root:workoutbuddy` `0750` ; environnement `root:root` `0600`, lu par systemd |
-| `/var/backups/workoutbuddy` | Instantanés privés des bases et configurations | `root:root`, dossier `0700`, fichiers privés `0600` |
+| `/usr/local/src/workoutbuddy` | Git clone, development, testing and build | Deployment administrator; `0700` on this single-administrator server |
+| `/usr/local/src/workoutbuddy-deploy` | Private deployment workspace, next to the clone | Same administrator, `0700`; never versioned or served over HTTP |
+| `/usr/local/lib/workoutbuddy` | Running copy of validated code | `root:root`, directories `0755`, regular files `0644`, executable files only `0755`; no service write access |
+| `/var/lib/workoutbuddy` | SQLite, journals and internal backups | `workoutbuddy:workoutbuddy`, directories `0700`, databases and journals `0600` |
+| `/etc/workoutbuddy` | Instance configuration | Directory `root:workoutbuddy` `0750`; environment `root:root` `0600`, read by systemd |
+| `/var/backups/workoutbuddy` | Private database and configuration snapshots | `root:root`, directory `0700`, private files `0600` |
 
-`/usr/local/src` convient aux sources locales : conserver ce chemin sur un Linux natif neuf.
-Si le clone est ailleurs, vérifier ses usages et déplacer le clone dans ce répertoire avant
-la première installation, puis corriger les chemins dépendants. Ne pas déplacer un clone déjà
-correctement placé. Le dossier `workoutbuddy-deploy` doit **toujours être créé dans le même parent
-que le clone** ; sur ce serveur les deux restent donc sous `/usr/local/src`.
+`/usr/local/src` is suitable for local sources: retain this path on a new native Linux host.
+If the clone is elsewhere, check its uses and move it into this directory before the first
+installation, then fix dependent paths. Do not move a clone already correctly located.
+The `workoutbuddy-deploy` directory must **always be created under the same parent as the
+clone**; on this server both therefore remain under `/usr/local/src`.
 
-Sur le serveur actuel, les deux dossiers appartiennent à root et leurs entrées sont limitées à
-`0700` ; `.git/` est également `0700`. Les fichiers sources peuvent garder leurs modes Git : la
-restriction sur le dossier parent protège tout l’arbre, y compris les fichiers locaux ignorés.
-Conserver les bits d’exécution des scripts ; ne pas appliquer un `chmod -R 644` ou `chmod -R 777`.
-Ne pas modifier les droits globaux de `/usr/local/src`, ni ceux de l’installation active par
-une commande récursive appliquée au clone. Pour un autre administrateur, utiliser son compte
-pour le clone et le travail privé, et sudo seulement pour les opérations système.
+On the current server, both directories belong to root and their permissions are limited to
+`0700`; `.git/` is also `0700`. Source files can retain their Git modes: the parent directory
+restriction protects the entire tree, including ignored local files. Preserve script executable
+bits; do not apply `chmod -R 644` or `chmod -R 777`. Do not change global permissions on
+`/usr/local/src`, or those of the active installation through a recursive command on the clone.
+For another administrator, use their account for the clone and private workspace, and sudo
+only for system operations.
 
-Exemple **pour un nouvel hôte administré en root**, sans écraser un clone existant :
+Example **for a new host administered as root**, without overwriting an existing clone:
 
 ```sh
 umask 077
@@ -218,33 +221,33 @@ WB_WORK="$(dirname "$WB_REPO")/workoutbuddy-deploy"
 install -d -o root -g root -m 0700 "$WB_WORK"
 ```
 
-Ne jamais faire pointer un site web vers le clone ou le dossier de travail. Les secrets générés,
-archives privées, `.env`, exports et bases restent hors Git. Répertoire de travail `0700`, rendus
-privés `0600`, `umask 077` pour leur création ; aucun secret dans les journaux de validation.
+Never point a website at the clone or workspace. Generated secrets, private archives, `.env`,
+exports and databases remain outside Git. Workspace `0700`, private rendered files `0600`,
+`umask 077` when creating them; no secrets in validation logs.
 
-### Première installation native et livraisons suivantes
+### Initial native installation and subsequent releases
 
-1. Installer les prérequis de la famille et les binaires vérifiés. Suivre ensuite
-   `docs/DEPLOYMENT_LINUX.md` pour créer les comptes dédiés, répertoires, règles réseau,
-   configurations et unités. Les guides de famille et le guide commun font partie du dépôt :
-   ils donnent les paquets, commandes et destinations à suivre, sans dépendre d’une conversation.
-2. Définir `WB_DEPLOY_DIR` sur la variante choisie. Pour une instance neuve uniquement,
-   rendre ses modèles dans un sous-dossier privé de `WB_WORK`, puis installer chaque rendu
-   avec les propriétaires et droits indiqués. Ne jamais régénérer les clés d’une instance existante.
-3. Copier le code validé dans `/usr/local/lib/workoutbuddy` en excluant `.git`, `.env`,
-   données locales, résultats de tests et dépendances de développement. Installer les dépendances
-   verrouillées et ressources dans cette copie, puis imposer les droits de code ci-dessus.
-   La base personnelle reste dans `/var/lib/workoutbuddy`, séparée du clone et du code exécuté.
-4. Valider Caddy/Authelia et les unités, démarrer les services, configurer le compte/MFA depuis
-   le terminal privé et vérifier l’accès HTTPS authentifié. Activer les sauvegardes et un seul
-   planificateur de maintenance selon `docs/DEPLOYMENT_OPERATIONS.md`.
-5. Pour les changements ultérieurs : tests ciblés du code et de l’UI modifiés, documentation,
-   commit/push, puis déploiement direct autorisé (§8). Pour l’interface seule, utiliser le
-   `workoutbuddy-deploy-assets` de la variante choisie pour publier le `public/` validé.
-   Installer les outils système depuis ces sources versionnées ; ne pas inventer une autre procédure
-   à partir d’anciens fichiers de `WB_WORK`. Pour le backend ou une migration, créer d’abord une
-   sauvegarde SQLite cohérente hors rétention, garder le code précédent et contrôler le service
-   après livraison. Vérifier la version réellement servie et conserver un retour arrière exploitable.
+1. Install family-specific requirements and verified binaries. Then follow
+   `docs/DEPLOYMENT_LINUX.md` to create dedicated accounts, directories, network rules,
+   configuration and units. Family guides and the shared guide are part of the repository:
+   they provide packages, commands and destinations without depending on a conversation.
+2. Set `WB_DEPLOY_DIR` to the chosen variant. For a new instance only, render its templates
+   into a private subdirectory of `WB_WORK`, then install each rendered file with the specified
+   ownership and permissions. Never regenerate keys for an existing instance.
+3. Copy validated code to `/usr/local/lib/workoutbuddy`, excluding `.git`, `.env`,
+   local data, test results and development dependencies. Install locked dependencies and
+   resources in this copy, then enforce the code permissions above. The personal database
+   remains in `/var/lib/workoutbuddy`, separate from the clone and running code.
+4. Validate Caddy/Authelia and units, start services, configure the account/MFA from the
+   private terminal and verify authenticated HTTPS access. Enable backups and exactly one
+   maintenance scheduler following `docs/DEPLOYMENT_OPERATIONS.md`.
+5. For subsequent changes: targeted tests for modified code and UI, documentation,
+   commit/push, then authorized direct deployment (§8). For frontend-only changes, use
+   `workoutbuddy-deploy-assets` from the chosen variant to publish validated `public/` files.
+   Install system tools from these versioned sources; do not invent another procedure from
+   old `WB_WORK` files. For backend changes or migrations, first create a consistent SQLite
+   backup outside retention, retain previous code and check the service after delivery.
+   Verify the version actually served and retain a usable rollback.
 
-Références de placement : [FHS, hiérarchie locale](https://specifications.freedesktop.org/fhs/latest-single/).
-Convention des consignes à la racine : [documentation officielle OpenAI](https://developers.openai.com/blog/custom-code-review-rules-for-codex).
+Location references: [FHS, local hierarchy](https://specifications.freedesktop.org/fhs/latest-single/).
+Root instruction convention: [official OpenAI documentation](https://developers.openai.com/blog/custom-code-review-rules-for-codex).

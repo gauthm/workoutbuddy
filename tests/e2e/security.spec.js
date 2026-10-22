@@ -1,7 +1,8 @@
+import {readFile} from 'node:fs/promises'
 import {test,expect} from './fixtures.js'
 import {get,planned,trainThroughUI,startThroughUI} from './helpers.js'
 
-test('mobile : pincement et double tap sans zoom, défilement tactile et champs de séance lisibles',async({browser,app,request})=>{
+test('mobile: pinch and double tap without zoom, touch scrolling and readable workout fields',async({browser,app,request})=>{
  const context=await browser.newContext({baseURL:app.url,viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'fr-FR'})
  try{
   const page=await context.newPage(),screen=await context.newCDPSession(page)
@@ -39,7 +40,7 @@ test('mobile : pincement et double tap sans zoom, défilement tactile et champs 
  }finally{await context.close()}
 })
 
-test('icônes navigateur et écran d’accueil : liens, décodage et PNG opaques aux dimensions prévues',async({page,request})=>{
+test('browser and home-screen icons: links, decoding and opaque PNGs with expected dimensions',async({page,request})=>{
  await page.goto('/')
  const apple=page.locator('link[rel="apple-touch-icon"]')
  await expect(apple).toHaveAttribute('sizes','180x180')
@@ -66,7 +67,7 @@ test('icônes navigateur et écran d’accueil : liens, décodage et PNG opaques
  expect([...(await ico.body()).subarray(0,6)]).toEqual([0,0,1,0,2,0])
 })
 
-test('la barre de titre respecte la zone de sécurité iOS au chargement, au défilement et après rotation',async({page})=>{
+test('title bar respects iOS safe area on load, scrolling and rotation',async({page})=>{
  const screen=await page.context().newCDPSession(page)
  await screen.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}})
  await page.goto('/#/exercises')
@@ -87,7 +88,7 @@ test('la barre de titre respecte la zone de sécurité iOS au chargement, au dé
  await screen.detach()
 })
 
-test('CSP active : interface Vue, séance complète, progression et statistiques fonctionnent',async({page,request})=>{
+test('active CSP: Vue interface, full workout, progression and statistics work',async({page,request})=>{
  const violations=[]
  await page.addInitScript(()=>{window.__cspViolations=[];document.addEventListener('securitypolicyviolation',e=>window.__cspViolations.push(e.violatedDirective+': '+e.blockedURI))})
  page.on('console',message=>{if(message.type()==='error' && /Content Security Policy|Refused to/.test(message.text()))violations.push(message.text())})
@@ -103,7 +104,7 @@ test('CSP active : interface Vue, séance complète, progression et statistiques
  expect(response.headers()['x-powered-by']).toBeUndefined()
 })
 
-test('vrai HTTP : origine étrangère refusée sans changement, JSON obligatoire, limite IA et no-store',async({request,app})=>{
+test('real HTTP: foreign origin rejected without changes, mandatory JSON, AI limit and no-store',async({request,app})=>{
  const before=await get(request,'/settings')
  const forbidden=await request.put('/api/v1/settings',{headers:{Origin:'https://attacker.example'},data:{theme:'light'}})
  expect(forbidden.status()).toBe(403)
@@ -123,7 +124,7 @@ test('vrai HTTP : origine étrangère refusée sans changement, JSON obligatoire
  expect((await request.get('/api/v1/settings')).status()).toBe(200)
 })
 
-test('service worker autorisé : installation et rechargement fonctionnent avec la CSP',async({browser,app})=>{
+test('service worker allowed: installation and reload work with CSP',async({browser,app})=>{
  const context=await browser.newContext({serviceWorkers:'allow'})
  try{
   const page=await context.newPage(),errors=[]
@@ -138,7 +139,7 @@ test('service worker autorisé : installation et rechargement fonctionnent avec 
  }finally{await context.close()}
 })
 
-test('un import HTTP interrompu ne monopolise pas la place et un second corps volumineux est refusé',async({request,app})=>{
+test('an interrupted HTTP import releases its slot and a second large body is rejected',async({request,app})=>{
  const {request:httpRequest}=await import('node:http')
  const slow=httpRequest(app.url+'/api/v1/import',{method:'POST',headers:{'Content-Type':'application/json','Content-Length':'1000000'}})
  slow.on('error',()=>{})
@@ -155,3 +156,39 @@ test('un import HTTP interrompu ne monopolise pas la place et un second corps vo
  }).toBe(400)
  expect((await get(request,'/settings')).theme).toBe('dark')
 })
+
+for(const locale of ['fr-FR','en-US']){
+ test(`offline page: ${locale} localization and retry work under CSP`,async({browser,app})=>{
+  const language=locale.slice(0,2)
+  const messages=JSON.parse(await readFile(new URL(`../../public/locales/${language}.json`,import.meta.url),'utf8'))
+  const context=await browser.newContext({baseURL:app.url,locale,serviceWorkers:'block'})
+  try{
+   const page=await context.newPage(),errors=[],policyErrors=[]
+   let pageRequests=0
+   page.on('pageerror',error=>errors.push(error.message))
+   page.on('console',message=>{
+    if(message.type()==='error' && /Content Security Policy|Refused to/.test(message.text()))policyErrors.push(message.text())
+   })
+   page.on('request',request=>{if(new URL(request.url()).pathname==='/offline.html')pageRequests++})
+   await page.addInitScript(()=>{
+    window.__cspViolations=[]
+    document.addEventListener('securitypolicyviolation',event=>window.__cspViolations.push(event.violatedDirective+': '+event.blockedURI))
+   })
+   const response=await page.goto('/offline.html')
+   expect(response.headers()['content-security-policy']).toContain("script-src 'self' 'unsafe-eval'")
+   async function localized(){
+    await expect(page.locator('html')).toHaveAttribute('lang',language)
+    await expect(page).toHaveTitle(messages['offline.title'])
+    await expect(page.locator('#offline-message')).toHaveText(messages['offline.message'])
+    await expect(page.locator('#offline-retry')).toHaveText(messages['offline.retry'])
+    expect(await page.evaluate(()=>window.__cspViolations)).toEqual([])
+   }
+   await localized()
+   await Promise.all([page.waitForEvent('load'),page.getByRole('button',{name:messages['offline.retry'],exact:true}).click()])
+   await localized()
+   expect(pageRequests).toBe(2)
+   expect(errors).toEqual([])
+   expect(policyErrors).toEqual([])
+  }finally{await context.close()}
+ })
+}

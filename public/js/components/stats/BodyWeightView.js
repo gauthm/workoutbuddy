@@ -10,7 +10,7 @@ import ErrorBanner    from '../common/ErrorBanner.js'
 import EmptyState     from '../common/EmptyState.js'
 import ConfirmModal   from '../common/ConfirmModal.js'
 
-// ── Calcul de la moyenne mobile 7 jours ──────────────────────────────────
+// ── Calculate the 7-day moving average ──────────────────────────────────
 function movingAverage(entries, windowDays = 7) {
   return entries.map((entry, idx) => {
     const windowStart = idx - windowDays + 1
@@ -20,7 +20,7 @@ function movingAverage(entries, windowDays = 7) {
   })
 }
 
-// ── Tendance (comparaison 7 derniers jours vs 7 jours précédents) ────────
+// ── Trend (compare the last 7 days with the previous 7 days) ────────
 function computeTrend(entries) {
   if (entries.length < 2) return 'stable'
   const last7  = entries.slice(-7)
@@ -46,7 +46,7 @@ export default {
     const state = reactive({
       loading:    false,
       error:      null,
-      entries:    [],           // BodyWeight[] triés ASC par date
+      entries:    [],           // BodyWeight[] sorted by date ascending
       showForm:   false,
       form:       { date: isoDate(), weight_kg: '', notes: '' },
       saving:     false,
@@ -64,12 +64,12 @@ export default {
 
     const trend = computed(() => computeTrend(state.entries))
 
-    // ── Chargement ──────────────────────────────────────────────
+    // ── Loading ──────────────────────────────────────────────
     async function load() {
       state.loading = true; state.error = null
       try {
         const data = await api.list({ days: 365 })
-        // Trier ASC par date pour la courbe
+        // Sort by date ascending for the chart
         state.entries = [...data.entries].sort((a, b) => a.date.localeCompare(b.date))
       } catch (err) {
         state.error = err.message
@@ -80,7 +80,7 @@ export default {
       }
     }
 
-    // ── Rendu du graphique ──────────────────────────────────────
+    // ── Chart rendering ──────────────────────────────────────
     function renderChart() {
       const styles = getComputedStyle(document.documentElement)
       const mutedColor = styles.getPropertyValue('--color-text-muted').trim()
@@ -94,7 +94,7 @@ export default {
       const canvas = document.getElementById('bodyweight-chart')
       if (!canvas || state.entries.length === 0) return
 
-      // Détruire l'instance précédente
+      // Destroy the previous instance
       if (chartInstance) {
         chartInstance.destroy()
         chartInstance = null
@@ -102,7 +102,7 @@ export default {
 
       const movAvg = movingAverage(state.entries)
 
-      // Convertir selon l'unité
+      // Convert to the selected unit
       const rawData = state.entries.map(e => ({
         x: e.date,
         y: unit.value === 'lb'
@@ -159,8 +159,8 @@ export default {
           },
           scales: {
             x: {
-              // 'category' (fallback documenté du plan) : le bundle UMD
-              // de Chart.js 4 n'inclut pas d'adaptateur de date, 'time' échouerait
+              // 'category' is the documented fallback: the UMD bundle
+              // for Chart.js 4 has no date adapter, so 'time' would fail
               type:    'category',
               ticks:   { color: mutedColor, maxTicksLimit: 8 },
               grid:    { color: gridColor },
@@ -177,14 +177,14 @@ export default {
       })
     }
 
-    // ── Ajout ───────────────────────────────────────────────────
+    // ── Add ───────────────────────────────────────────────────
     async function saveEntry() {
       if (!state.form.weight_kg || parseFloat(state.form.weight_kg) <= 0) {
         store.showToast(t('bodyweight.invalid_weight'), 'error'); return
       }
       state.saving = true
       try {
-        // Convertir lb → kg si nécessaire
+        // Convert lb → kg if needed
         const weightKg = unit.value === 'lb'
           ? Math.round(parseFloat(state.form.weight_kg) / 2.20462 * 100) / 100
           : parseFloat(state.form.weight_kg)
@@ -205,7 +205,7 @@ export default {
       }
     }
 
-    // ── Suppression ─────────────────────────────────────────────
+    // ── Delete ─────────────────────────────────────────────
     async function doDelete() {
       if (!state.deleteTarget) return
       try {
@@ -250,7 +250,7 @@ export default {
         <ErrorBanner v-else-if="state.error" :message="state.error" :retry="load" />
 
         <template v-else>
-          <!-- Formulaire d'ajout -->
+          <!-- Add form -->
           <div v-if="state.showForm" class="bw-form">
             <form @submit.prevent="saveEntry">
               <div class="form-group">
@@ -285,7 +285,7 @@ export default {
           </EmptyState>
 
           <template v-else>
-            <!-- Résumé -->
+            <!-- Summary -->
             <div class="bw-summary">
               <div class="bw-summary__item">
                 <div class="detail-section__title">{{ t('bodyweight.latest') }}</div>
@@ -309,12 +309,12 @@ export default {
               </div>
             </div>
 
-            <!-- Graphique -->
+            <!-- Chart -->
             <div class="bw-chart-container">
               <canvas id="bodyweight-chart"></canvas>
             </div>
 
-            <!-- Liste des entrées (30 dernières) -->
+            <!-- Entry list (last 30) -->
             <div class="bw-list">
               <div
                 v-for="entry in [...state.entries].reverse().slice(0, 30)"

@@ -2,17 +2,17 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createActionStreamParser } from '../../src/services/actionStreamParser.js'
 
-test('les blocs action sont reconnus à toutes les frontières de chunks',()=>{
-  const text='Avant ```action\n{"action":"update_settings","data":{"theme":"light"}}\n``` Après'
+test('action blocks are recognized at every chunk boundary',()=>{
+  const text='Before ```action\n{"action":"update_settings","data":{"theme":"light"}}\n``` After'
   for(let split=0;split<=text.length;split++) {
     const parse=createActionStreamParser()
     const events=[...parse(text.slice(0,split)),...parse(text.slice(split)),...parse('',true)]
-    assert.equal(events.filter(x=>x.type==='token').map(x=>x.content).join(''),'Avant  Après')
+    assert.equal(events.filter(x=>x.type==='token').map(x=>x.content).join(''),'Before  After')
     assert.equal(events.filter(x=>x.type==='action').length,1)
     assert.equal(events.find(x=>x.type==='action').action.data.theme,'light')
   }
 })
-test('plusieurs blocs dans un seul chunk et erreurs JSON restent délimités',()=>{
+test('multiple blocks in one chunk and JSON errors remain delimited',()=>{
   const parse=createActionStreamParser()
   const events=parse('```action\n{"action":"one"}\n``` texte ```action\n{"action":"two"}\n```',true)
   assert.equal(events.filter(x=>x.type==='action').length,2)

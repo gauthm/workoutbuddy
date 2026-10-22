@@ -1,14 +1,15 @@
+import { message } from '../utils/messages.js'
 import { detectProgramPlateau } from './plateauDetector.js'
 
 /**
- * Détermine si un programme doit passer en deload.
+ * Determine whether a program should enter a deload.
  *
- * Deux déclencheurs :
- * 1. Deload planifié : N semaines écoulées depuis le dernier deload
- * 2. Plateau : ≥ 50% des exercices en plateau sur `plateau_sessions` séances
+ * Two triggers:
+ * 1. Scheduled deload: N weeks elapsed since the last deload
+ * 2. Plateau: ≥ 50% of exercises plateaued over `plateau_sessions` sessions
  *
- * @param {object}  program   - ligne de la table `program`
- * @param {object}  settings  - settings parsés (objet clé→valeur)
+ * @param {object}  program   - row from the `program` table
+ * @param {object}  settings  - parsed settings (key→value object)
  * @param {object}  db
  * @returns {{ should: bool, reason?: 'scheduled'|'plateau', detail?: string }}
  */
@@ -17,7 +18,7 @@ export function shouldDeload(program, settings, db, now = new Date()) {
     return { should: false }
   }
 
-  // ── Déclencheur 1 : deload planifié ──────────────────────────────
+  // ── Trigger 1: scheduled deload ──────────────────────────────
   if (program.deload_auto_enabled) {
     const freqWeeks = program.deload_frequency_weeks || 6
     const refDate   = program.last_deload_date || program.started_on || program.created_at
@@ -27,12 +28,12 @@ export function shouldDeload(program, settings, db, now = new Date()) {
       return {
         should: true,
         reason: 'scheduled',
-        detail: `${weeksSince} semaines depuis le dernier deload (fréquence : ${freqWeeks}).`,
+        detail: message('deload.scheduled', { weeksSince: weeksSince, freqWeeks: freqWeeks }),
       }
     }
   }
 
-  // ── Déclencheur 2 : plateau persistant ───────────────────────────
+  // ── Trigger 2: persistent plateau ───────────────────────────
   const plateauSessions = settings.plateau_detection_sessions || 4
   const result = detectProgramPlateau(program.id, plateauSessions, 0.5, db)
 
@@ -40,7 +41,7 @@ export function shouldDeload(program, settings, db, now = new Date()) {
     return {
       should: true,
       reason: 'plateau',
-      detail: `${result.plateau_count}/${result.total_exercises} exercices en plateau sur ${plateauSessions} séances.`,
+      detail: message('deload.plateau', { plateauCount: result.plateau_count, totalExercises: result.total_exercises, plateauSessions: plateauSessions }),
     }
   }
 
@@ -48,18 +49,18 @@ export function shouldDeload(program, settings, db, now = new Date()) {
 }
 
 /**
- * Calcule les objectifs d'une séance de deload pour un template_exercise.
+ * Calculate deload session targets for a template_exercise.
  *
- * Règles :
- * - Poids     : current_weight_kg × (1 - load_reduction_pct / 100)
- * - Séries    : max(deload_min_sets, round(target_sets × (1 - volume_reduction_pct / 100)))
- * - Reps      : target_reps_min (fourchette basse)
+ * Rules:
+ * - Weight    : current_weight_kg × (1 - load_reduction_pct / 100)
+ * - Sets      : max(deload_min_sets, round(target_sets × (1 - volume_reduction_pct / 100)))
+ * - Reps      : target_reps_min (lower bound)
  *
- * @param {object}  templateExercise  - ligne template_exercise
- * @param {object}  progressionState  - ligne progression_state
- * @param {object}  program           - ligne program
- * @param {object}  settings          - settings parsés
- * @param {number[]} achievableLoads  - charges atteignables
+ * @param {object}  templateExercise  - template_exercise row
+ * @param {object}  progressionState  - progression_state row
+ * @param {object}  program           - program row
+ * @param {object}  settings          - parsed settings
+ * @param {number[]} achievableLoads  - achievable loads
  * @returns {{ weight_kg, sets, reps_min, reps_max }}
  */
 export function computeDeloadTargets(
@@ -75,7 +76,7 @@ export function computeDeloadTargets(
 
   const targetW = progressionState.current_weight_kg * (1 - loadPct / 100)
 
-  // Arrondir vers le bas à la charge atteignable la plus proche
+  // Round down to the nearest achievable load
   let weight
   if (achievableLoads && achievableLoads.length > 0) {
     const valid = achievableLoads.filter(l => l <= targetW + 0.001)
@@ -95,11 +96,11 @@ export function computeDeloadTargets(
     weight_kg: weight,
     sets:      targetSets,
     reps_min:  templateExercise.target_reps_min,
-    reps_max:  templateExercise.target_reps_min,  // fourchette resserrée au minimum
+    reps_max:  templateExercise.target_reps_min,  // range narrowed to the minimum
   }
 }
 
-// ── Helper : nombre de semaines entre deux dates ISO ────────────────────
+// ── Helper: number of weeks between two ISO dates ────────────────────
 function weeksBetween(dateA, dateB) {
   const a = new Date(dateA.slice(0, 10))
   const b = new Date(dateB.slice(0, 10))

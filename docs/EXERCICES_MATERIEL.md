@@ -1,83 +1,78 @@
-# Exercices et matériel
+# Exercises and equipment
 
-[Accueil de la documentation](INDEX.md) · [README](../README.md)
+[Documentation home](INDEX.md) · [README](../README.md)
 
-- [Catalogue et compatibilité](#catalogue-et-compatibilité)
-- [Langues et recherche](#langues-et-recherche)
-- [Maintenance des traductions](#maintenance-des-traductions)
-- [Navigation et démonstrations](#navigation-et-démonstrations)
-- [Inventaire](#inventaire)
-- [Douleurs et exclusions](#douleurs-et-exclusions)
-- [Remplacer un exercice](#remplacer-un-exercice)
+- [Catalog and compatibility](#catalog-and-compatibility)
+- [Languages and search](#languages-and-search)
+- [Translation maintenance](#translation-maintenance)
+- [Navigation and demonstrations](#navigation-and-demonstrations)
+- [Inventory](#inventory)
+- [Pain and exclusions](#pain-and-exclusions)
+- [Replace an exercise](#replace-an-exercise)
 
-## Catalogue et compatibilité
+## Catalog and compatibility
 
-L’interface et le moteur utilisent uniquement le catalogue importé de free-exercise-db. L’ajout et
-la modification d’exercices personnalisés sont bloqués côté API. Les anciens doublons « Curl marteau
-» sont rattachés à Hammer Curls, avec conservation des séances, séries, exclusions et de la
-progression la plus récente.
+The interface and engine use only the catalog imported from free-exercise-db. Adding and editing
+custom exercises is blocked by the API. Old “Curl marteau” duplicates are linked to Hammer Curls,
+preserving sessions, sets, exclusions, and the most recent progression.
 
-## Langues et recherche
+## Languages and search
 
-Les 876 exercices disposent de noms et de consignes en français et en anglais, selon la langue
-choisie dans Réglages. Les noms français gardent les termes courants comme curl, rowing, dips ou
-kettlebell. La recherche couvre les deux langues et ignore les accents et la casse. Les identifiants
-restent identiques : changer de langue conserve l’historique et la progression.
+All 876 exercises have French and English names and instructions, according to the language
+selected in Settings. French names retain familiar terms such as curl, rowing, dips, and
+kettlebell. Search covers both languages and ignores accents and case. Identifiers stay unchanged:
+switching languages preserves history and progression.
 
-## Maintenance des traductions
+## Translation maintenance
 
-Le catalogue source reste dans `src/seed/exercises.json` ; les traductions statiques sont dans
-`src/seed/exercises.fr.json`. Les noms ont été rédigés en français ; les consignes ont été traduites
-avec assistance locale, avec relecture des 71 fiches du générateur et corrections de vocabulaire
-technique. Aucun traducteur ou modèle supplémentaire n’est nécessaire pour utiliser l’application.
+The source catalog remains in `src/seed/exercises.json`; static translations are in
+`src/seed/exercises.fr.json`. Names were written in French; instructions were translated with local
+assistance, with review of the generator's 71 exercise entries and technical vocabulary fixes.
+No additional translator or model is needed to use the app.
 
-Au démarrage et avec `npm run load:exercises`, seuls les champs français des exercices existants
-sont actualisés. L’empreinte de chaque entrée vérifie sa correspondance avec la source anglaise :
-après un réimport modifiant un nom ou des consignes EN, actualiser aussi la traduction et son
-empreinte (`translationSource` dans `seed.js`). Les tests vérifient la couverture du catalogue.
+At startup and with `npm run load:exercises`, only French fields of existing exercises are updated.
+Each entry's fingerprint checks its match with the English source: after reimporting changed
+English names or instructions, also update the translation and its fingerprint (`translationSource`
+in `seed.js`). Tests verify catalog coverage.
 
-## Navigation et démonstrations
+## Navigation and demonstrations
 
-La page **Exercices et Matériel** regroupe trois onglets : Exercices, Douleurs et Matériel. La
-recherche et les filtres permettent de choisir un muscle, un mouvement, une famille de matériel ou
-les exercices réalisables avec l’inventaire. Le compteur de l’onglet Exercices indique le nombre de
-mouvements restants après les filtres, douleurs et exclusions ; les exclusions sont signalées
-séparément.
+The **Exercises and Equipment** page has three tabs: Exercises, Pain, and Equipment. Search and
+filters let you select a muscle, movement, equipment family, or exercises possible with the
+inventory. The Exercises tab counter shows movements remaining after filters, pain, and exclusions;
+exclusions are indicated separately.
 
-Consulter une fiche puis revenir conserve les filtres et la position de défilement. Les deux photos
-alternent automatiquement pour montrer les positions du mouvement, dans la fiche et dans l’aide en
-séance. Un bouton permet de mettre en pause ou de reprendre ; les images sont chargées une seule
-fois et l’animation s’arrête hors écran, quand l’onglet est masqué ou à la fermeture.
+Opening an exercise and returning preserves filters and scroll position. Two photos alternate
+automatically to show movement positions, both in the details page and in session help. A button
+pauses or resumes playback; images load only once and animation stops off-screen, when the tab is
+hidden, or when closed.
 
-La préférence de réduction des animations est respectée.
+The reduced-motion preference is respected.
 
-## Inventaire
+## Inventory
 
-L’inventaire regroupe le matériel par familles, sans distinction domicile/salle. Il permet de
-renseigner :
+Inventory groups equipment into families without distinguishing home from gym. It supports:
 
-- Haltères fixes : quantité et poids d’un haltère.
-- Haltères à disques : nombre et poids des barres, quantité et poids des disques.
-- Kettlebells : quantité et poids.
-- Élastiques : quantité et fourchette de résistance.
-- Autres équipements : cases à cocher, avec une catégorie pour le matériel personnalisé.
+- Fixed dumbbells: quantity and weight per dumbbell.
+- Plate-loaded dumbbells: number and weight of handles, quantity and weight of plates.
+- Kettlebells: quantity and weight.
+- Resistance bands: quantity and resistance range.
+- Other equipment: checkboxes, with a category for custom equipment.
 
-Les lignes de poids et résistances sont ajoutables. Les changements de matériel restent en brouillon
-: une barre flottante « Modifications non enregistrées » permet de tout enregistrer ou d’annuler.
-Les croix retirent les lignes du brouillon ; les cases et les ajouts personnalisés suivent la même
-sauvegarde groupée. Les charges proposées tiennent compte du matériel et des quantités nécessaires
-au mouvement.
+Weight and resistance rows can be added. Equipment changes remain drafts: a floating “Unsaved
+changes” bar lets you save everything or cancel. Cross buttons remove draft rows; checkboxes and
+custom additions use the same grouped save. Suggested loads account for equipment and quantities
+required by the movement.
 
-La résistance des élastiques reste une approximation.
+Resistance-band resistance remains approximate.
 
-## Douleurs et exclusions
+## Pain and exclusions
 
-Les zones douloureuses sont sauvegardées et filtrent les muscles principaux et secondaires lors de
-la création des programmes et du choix des alternatives. Les séances déjà prévues restent
-inchangées.
+Pain areas are saved and filter primary and secondary muscles during program creation and
+alternative selection. Already planned sessions remain unchanged.
 
-## Remplacer un exercice
+## Replace an exercise
 
-Depuis la fiche du programme, un exercice peut être remplacé par une alternative similaire
-compatible avec le matériel et les contraintes. Ce remplacement est bloqué lorsque sa séance type
-est en cours. L’historique conserve le mouvement réellement effectué.
+From program details, an exercise can be replaced with a similar alternative compatible with
+equipment and constraints. Replacement is blocked while its template session is in progress.
+History retains the movement actually performed.

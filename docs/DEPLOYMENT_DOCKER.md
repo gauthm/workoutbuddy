@@ -1,39 +1,39 @@
-# Déployer WorkoutBuddy avec Docker
+# Deploy WorkoutBuddy with Docker
 
-[Documentation](INDEX.md) · [Déploiement Linux natif](DEPLOYMENT_LINUX.md)
+[Documentation](INDEX.md) · [Native Linux deployment](DEPLOYMENT_LINUX.md)
 
-## Ce qui est fourni
+## What is included
 
-- `deploy/docker/Dockerfile` : image Node 24, dépendances verrouillées, Vue/Chart.js et photos locales.
-- `deploy/docker/compose.yaml` : application seule, accessible sur localhost.
-- `deploy/docker/compose.production.yaml` : origine HTTPS obligatoire derrière un proxy authentifié.
-- `deploy/docker/backup.mjs`, `restore.mjs` : sauvegarde SQLite cohérente et restauration hors ligne.
+- `deploy/docker/Dockerfile`: Node 24 image, locked dependencies, and local Vue/Chart.js and photos.
+- `deploy/docker/compose.yaml`: application only, accessible on localhost.
+- `deploy/docker/compose.production.yaml`: requires an HTTPS origin behind an authenticated proxy.
+- `deploy/docker/backup.mjs`, `restore.mjs`: consistent SQLite backup and offline restoration.
 
-L’application tourne sous le compte `node` (UID/GID 1000), avec un système de fichiers en lecture
-seule et un volume de données inscriptible. L’image ne contient ni la base personnelle, ni `.env`,
-ni les dépendances de développement. Les ressources sont téléchargées pendant la construction,
-pas au démarrage. Le script natif de `better-sqlite3` est explicitement autorisé pour
-la version verrouillée ; la construction vérifie son chargement avant de produire l’image. La première construction demande un accès au registre Node, à npm, à GitHub
-et au CDN des bibliothèques ; elle télécharge environ 101 Mio de photos.
+The application runs as `node` (UID/GID 1000), with a read-only filesystem and a writable
+data volume. The image contains neither the personal database, `.env`, nor development
+dependencies. Assets are downloaded during the build, rather than at startup.
+The native `better-sqlite3` script is explicitly allowed for the locked version;
+the build checks that it loads before producing the image. The first build requires
+access to the Node registry, npm, GitHub, and library CDNs; it downloads about 101 MiB of photos.
 
-## Prérequis
+## Requirements
 
-Installer [Docker Engine](https://docs.docker.com/engine/install/) et le
-[plugin Docker Compose](https://docs.docker.com/compose/install/) sur l’hôte, ou Docker Desktop
-sur macOS/Windows. Vérifier `docker version` et `docker compose version`.
-Node/npm ne sont pas nécessaires sur l’hôte. Utiliser Compose avec prise en charge de `up --wait`.
+Install [Docker Engine](https://docs.docker.com/engine/install/) and the
+[Docker Compose plugin](https://docs.docker.com/compose/install/) on the host, or Docker Desktop
+on macOS/Windows. Check `docker version` and `docker compose version`.
+Node/npm are not required on the host. Use Compose with `up --wait` support.
 
-Toutes les commandes suivantes partent de la racine du dépôt. Cette variante est indépendante
-des unités systemd de `deploy/linux/` : ne pas installer ces unités dans les conteneurs.
+All following commands run from the repository root. This variant is independent
+of the systemd units in `deploy/linux/`: do not install those units in containers.
 
-## Démarrer en local
+## Start locally
 
 ```sh
 cp deploy/docker/.env.example deploy/docker/.env
 ```
 
-Adapter `WB_PORT` dans ce fichier si le port 3000 est occupé.
-`WB_TIMEZONE` règle les dates locales du serveur ; sa valeur par défaut est `Europe/Paris`. Définir ce raccourci dans le terminal :
+Adjust `WB_PORT` in this file if port 3000 is occupied.
+`WB_TIMEZONE` controls the server's local dates; its default is `Europe/Paris`. Define this shortcut in the terminal:
 
 ```sh
 wb() {
@@ -45,28 +45,28 @@ wb up -d --wait
 wb ps
 ```
 
-Ouvrir `http://localhost:3000`, ou le port choisi. Le port est publié uniquement sur `127.0.0.1`.
-Le mode local utilise `NODE_ENV=development` pour autoriser HTTP ; le code de l’application et
-les dépendances installées sont les mêmes qu’en production. Docker crée le volume nommé
-`workoutbuddy_data`, avec les droits du compte de l’application.
+Open `http://localhost:3000`, or the chosen port. The port is published only on `127.0.0.1`.
+Local mode uses `NODE_ENV=development` to allow HTTP; the application code and installed
+dependencies are the same as in production. Docker creates the named volume
+`workoutbuddy_data`, with permissions for the application account.
 
-L’application n’intègre pas d’authentification. Pour un accès depuis Internet ou un téléphone,
-utiliser un proxy HTTPS authentifié ; le maintien du port Docker sur localhost évite une
-exposition directe.
+The application has no built-in authentication. For access from the Internet or a phone,
+use an authenticated HTTPS proxy; keeping the Docker port on localhost prevents
+direct exposure.
 
-## Utiliser un domaine en production
+## Use a production domain
 
-Configurer d’abord le DNS, le certificat HTTPS et l’authentification externe du proxy.
-Le couple Caddy/Authelia des [guides Linux](DEPLOYMENT_LINUX.md) peut servir de proxy sur l’hôte,
-ou utiliser un proxy déjà administré. Cette composition ne démarre pas Caddy, Authelia ou Redis.
+First configure DNS, the HTTPS certificate, and external proxy authentication.
+The Caddy/Authelia pair from the [Linux guides](DEPLOYMENT_LINUX.md) can serve as a host proxy,
+or use a proxy already under administration. This composition does not start Caddy, Authelia, or Redis.
 
-Dans `deploy/docker/.env`, renseigner l’origine exacte :
+In `deploy/docker/.env`, enter the exact origin:
 
 ```dotenv
 PUBLIC_ORIGIN=https://workout.example.com
 ```
 
-Redéfinir le raccourci en ajoutant l’override de production, puis le garder pour les opérations suivantes :
+Redefine the shortcut by adding the production override, then keep it for subsequent operations:
 
 ```sh
 wb() {
@@ -78,24 +78,24 @@ wb config --quiet
 wb up -d --build --wait
 ```
 
-Le proxy sur l’hôte doit joindre `127.0.0.1:3000` (ou `WB_PORT`) et conserver le Host public.
-Faire passer les pages, photos, assets privés et l’API par l’authentification. Pour Caddy/Authelia,
-reprendre les règles de chemins publics explicites du modèle Linux et adapter la destination Node.
-Ne pas exposer le port Docker directement ni ajouter une seconde route publique vers l’API.
+The host proxy must reach `127.0.0.1:3000` (or `WB_PORT`) and preserve the public Host.
+Require authentication for pages, photos, private assets, and the API. For Caddy/Authelia,
+reuse the explicit public-path rules from the Linux template and adjust the Node destination.
+Do not expose the Docker port directly or add a second public route to the API.
 
-`TRUST_PROXY` reste désactivé : un proxy hôte atteint généralement l’application via le bridge
-Docker, pas via le loopback du conteneur. `PUBLIC_ORIGIN` fournit l’origine HTTPS et le Host
-attendus. Avec un proxy lui-même conteneurisé, créer explicitement un réseau partagé privé,
-utiliser le nom du service comme destination et conserver la protection d’accès du proxy.
+`TRUST_PROXY` remains disabled: a host proxy generally reaches the application through the
+Docker bridge, rather than container loopback. `PUBLIC_ORIGIN` provides the expected HTTPS
+origin and Host. With a containerized proxy, explicitly create a shared private network,
+use the service name as the destination, and preserve the proxy's access protection.
 
-Le contrôle de santé interroge l’API et SQLite sur le loopback interne avec le bon Host,
-même si l’origine publique est un domaine HTTPS. Un état `unhealthy` est visible dans `wb ps` ;
-la politique de redémarrage relance un processus arrêté, pas un processus simplement malsain.
+The health check queries the API and SQLite on internal loopback with the correct Host,
+even when the public origin is an HTTPS domain. An `unhealthy` state appears in `wb ps`;
+the restart policy restarts a stopped process, rather than a merely unhealthy one.
 
-## Mettre à jour
+## Update
 
-Recréer le raccourci `wb` du mode choisi dans chaque nouveau terminal. Garder le même nom de
-projet Compose pour retrouver le même volume.
+Recreate the `wb` shortcut for the chosen mode in each new terminal. Keep the same Compose
+project name to reuse the same volume.
 
 ```sh
 wb exec -T workoutbuddy node deploy/docker/backup.mjs
@@ -105,25 +105,25 @@ wb up -d --wait
 wb logs --tail=100 workoutbuddy
 ```
 
-Le volume est conservé lors d’une recréation. Les migrations et la synchronisation du catalogue
-s’exécutent au démarrage. Avant une livraison, copier la sauvegarde hors du volume comme indiqué
-ci-dessous. Conserver aussi l’image précédente si un retour arrière est nécessaire ; une ancienne
-image peut nécessiter la sauvegarde de base antérieure à la migration.
+The volume is preserved on recreation. Migrations and catalog synchronization run at startup.
+Before a release, copy the backup outside the volume as described below. Also retain the
+previous image if rollback is needed; an older image may require the database backup
+from before the migration.
 
-Les modifications de l’interface doivent toujours incrémenter la version du service worker.
-Le mécanisme habituel de mise à jour du navigateur reste actif.
+Frontend changes must always increment the service worker version.
+The usual browser update mechanism remains active.
 
-## Sauvegarder
+## Back up
 
-Lancer une sauvegarde avec le serveur en fonctionnement :
+Run a backup while the server is running:
 
 ```sh
 wb exec -T workoutbuddy node deploy/docker/backup.mjs
 ```
 
-La commande affiche le chemin créé dans `/app/data/backups/`. Elle utilise le mécanisme SQLite
-de l’application, incluant les transactions du WAL, et conserve les sept dernières copies.
-Pour les sortir du volume :
+The command displays the path created in `/app/data/backups/`. It uses the application's
+SQLite mechanism, including WAL transactions, and retains the seven latest copies.
+To copy them outside the volume:
 
 ```sh
 umask 077
@@ -131,27 +131,27 @@ mkdir -p "$HOME/workoutbuddy-backups"
 wb cp workoutbuddy:/app/data/backups/. "$HOME/workoutbuddy-backups/"
 ```
 
-Les bases et leurs sauvegardes contiennent des données privées, dont la clé API configurée.
-Les conserver hors Git et sur un support adapté. L’export JSON depuis l’interface reste disponible
-et exclut la clé API. Planifier la commande de sauvegarde sur l’hôte si une copie périodique est souhaitée.
+Databases and their backups contain private data, including the configured API key.
+Keep them outside Git and on suitable storage. JSON export from the interface remains
+available and excludes the API key. Schedule the backup command on the host if periodic copies are wanted.
 
-## Restaurer une sauvegarde SQLite
+## Restore a SQLite backup
 
-Arrêter d’abord l’application. Utiliser un fichier issu d’une sauvegarde SQLite cohérente :
+Stop the application first. Use a file produced by a consistent SQLite backup:
 
 ```sh
 wb stop workoutbuddy
-wb run --rm --no-deps -T workoutbuddy node deploy/docker/restore.mjs < /chemin/backup.db
+wb run --rm --no-deps -T workoutbuddy node deploy/docker/restore.mjs < /path/to/backup.db
 wb up -d --wait
 ```
 
-Le programme vérifie l’intégrité et les tables attendues avant remplacement. Une entrée invalide
-est refusée. Les anciens fichiers SQLite et journaux sont conservés ensemble dans un sous-dossier
-`.restore-*` du volume ; ils ne sont pas supprimés automatiquement. Ne jamais exécuter cette
-restauration pendant que le serveur utilise la base. Pour une reprise sur une autre machine,
-construire l’image, créer le volume avec la commande `run`, restaurer, puis démarrer l’application.
+The program checks integrity and expected tables before replacement. Invalid input is rejected.
+The previous SQLite files and journals are kept together in a `.restore-*` subdirectory
+of the volume; they are not deleted automatically. Never run this restore while the server
+is using the database. To recover on another machine, build the image, create the volume
+with the `run` command, restore, then start the application.
 
-## Arrêter et diagnostiquer
+## Stop and diagnose
 
 ```sh
 wb logs --tail=100 workoutbuddy
@@ -160,22 +160,22 @@ wb stop
 wb down
 ```
 
-`down` conserve le volume. L’option `down -v` supprime les données : elle ne fait pas partie de la
-procédure de mise à jour. L’arrêt accorde 35 secondes au drainage HTTP et à la fermeture SQLite.
+`down` preserves the volume. The `down -v` option deletes data: it is not part of the
+update procedure. Shutdown allows 35 seconds for HTTP draining and SQLite closure.
 
-## Vérifier une image
+## Verify an image
 
-Après construction, avec Python 3 sur l’hôte :
+After building, with Python 3 on the host:
 
 ```sh
 python3 deploy/docker/test-docker.py --image workoutbuddy:local
 ```
 
-Adapter le tag si `WB_IMAGE_TAG` a changé. Le test crée ses propres conteneurs et un volume neuf,
-sans publier de port ni utiliser la base personnelle. Il vérifie l’API, le compte sans privilèges,
-la lecture seule, les contrôles de santé local/production, la persistance après recréation,
-l’arrêt propre, la sauvegarde et la restauration. Ses ressources sont supprimées à la fin.
+Adjust the tag if `WB_IMAGE_TAG` has changed. The test creates its own containers and a fresh volume,
+without publishing a port or using the personal database. It checks the API, unprivileged account,
+read-only filesystem, local/production health checks, persistence after recreation,
+clean shutdown, backup, and restore. Its resources are removed at the end.
 
-Références : [construction Compose](https://docs.docker.com/reference/compose-file/build/),
-[options des services](https://docs.docker.com/reference/compose-file/services/),
-[image officielle Node](https://github.com/nodejs/docker-node).
+References: [Compose build](https://docs.docker.com/reference/compose-file/build/),
+[service options](https://docs.docker.com/reference/compose-file/services/),
+[official Node image](https://github.com/nodejs/docker-node).

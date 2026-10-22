@@ -9,7 +9,7 @@ import {privateCreation,privateDirectory,privateFile,privateBackups} from '../..
 const root=fileURLToPath(new URL('../../',import.meta.url))
 const mode=file=>fs.statSync(file).mode&0o777
 function temporary(fn){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'wb-private-'));try{return fn(dir)}finally{fs.rmSync(dir,{recursive:true,force:true})}}
-test('fichiers et dossiers privés : création restrictive, correction de l’existant, umask restauré même en erreur',()=>temporary(dir=>{
+test('private files and directories: restrictive creation, existing permissions corrected, umask restored even on error',()=>temporary(dir=>{
  const previous=process.umask()
  const folder=path.join(dir,'data');privateDirectory(folder);assert.equal(mode(folder),0o700)
  const file=path.join(folder,'test.db')
@@ -19,7 +19,7 @@ test('fichiers et dossiers privés : création restrictive, correction de l’ex
  fs.chmodSync(folder,0o777);privateDirectory(folder);assert.equal(mode(folder),0o700)
  assert.throws(()=>privateCreation(()=>{throw new Error('failure')}));assert.equal(process.umask(),previous)
 }))
-test('un parent personnalisé préexistant reste intact ; les liens symboliques ne sont jamais suivis',()=>temporary(dir=>{
+test('an existing custom parent remains intact; symlinks are never followed',()=>temporary(dir=>{
  fs.chmodSync(dir,0o755);privateDirectory(dir,{restrictExisting:false});assert.equal(mode(dir),0o755)
  const file=path.join(dir,'outside');fs.writeFileSync(file,'keep');fs.chmodSync(file,0o644)
  const link=path.join(dir,'link');fs.symlinkSync(file,link)
@@ -29,7 +29,7 @@ test('un parent personnalisé préexistant reste intact ; les liens symboliques 
  fs.chmodSync(dir,0o777)
  assert.throws(()=>privateDirectory(dir,{restrictExisting:false}));assert.equal(mode(dir),0o777)
 }))
-test('SQLite réel : DB, WAL, SHM et sauvegardes anciennes/nouvelles en 0600, dossiers en 0700',()=>temporary(dir=>{
+test('real SQLite: DB, WAL, SHM and old/new backups use 0600, directories use 0700',()=>temporary(dir=>{
  const database=path.join(dir,'data','test.db')
  const code=`
   import fs from 'node:fs';import path from 'node:path';
@@ -55,7 +55,7 @@ test('SQLite réel : DB, WAL, SHM et sauvegardes anciennes/nouvelles en 0600, do
  const again=spawnSync(process.execPath,['--input-type=module','-e',"const {getDb}=await import('./src/db/database.js');getDb().close()"],{cwd:root,env:{...process.env,DB_PATH:database},encoding:'utf8'})
  assert.equal(again.status,0,again.stderr);assert.equal(mode(database),0o600);assert.equal(mode(old),0o600)
 }))
-test('une sauvegarde pointant ailleurs est refusée sans modifier sa cible',()=>temporary(dir=>{
+test('a backup pointing elsewhere is rejected without modifying its target',()=>temporary(dir=>{
  const folder=privateBackups(path.join(dir,'test.db'),{create:true})
  const outside=path.join(dir,'outside');fs.writeFileSync(outside,'keep');fs.chmodSync(outside,0o644)
  fs.symlinkSync(outside,path.join(folder,'workoutbuddy_bad.db'))

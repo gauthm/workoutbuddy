@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import getpass, os, pathlib, pty, re, select, subprocess, json, grp, termios, fcntl, struct
-if os.geteuid() != 0: raise SystemExit('Exécuter avec sudo.')
-user=input('Identifiant Authelia (lettres, chiffres, tiret, souligné) : ').strip()
-if not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}',user): raise SystemExit('Identifiant invalide')
-pw=getpass.getpass('Mot de passe unique (20 caractères minimum) : ')
-if len(pw.strip())<20 or len(set(pw))<8: raise SystemExit('Utiliser un mot de passe unique de 20 caractères minimum, suffisamment varié')
-if pw!=getpass.getpass('Confirmer : '): raise SystemExit('Confirmation différente')
+if os.geteuid() != 0: raise SystemExit('Run with sudo.')
+user=input('Authelia username (letters, digits, hyphen, underscore): ').strip()
+if not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}',user): raise SystemExit('Invalid username')
+pw=getpass.getpass('Unique password (at least 20 characters): ')
+if len(pw.strip())<20 or len(set(pw))<8: raise SystemExit('Use a unique password of at least 20 characters with sufficient variety')
+if pw!=getpass.getpass('Confirm: '): raise SystemExit('Confirmation does not match')
 master,slave=pty.openpty()
 fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack("HHHH",24,100,0,0))
 attrs=termios.tcgetattr(slave);attrs[3] &= ~termios.ECHO;termios.tcsetattr(slave,termios.TCSANOW,attrs)
@@ -21,7 +21,7 @@ while True:
   os.write(master,pw.encode()+b'\r');sent=True
 proc.wait();os.close(master);pw=None
 match=re.search(rb'Digest:\s*(\$argon2id\$[^\s]+)',data)
-if proc.returncode or not match: raise SystemExit('Échec du hachage (aucun secret affiché)')
+if proc.returncode or not match: raise SystemExit('Hashing failed (no secret displayed)')
 config=pathlib.Path('/etc/authelia/users.yml')
 body='users:\n  '+user+':\n    displayname: WorkoutBuddy\n    password: '+json.dumps(match[1].decode())+'\n    email: owner@__DOMAIN__\n'
 if config.exists():
@@ -29,5 +29,5 @@ if config.exists():
 tmp=config.with_suffix('.new');tmp.write_text(body);os.chmod(tmp,0o640);os.chown(tmp,0,grp.getgrnam('authelia').gr_gid);os.replace(tmp,config)
 subprocess.run(['/usr/local/bin/authelia','config','validate','--config','/etc/authelia/configuration.yml'],check=True)
 subprocess.run(['systemctl','restart','authelia'],check=True)
-print('Compte activé. Ouvrir le portail HTTPS Authelia et enregistrer un authentificateur TOTP.')
-print('Le lien de vérification est dans /var/lib/authelia/notifications.txt, à lire uniquement dans votre terminal SSH.')
+print('Account enabled. Open the Authelia HTTPS portal and register a TOTP authenticator.')
+print('The verification link is in /var/lib/authelia/notifications.txt; read it only in your SSH terminal.')

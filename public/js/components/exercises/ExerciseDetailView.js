@@ -42,7 +42,7 @@ export default {
       load()
     })
 
-    // RM estimé depuis la dernière performance
+    // RM estimated from the latest performance
     function lastRM() {
       if (!state.history?.length) return null
       const lastSession = state.history[0]
@@ -79,7 +79,7 @@ export default {
             </template>
           </section>
 
-          <!-- Équipement -->
+          <!-- Equipment -->
           <section v-if="state.exercise.equipment_required.length" class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.equipment') }}</h3>
             <p>{{ state.exercise.equipment_required.map(e => t('equipment.category_' + e)).join(', ') }}</p>
@@ -93,7 +93,7 @@ export default {
             </ol>
           </section>
 
-          <!-- Dernière performance + RM -->
+          <!-- Latest performance + RM -->
           <section v-if="lastRM()" class="detail-section">
             <h3 class="detail-section__title">{{ t('stats.rm_estimated') }}</h3>
             <p style="font-size:1.5rem;font-weight:700;color:var(--color-primary)">
@@ -104,7 +104,7 @@ export default {
             </p>
           </section>
 
-          <!-- Historique -->
+          <!-- History -->
           <section class="detail-section">
             <h3 class="detail-section__title">{{ t('exercises.history') }}</h3>
             <div v-if="!state.history.length" style="color:var(--color-text-muted);font-size:0.9rem">

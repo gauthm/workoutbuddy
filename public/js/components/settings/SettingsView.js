@@ -30,7 +30,7 @@ export default {
       loggingOut: false,
     })
 
-    // ── Chargement ───────────────────────────────────────────
+    // ── Loading ───────────────────────────────────────────
     async function load() {
       state.loading = true; state.error = null
       try {
@@ -95,7 +95,7 @@ export default {
         <template v-else-if="state.settings">
           <fieldset class="settings-fields" :disabled="state.saving">
 
-          <!-- ① Général ───────────────────────────────────── -->
+          <!-- ① General ───────────────────────────────────── -->
           <SettingsSection :title="t('settings.section_general')">
             <div class="setting-row">
               <label class="setting-row__label" for="SettingsView-state-settings-unit">{{ t('settings.bodyweight_unit') }}</label>
@@ -141,7 +141,7 @@ export default {
             </p>
           </SettingsSection>
 
-          <!-- ⑤b Mon profil ─────────────────────────────────── -->
+          <!-- ⑤b My profile ─────────────────────────────────── -->
           <SettingsSection :title="t('settings.section_profile')">
             <ProfileSettings ref="profile" />
           </SettingsSection>
@@ -170,7 +170,7 @@ export default {
 
 
 
-          <!-- ⑥ Coach IA ─────────────────────────────────── -->
+          <!-- ⑥ AI Coach ─────────────────────────────────── -->
           <SettingsSection :title="t('settings.section_ai')">
             <p class="settings-notice">{{ t('settings.advisor_optional') }}</p>
             <AIProviderForm ref="ai"

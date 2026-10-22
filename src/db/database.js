@@ -6,10 +6,10 @@ import { privateCreation, privateDirectory, privateFile, privateBackups } from '
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT_DIR = path.join(__dirname, '..', '..')
 
-// Charge le fichier .env à la racine s'il existe (Node 24 LTS, aucune dépendance)
-try { process.loadEnvFile(path.join(ROOT_DIR, '.env')) } catch (_) { /* absent : ignoré */ }
+// Load the root .env file if present (Node 24 LTS, no dependencies)
+try { process.loadEnvFile(path.join(ROOT_DIR, '.env')) } catch (_) { /* missing: ignored */ }
 
-// DB_PATH surchargeable via l'environnement (défaut : ./data/workoutbuddy.db)
+// DB_PATH can be overridden through the environment (default: ./data/workoutbuddy.db)
 const DB_PATH = process.env.DB_PATH
   ? (process.env.DB_PATH === ':memory:' ? ':memory:' : path.resolve(process.cwd(), process.env.DB_PATH))
   : path.join(ROOT_DIR, 'data', 'workoutbuddy.db')

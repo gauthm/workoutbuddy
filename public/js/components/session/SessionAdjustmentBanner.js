@@ -21,7 +21,7 @@ export default {
 
   template: `
     <div v-if="adjustments.length" class="adjustment-banner">
-      <!-- En-tête cliquable -->
+      <!-- Clickable header -->
       <div class="adjustment-banner__header" @click="expanded = !expanded">
         <span class="adjustment-banner__icon">🧠</span>
         <span class="adjustment-banner__title">
@@ -30,7 +30,7 @@ export default {
         <span class="adjustment-banner__toggle">{{ expanded ? '▲' : '▼' }}</span>
       </div>
 
-      <!-- Détail des ajustements (accordéon) -->
+      <!-- Adjustment details (accordion) -->
       <div v-if="expanded" class="adjustment-banner__list">
         <div
           v-for="adj in adjustments"
@@ -51,7 +51,7 @@ export default {
         </div>
       </div>
 
-      <!-- Fermer -->
+      <!-- Close -->
       <button class="adjustment-banner__dismiss" @click="$emit('dismiss')">
         {{ t('session.adjustment_dismiss') }}
       </button>

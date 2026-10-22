@@ -1,7 +1,7 @@
 import {test,expect} from './fixtures.js'
 import {L,get,planned,startThroughUI,trainThroughUI} from './helpers.js'
 
-test('saisir → annuler une série → reprendre après rechargement et redémarrage du vrai serveur',async({page,request,app})=>{
+test('enter data → undo a set → resume after reload and real server restart',async({page,request,app})=>{
  const p=await planned(request)
  await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
@@ -23,7 +23,7 @@ test('saisir → annuler une série → reprendre après rechargement et redéma
  expect((await get(request,'/export')).data.exercise_progressions).toEqual([])
 })
 
-test('terminer toutes les séries → progression conservée → prochaines cibles proposées en séance',async({page,request})=>{
+test('complete all sets → progression preserved → next targets suggested during workout',async({page,request})=>{
  // Include today: on a Friday, a Mon/Thu program only has next week's slots,
  // and performing its first workout early legitimately occupies its original slot.
  const weekday=(new Date().getDay()+6)%7
@@ -49,7 +49,7 @@ test('terminer toutes les séries → progression conservée → prochaines cibl
  await expect(page.locator('.exercise-block--active .set-row input').first()).toHaveValue(String(target.weight_kg))
 })
 
-test('une sauvegarde de série interrompue laisse la saisie réessayable sans doublon',async({page,request})=>{
+test('an interrupted set save leaves input retryable without duplicates',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
  await row.locator('input').nth(0).fill('10');await row.locator('input').nth(1).fill('12')
@@ -64,7 +64,7 @@ test('une sauvegarde de série interrompue laisse la saisie réessayable sans do
  expect(detail.exercises[0].sets).toHaveLength(1)
 })
 
-test('terminer propose de continuer ou de quitter sans enregistrer, avec retour à une séance vide',async({page,request,app})=>{
+test('finishing offers continue or leave without saving, returning to an empty workout',async({page,request,app})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const active=(await get(request,'/sessions?status=in_progress')).sessions[0]
  const row=page.locator('.exercise-block--active .set-row').first()
@@ -87,7 +87,7 @@ test('terminer propose de continuer ou de quitter sans enregistrer, avec retour 
  expect((await get(request,'/sessions?status=in_progress')).sessions).toHaveLength(0)
 })
 
-test('réponse de série perdue après écriture : réessayer garde une seule série',async({page,request})=>{
+test('set response lost after write: retry retains one set',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
  await row.locator('input').nth(0).fill('10');await row.locator('input').nth(1).fill('12')
@@ -100,7 +100,7 @@ test('réponse de série perdue après écriture : réessayer garde une seule s�
  expect(detail.exercises[0].sets).toHaveLength(1)
 })
 
-test('impossible de terminer pendant une sauvegarde de série, puis réponse de complétion perdue récupérée',async({page,request})=>{
+test('cannot finish during a set save, then recover lost completion response',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
  await row.locator('input').nth(0).fill('10');await row.locator('input').nth(1).fill('12')
@@ -121,7 +121,7 @@ test('impossible de terminer pendant une sauvegarde de série, puis réponse de 
  expect(saved.exercise_progression_events).toHaveLength(1)
 })
 
-test('arrêt brutal après validation : séance et série récupérées sans doublon',async({page,request,app})=>{
+test('abrupt shutdown after completion: workout and set recovered without duplicates',async({page,request,app})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
  await row.locator('input').nth(0).fill('10');await row.locator('input').nth(1).fill('12')
@@ -137,7 +137,7 @@ test('arrêt brutal après validation : séance et série récupérées sans dou
  expect(detail.exercises[0].sets[0].weight_kg).toBe(10)
 })
 
-test('réessai avec une valeur différente après réponse perdue : conflit explicite et aucune écriture silencieuse',async({page,request})=>{
+test('retry with a different value after lost response: explicit conflict and no silent write',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const row=page.locator('.exercise-block--active .set-row').first()
  await row.locator('input').nth(0).fill('10');await row.locator('input').nth(1).fill('12')
@@ -153,7 +153,7 @@ test('réessai avec une valeur différente après réponse perdue : conflit expl
  expect((await get(request,`/sessions/${active.id}`)).exercises[0].sets).toHaveLength(1)
 })
 
-test('quitter sans enregistrer récupère une réponse perdue après la réinitialisation',async({page,request})=>{
+test('leave without saving recovers a lost response after reset',async({page,request})=>{
  const p=await planned(request);await startThroughUI(page,p)
  const active=(await get(request,'/sessions?status=in_progress')).sessions[0]
  const row=page.locator('.exercise-block--active .set-row').first()

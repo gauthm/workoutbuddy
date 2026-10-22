@@ -1,12 +1,13 @@
 import { computed, inject, defineAsyncComponent, h, resolveComponent }
   from '/vendor/vue.esm-browser.prod.js'
+import { t } from '../../i18n.js'
 import BottomNav from './BottomNav.js'
 import PageHeader from './PageHeader.js'
 import Toast from '../common/Toast.js'
 import AppUpdateBanner from '../common/AppUpdateBanner.js'
 
-// Import statique de toutes les vues
-// (les vues non encore implémentées utilisent un placeholder)
+// Statically import all views
+// (views not yet implemented use a placeholder)
 import DashboardView        from '../../views/DashboardView.js'
 import ExerciseListView     from '../exercises/ExerciseListView.js'
 import ExerciseDetailView   from '../exercises/ExerciseDetailView.js'
@@ -24,11 +25,12 @@ import ExerciseProgressView from '../stats/ExerciseProgressView.js'
 import CoachView            from '../coach/CoachView.js'
 import SettingsView         from '../settings/SettingsView.js'
 
-// Placeholder pour les vues non encore implémentées
+// Placeholder for views not yet implemented
 const Placeholder = (name) => ({
   name,
+  setup: () => ({ t, viewName: name }),
   template: `<div style="padding:1.5rem;color:var(--color-text-muted);text-align:center">
-    <p>Vue « ${name} » — à implémenter</p>
+    <p>{{ t('app.view_not_implemented', { name: viewName }) }}</p>
   </div>`
 })
 
@@ -37,7 +39,7 @@ const VIEW_MAP = {
   ExerciseListView,
   ExerciseDetailView,
   EquipmentView,
-  // Jalons suivants — placeholders pour l'instant :
+  // Upcoming milestones: placeholders for now
   ProgramListView,
   ProgramDetailView,
   ProgramGenerator,
@@ -65,7 +67,7 @@ export default {
       return VIEW_MAP[name] || Placeholder(name)
     })
 
-    // Routes qui N'affichent PAS la BottomNav
+    // Routes that hide BottomNav
     const HIDE_NAV = []
     const showNav = computed(() => !HIDE_NAV.includes(router.currentRoute.name))
 

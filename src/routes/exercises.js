@@ -46,13 +46,13 @@ router.get('/', (req, res) => {
       params.push(parseInt(req.query.custom))
     }
     if (req.query.excluded !== undefined) {
-      // Pas de paramètre → tous (exclus compris) ; excluded=0 → disponibles ; excluded=1 → exclus
+      // No parameter → all (including excluded); excluded=0 → available; excluded=1 → excluded
       sql += ' AND is_excluded = ?'
       params.push(parseInt(req.query.excluded))
     }
     if (req.query.muscle) {
-      // Filtre JSON : primary_muscles est '["chest","triceps"]'
-      // Chercher la valeur exacte entre guillemets
+      // JSON filter: primary_muscles is '["chest","triceps"]'
+      // Find the exact quoted value
       sql += ' AND primary_muscles LIKE ?'
       params.push(`%"${req.query.muscle}"%`)
     }
@@ -62,7 +62,7 @@ router.get('/', (req, res) => {
     }
     sql += ' ORDER BY name_fr ASC'
 
-    // SQLite LIKE ne traite pas la casse des lettres accentuées.
+    // SQLite LIKE does not handle case folding for accented letters.
     const term = searchText(req.query.q).trim()
     const rows = db.prepare(sql).all(...params).filter(ex => !term || searchText(ex.name_fr).includes(term) || searchText(ex.name_en).includes(term))
     let exercises = rows.map(parseExercise)
@@ -87,7 +87,7 @@ router.get('/', (req, res) => {
 // The catalogue is supplied by free-exercise-db; user exclusions remain editable.
 router.post('/', (_req,res) => res.status(403).json({error:'EXERCISE_CATALOG_READ_ONLY'}))
 
-// Ordre important : routes spécifiques AVANT /:id
+// Order matters: specific routes BEFORE /:id
 router.get('/:id/history', (req, res) => {
   try {
     const exercise = db.prepare('SELECT id FROM exercise WHERE id = ?').get(req.params.id)
@@ -126,7 +126,7 @@ router.get('/:id/history', (req, res) => {
 
     const rows = db.prepare(sql).all(...params)
 
-    // Grouper par session
+    // Group by session
     const sessionsMap = new Map()
     for (const row of rows) {
       if (!sessionsMap.has(row.session_id)) {
@@ -165,7 +165,7 @@ router.get('/:id/rm-history', (req, res) => {
 
     const days = parseInt(req.query.days) || 90
 
-    // Récupérer le setting de formule RM
+    // Fetch the RM formula setting
     const formulaRow = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
     const formula = formulaRow ? JSON.parse(formulaRow.value) : 'epley'
 
@@ -202,7 +202,7 @@ router.get('/:id/rm-history', (req, res) => {
   }
 })
 
-// Déclarée AVANT /:id pour éviter qu'Express interprète "toggle-exclusion" comme un :id
+// Declared BEFORE /:id to prevent Express from treating "toggle-exclusion" as an :id
 router.put('/:id/toggle-exclusion', (req, res) => {
   try {
     const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(req.params.id)

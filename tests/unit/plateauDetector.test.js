@@ -30,7 +30,7 @@ function insertSession(db, programId, date, weightKg, reps, exerciseId = 'barbel
 }
 
 describe('plateauDetector', () => {
-  it('pas assez de données → pas de plateau', () => {
+  it('insufficient data → no plateau', () => {
     const db = createDb()
     const pRes = db.prepare(
       "INSERT INTO program (name,goal,level,days_per_week,progression_model) VALUES ('T','strength','beginner',3,'linear')"
@@ -41,7 +41,7 @@ describe('plateauDetector', () => {
     assert.ok(r.sessions_checked < 4)
   })
 
-  it('4 séances même RM → plateau détecté', () => {
+  it('4 workouts with same RM → plateau detected', () => {
     const db = createDb()
     const pRes = db.prepare(
       "INSERT INTO program (name,goal,level,days_per_week,progression_model) VALUES ('T','strength','beginner',3,'linear')"
@@ -56,7 +56,7 @@ describe('plateauDetector', () => {
     assert.equal(r.sessions_checked, 4)
   })
 
-  it('progression réelle → pas de plateau', () => {
+  it('real progression → no plateau', () => {
     const db = createDb()
     const pRes = db.prepare(
       "INSERT INTO program (name,goal,level,days_per_week,progression_model) VALUES ('T','strength','beginner',3,'linear')"

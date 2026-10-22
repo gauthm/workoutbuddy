@@ -1,9 +1,9 @@
-// Retourne la date du jour au format YYYY-MM-DD
+// Return today's date in YYYY-MM-DD format
 export function isoDate(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Retourne la semaine ISO au format YYYY-Www (ex: "2025-W27")
+// Return the ISO week in YYYY-Www format (e.g. "2025-W27")
 export function isoWeek(dateStr) {
   const d = new Date(dateStr)
   d.setHours(0, 0, 0, 0)
@@ -15,26 +15,26 @@ export function isoWeek(dateStr) {
   return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`
 }
 
-// Semaine ISO précédente
+// Previous ISO week
 export function previousIsoWeek(weekStr) {
   // weekStr: "2025-W27"
   const [year, w] = weekStr.split('-W').map(Number)
   if (w === 1) {
-    // Trouver la dernière semaine de l'année précédente
+    // Find the last week of the previous year
     const dec28 = new Date(year - 1, 11, 28)
     return isoWeek(isoDate(dec28))
   }
   return `${year}-W${String(w - 1).padStart(2, '0')}`
 }
 
-// Nombre de jours entre deux dates YYYY-MM-DD
+// Number of days between two YYYY-MM-DD dates
 export function daysBetween(dateA, dateB) {
   const a = new Date(dateA)
   const b = new Date(dateB)
   return Math.round(Math.abs(b - a) / 86400000)
 }
 
-// Formate une date YYYY-MM-DD pour l'affichage
+// Format a YYYY-MM-DD date for display
 export function formatDate(dateStr, locale = 'fr-FR') {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString(locale, {
@@ -42,7 +42,7 @@ export function formatDate(dateStr, locale = 'fr-FR') {
   })
 }
 
-// Formate une durée en secondes → "1h 23min" ou "45min"
+// Format a duration in seconds → "1h 23min" or "45min"
 export function formatDuration(seconds) {
   if (!seconds || seconds < 0) return '—'
   const h = Math.floor(seconds / 3600)

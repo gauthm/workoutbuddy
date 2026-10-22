@@ -38,16 +38,16 @@ async function set(se,weight,reps=8) {
   return res.body
 }
 
-test('la base de régression utilise réellement :memory:',()=>assert.equal(getDbPath(),':memory:'))
+test('regression database actually uses :memory:',()=>assert.equal(getDbPath(),':memory:'))
 
-test('un import incomplet ne supprime aucune donnée',async()=>{
+test('an incomplete import deletes no data',async()=>{
   const count=db.prepare('SELECT COUNT(*) AS n FROM exercise').get().n
   const result=await request(app).post('/api/v1/import').send({version:1,app:'workoutbuddy',data:{}})
   assert.equal(result.status,400)
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM exercise').get().n,count)
 })
 
-test('export/import conserve profil, exclusions et clé API locale',async()=>{
+test('export/import preserves profile, exclusions and local API key',async()=>{
   db.prepare("UPDATE user_profile SET display_name='Audit', secondary_goals='[\"strength\"]' WHERE id=1").run()
   db.prepare("UPDATE exercise SET is_excluded=1,exclusion_reason='Audit' WHERE id='audit_ex'").run()
   db.prepare("INSERT OR REPLACE INTO settings(key,value) VALUES ('ai_api_key','\"secret-test\"')").run()
@@ -61,7 +61,7 @@ test('export/import conserve profil, exclusions et clé API locale',async()=>{
   assert.equal(JSON.parse(db.prepare("SELECT value FROM settings WHERE key='ai_api_key'").get().value),'secret-test')
 })
 
-test('une sauvegarde SQLite contient les dernières écritures, même sans checkpoint',()=>{
+test('a SQLite backup contains latest writes, even without checkpoint',()=>{
   db.prepare("UPDATE user_profile SET display_name='Audit' WHERE id=1").run()
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'wb-backup-audit-'))
   try {
@@ -72,7 +72,7 @@ test('une sauvegarde SQLite contient les dernières écritures, même sans check
   } finally {fs.rmSync(dir,{recursive:true,force:true})}
 })
 
-test('validation booléenne d’une série existante et formule Lombardi',async()=>{
+test('boolean validation of an existing set and Lombardi formula',async()=>{
   db.prepare("UPDATE settings SET value='\"lombardi\"' WHERE key='rm_formula'").run()
   const {se}=session()
   const created=await request(app).post(`/api/v1/session-exercises/${se}/sets`).send({set_number:1,weight_kg:50,reps:8})
@@ -82,7 +82,7 @@ test('validation booléenne d’une série existante et formule Lombardi',async(
   assert.equal(updated.body._estimated_1rm,estimate1RM(50,8,'lombardi'))
 })
 
-test('modifier ou supprimer un record restaure la meilleure série restante',async()=>{
+test('editing or deleting a record restores the best remaining set',async()=>{
   const {se}=session()
   const first=await set(se,55)
   const best=await set(se,65)
@@ -92,7 +92,7 @@ test('modifier ou supprimer un record restaure la meilleure série restante',asy
   assert.equal(db.prepare("SELECT weight_kg FROM personal_record WHERE exercise_id='audit_ex' AND reps=8").get().weight_kg,45)
 })
 
-test('supprimer une séance avec un record respecte les clés étrangères',async()=>{
+test('deleting a workout with a record respects foreign keys',async()=>{
   const {id,se}=session()
   await set(se,80)
   assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
@@ -101,7 +101,7 @@ test('supprimer une séance avec un record respecte les clés étrangères',asyn
   assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0)
 })
 
-test('un second démarrage conserve le début ; une séance planifiée ne peut pas être terminée',async()=>{
+test('a second start preserves start time; a planned workout cannot be completed',async()=>{
   const {id}=session()
   const before=db.prepare('SELECT started_at FROM session WHERE id=?').get(id).started_at
   assert.equal((await request(app).post(`/api/v1/sessions/${id}/start`)).status,200)
@@ -110,7 +110,7 @@ test('un second démarrage conserve le début ; une séance planifiée ne peut p
   assert.equal((await request(app).post(`/api/v1/sessions/${planned.id}/complete`)).status,409)
 })
 
-test('la progression journalière n’invente pas une série en combinant les MAX',async()=>{
+test('daily progression does not invent a set by combining MAX values',async()=>{
   db.prepare("UPDATE settings SET value='\"epley\"' WHERE key='rm_formula'").run()
   const {id,se}=session()
   await set(se,100,3)
@@ -124,7 +124,7 @@ test('la progression journalière n’invente pas une série en combinant les MA
   assert.equal(row.estimated_1rm_kg,110)
 })
 
-test('modifier une série historique recalcule aussi le volume de sa séance',async()=>{
+test('editing a historical set also recalculates workout volume',async()=>{
   const {id,se}=session()
   const created=await set(se,50,8)
   assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)
@@ -133,7 +133,7 @@ test('modifier une série historique recalcule aussi le volume de sa séance',as
   assert.equal(db.prepare('SELECT total_volume_kg FROM session WHERE id=?').get(id).total_volume_kg,320)
 })
 
-test('les entrées de poids et paramètres invalides sont refusés',async()=>{
+test('invalid weight entries and settings are rejected',async()=>{
   for (const weight of ['abc',null,-5]) {
     assert.equal((await request(app).post('/api/v1/bodyweight').send({date:today,weight_kg:weight})).status,400)
   }
@@ -141,7 +141,7 @@ test('les entrées de poids et paramètres invalides sont refusés',async()=>{
   assert.equal((await request(app).put('/api/v1/settings').send({network_port:'3000abc'})).status,400)
 })
 
-test('un pas d’haltère invalide ne bloque pas le moteur de charges',()=>{
+test('an invalid dumbbell increment does not block the load engine',()=>{
   const exercise={equipment_required:['dumbbell_adjustable']}
   for(const step of [0,-1,NaN,0.001]) {
     const result=calculateAchievableLoads([{category:'dumbbell_adjustable',weight_min_kg:2,weight_max_kg:30,weight_step_kg:step}],exercise)
@@ -149,7 +149,7 @@ test('un pas d’haltère invalide ne bloque pas le moteur de charges',()=>{
   }
 })
 
-test('les actions IA en lot sont refusées sans modification',async()=>{
+test('batch AI actions are rejected without changes',async()=>{
   const before=db.prepare("SELECT value FROM settings WHERE key='theme'").get().value
   const result=await request(app).post('/api/v1/ai/apply-actions').send({actions:[
     {action:'update_settings',explanation:'Audit',data:{theme:'light'}},
@@ -159,7 +159,7 @@ test('les actions IA en lot sont refusées sans modification',async()=>{
   assert.equal(db.prepare("SELECT value FROM settings WHERE key='theme'").get().value,before)
 })
 
-test('les rendez-vous sautés ou terminés ne sont pas recréés par le scheduler',()=>{
+test('skipped or completed appointments are not recreated by the scheduler',()=>{
   const p=db.prepare("INSERT INTO program(name,goal,level,days_per_week,is_active) VALUES ('Audit','strength','beginner',3,1)").run().lastInsertRowid
   db.prepare("INSERT INTO workout_template(program_id,name) VALUES (?,'Audit')").run(p)
   assert.ok(scheduleWeeks(db,p)>0)
@@ -167,7 +167,7 @@ test('les rendez-vous sautés ou terminés ne sont pas recréés par le schedule
   assert.equal(scheduleWeeks(db,p),0)
 })
 
-test('supprimer un programme conserve l’historique des séances',async()=>{
+test('deleting a program preserves workout history',async()=>{
   const p=db.prepare("INSERT INTO program(name,goal,level,days_per_week,is_active) VALUES ('Audit','strength','beginner',3,1)").run().lastInsertRowid
   db.prepare("INSERT INTO workout_template(program_id,name) VALUES (?,'Audit')").run(p)
   scheduleWeeks(db,p)
@@ -178,14 +178,14 @@ test('supprimer un programme conserve l’historique des séances',async()=>{
   assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0)
 })
 
-test('un export supérieur à 100 ko peut être réimporté',async()=>{
+test('an export larger than 100 KB can be reimported',async()=>{
   const exp=await request(app).get('/api/v1/export')
   exp.body.data.settings.ai_model='x'.repeat(150000)
   const result=await request(app).post('/api/v1/import').send(exp.body)
   assert.equal(result.status,200)
 })
 
-test('annuler puis revalider une série conserve ses valeurs et recalcule records et volume',async()=>{
+test('undoing then revalidating a set preserves values and recalculates records and volume',async()=>{
   const {id,se}=session()
   const created=await set(se,50,8)
   assert.equal((await request(app).post(`/api/v1/sessions/${id}/complete`)).status,200)

@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (DB fichier partagée sinon → course avec les autres fichiers de tests)
+// Isolated DB (otherwise shared file DB → race with other test files)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t61-')), 'test.db')
 
 const { getDb } = await import('../../src/db/database.js')
@@ -14,11 +14,11 @@ migrate(getDb())
 
 const { app } = await import('../../server.js')
 
-describe('T6.1 — Settings API complète', () => {
+describe('T6.1 — Complete Settings API', () => {
 
   // ── GET /settings ──────────────────────────────────────────
   describe('GET /settings', () => {
-    it('retourne 200 avec toutes les clés attendues', async () => {
+    it('returns 200 with all expected keys', async () => {
       const res = await request(app).get('/api/v1/settings')
       assert.equal(res.status, 200)
       const REQUIRED_KEYS = [
@@ -36,16 +36,16 @@ describe('T6.1 — Settings API complète', () => {
         'show_rpe_field', 'show_rir_field', 'warmup_sets_count', 'auto_next_exercise',
       ]
       for (const key of REQUIRED_KEYS) {
-        assert.ok(key in res.body, `Clé manquante : ${key}`)
+        assert.ok(key in res.body, `Missing key: ${key}`)
       }
     })
 
-    it('ne retourne JAMAIS ai_api_key', async () => {
+    it('NEVER returns ai_api_key', async () => {
       const res = await request(app).get('/api/v1/settings')
       assert.ok(!('ai_api_key' in res.body))
     })
 
-    it('retourne les valeurs par défaut correctes', async () => {
+    it('returns correct defaults', async () => {
       const res = await request(app).get('/api/v1/settings')
       assert.equal(res.body.unit,               'kg')
       assert.equal(res.body.rm_formula,         'epley')
@@ -58,7 +58,7 @@ describe('T6.1 — Settings API complète', () => {
 
   // ── PUT /settings ──────────────────────────────────────────
   describe('PUT /settings', () => {
-    it('sauvegarde le maintien de l’écran et rejette les valeurs non booléennes', async () => {
+    it('saves screen wake lock and rejects non-boolean values', async () => {
       const saved = await request(app).post('/api/v1/settings/save').send({settings:{keep_screen_awake:true}})
       assert.equal(saved.status, 200)
       assert.equal((await request(app).get('/api/v1/settings')).body.keep_screen_awake, true)
@@ -67,29 +67,29 @@ describe('T6.1 — Settings API complète', () => {
       assert.equal((await request(app).get('/api/v1/settings')).body.keep_screen_awake, true)
       assert.equal((await request(app).put('/api/v1/settings').send({keep_screen_awake:false})).status, 200)
     })
-    it('met à jour une clé string valide', async () => {
+    it('updates a valid string key', async () => {
       const res = await request(app).put('/api/v1/settings').send({ language: 'en' })
       assert.equal(res.status, 200)
       assert.equal(res.body.language, 'en')
-      // Remettre la valeur par défaut
+      // Restore the default
       await request(app).put('/api/v1/settings').send({ language: 'fr' })
     })
 
-    it('met à jour un boolean', async () => {
+    it('updates a boolean', async () => {
       const res = await request(app).put('/api/v1/settings').send({ show_rpe_field: true })
       assert.equal(res.status, 200)
       assert.equal(res.body.show_rpe_field, true)
       await request(app).put('/api/v1/settings').send({ show_rpe_field: false })
     })
 
-    it('met à jour un nombre dans la plage', async () => {
+    it('updates an in-range number', async () => {
       const res = await request(app).put('/api/v1/settings').send({ default_rest_seconds: 120 })
       assert.equal(res.status, 200)
       assert.equal(res.body.default_rest_seconds, 120)
       await request(app).put('/api/v1/settings').send({ default_rest_seconds: 90 })
     })
 
-    it('rejette une valeur hors enum → 400', async () => {
+    it('rejects a value outside the enum → 400', async () => {
       const res = await request(app).put('/api/v1/settings').send({ unit: 'stones' })
       assert.equal(res.status, 400)
       assert.equal(res.body.error, 'VALIDATION_ERRORS')
@@ -97,44 +97,44 @@ describe('T6.1 — Settings API complète', () => {
       assert.ok(res.body.details.length > 0)
     })
 
-    it('rejette un nombre hors plage → 400', async () => {
+    it('rejects an out-of-range number → 400', async () => {
       const res = await request(app).put('/api/v1/settings').send({ default_rest_seconds: 5 })
       assert.equal(res.status, 400)
     })
 
-    it('rejette une clé inconnue → 400', async () => {
+    it('rejects an unknown key → 400', async () => {
       const res = await request(app).put('/api/v1/settings').send({ foobar_key: 'test' })
       assert.equal(res.status, 400)
     })
 
-    it('met à jour ai_api_key → retourne ai_api_key_set=true sans exposer la clé', async () => {
+    it('updates ai_api_key → returns ai_api_key_set=true without exposing the key', async () => {
       const res = await request(app).put('/api/v1/settings').send({ ai_api_key: 'sk-test-xyz' })
       assert.equal(res.status, 200)
       assert.equal(res.body.ai_api_key_set, true)
       assert.ok(!('ai_api_key' in res.body))
     })
 
-    it('efface ai_api_key avec chaîne vide → ai_api_key_set=false', async () => {
+    it('clears ai_api_key with empty string → ai_api_key_set=false', async () => {
       const res = await request(app).put('/api/v1/settings').send({ ai_api_key: '' })
       assert.equal(res.status, 200)
       assert.equal(res.body.ai_api_key_set, false)
     })
 
-    it('changement réseau → restart_required=true', async () => {
+    it('network change → restart_required=true', async () => {
       const res = await request(app).put('/api/v1/settings').send({ network_port: 3001 })
       assert.equal(res.status, 200)
       assert.equal(res.body.restart_required, true)
       await request(app).put('/api/v1/settings').send({ network_port: 3000 })
     })
 
-    it('changement non-réseau → pas de restart_required', async () => {
+    it('non-network change → no restart_required', async () => {
       const res = await request(app).put('/api/v1/settings').send({ theme: 'light' })
       assert.equal(res.status, 200)
       assert.ok(!res.body.restart_required)
       await request(app).put('/api/v1/settings').send({ theme: 'dark' })
     })
 
-    it('plusieurs clés en une requête → toutes mises à jour', async () => {
+    it('multiple keys in one request → all updated', async () => {
       const res = await request(app).put('/api/v1/settings').send({
         timer_sound_enabled:     true,
         timer_vibration_enabled: false,
@@ -144,7 +144,7 @@ describe('T6.1 — Settings API complète', () => {
       assert.equal(res.body.timer_sound_enabled,     true)
       assert.equal(res.body.timer_vibration_enabled, false)
       assert.equal(res.body.warmup_sets_count,        1)
-      // Remettre les valeurs par défaut
+      // Restore defaults
       await request(app).put('/api/v1/settings').send({
         timer_sound_enabled: true, timer_vibration_enabled: true, warmup_sets_count: 0
       })
@@ -153,7 +153,7 @@ describe('T6.1 — Settings API complète', () => {
 
   // ── POST /settings/test-ai ─────────────────────────────────
   describe('POST /settings/test-ai', () => {
-    it('sans provider configuré → 400', async () => {
+    it('without configured provider → 400', async () => {
       await request(app).put('/api/v1/settings').send({ ai_base_url: '', ai_model: '' })
       const res = await request(app).post('/api/v1/settings/test-ai')
       assert.equal(res.status, 400)
@@ -163,7 +163,7 @@ describe('T6.1 — Settings API complète', () => {
 
   // ── GET /settings/ai-models ────────────────────────────────
   describe('GET /settings/ai-models', () => {
-    it('sans base_url → 400', async () => {
+    it('without base_url → 400', async () => {
       await request(app).put('/api/v1/settings').send({ ai_base_url: '' })
       const res = await request(app).get('/api/v1/settings/ai-models')
       assert.equal(res.status, 400)

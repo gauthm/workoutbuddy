@@ -21,7 +21,7 @@ before(async () => {
   originalFetch = globalThis.fetch
   globalThis.fetch = async (_url, options) => {
     const last = JSON.parse(options.body).messages.at(-1).content
-    return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: `Réponse à: ${last}` } }] })}\n\ndata: [DONE]\n\n`, {
+    return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: `Response to: ${last}` } }] })}\n\ndata: [DONE]\n\n`, {
       headers: { 'Content-Type': 'text/event-stream' },
     })
   }
@@ -29,10 +29,10 @@ before(async () => {
 })
 after(() => { globalThis.fetch = originalFetch })
 
-describe('T8.2 — Persistance du chat coach', () => {
+describe('T8.2 — Coach chat persistence', () => {
 
-  it('Premier chat sans conversation_id → crée et active une conversation', async () => {
-    const res = await request(app).post('/api/v1/ai/chat').send({ message: 'Bonjour' })
+  it('First chat without conversation_id → creates and activates a conversation', async () => {
+    const res = await request(app).post('/api/v1/ai/chat').send({ message: 'Hello' })
     assert.equal(res.status, 200)
     assert.ok(res.text.includes('"type":"done"'))
     const done = JSON.parse(res.text.split('\n').find(l => l.includes('"conversation_id"')).slice(6))
@@ -43,24 +43,24 @@ describe('T8.2 — Persistance du chat coach', () => {
     assert.equal(actives[0].id, done.conversation_id)
   })
 
-  it('Titre dérivé de la première question', async () => {
+  it('Title derived from the first question', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const conv = list.body.conversations.find(c => c.is_active === 1)
-    assert.equal(conv.title, 'Bonjour')
+    assert.equal(conv.title, 'Hello')
   })
 
-  it('Messages user + assistant persistés dans l\'ordre', async () => {
+  it('User + assistant messages persisted in order', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const id = list.body.conversations.find(c => c.is_active === 1).id
     const detail = await request(app).get(`/api/v1/ai/conversations/${id}/messages`)
     assert.equal(detail.body.messages.length, 2)
     assert.equal(detail.body.messages[0].role, 'user')
-    assert.equal(detail.body.messages[0].content, 'Bonjour')
+    assert.equal(detail.body.messages[0].content, 'Hello')
     assert.equal(detail.body.messages[1].role, 'assistant')
-    assert.ok(detail.body.messages[1].content.includes('Réponse à: Bonjour'))
+    assert.ok(detail.body.messages[1].content.includes('Response to: Hello'))
   })
 
-  it('Deuxième message dans le même fil → 4 messages', async () => {
+  it('Second message in the same thread → 4 messages', async () => {
     const list = await request(app).get('/api/v1/ai/conversations')
     const id = list.body.conversations.find(c => c.is_active === 1).id
     const sent = await request(app).post('/api/v1/ai/chat').send({ message: 'Comment aller ?', conversation_id: id })
@@ -68,11 +68,11 @@ describe('T8.2 — Persistance du chat coach', () => {
     assert.ok(sent.text.includes('"type":"done"'))
     const detail = await request(app).get(`/api/v1/ai/conversations/${id}/messages`)
     assert.equal(detail.body.messages.length, 4)
-    // Le contexte DB est utilisé : le mock voit le dernier message user
+    // DB context is used: the mock sees the latest user message
     assert.ok(detail.body.messages[3].content.includes('Comment aller ?'))
   })
 
-  it('conversation_id inconnu → 404, aucun message écrit', async () => {
+  it('unknown conversation_id → 404, no message written', async () => {
     const before = await request(app).get('/api/v1/ai/conversations')
     const res = await request(app).post('/api/v1/ai/chat')
       .send({ message: 'test', conversation_id: 99999 })
@@ -80,7 +80,7 @@ describe('T8.2 — Persistance du chat coach', () => {
     assert.equal(res.body.error, 'CONVERSATION_NOT_FOUND')
   })
 
-  it('ignore les actions de configuration dans le flux et dans le message sauvegardé', async () => {
+  it('ignores configuration actions in the stream and saved message', async () => {
     const db=getDb()
     const snapshot=()=>Object.fromEntries(['program','equipment_item','exercise','settings','user_profile'].map(table=>[table,db.prepare(`SELECT * FROM ${table}`).all()]))
     const before=snapshot()
@@ -95,10 +95,10 @@ describe('T8.2 — Persistance du chat coach', () => {
     assert.deepEqual(snapshot(),before)
   })
 
-  it('Provider non configuré → 503 et aucune écriture DB', async () => {
+  it('Unconfigured provider → 503 and no DB write', async () => {
     await request(app).put('/api/v1/settings').send({ ai_base_url: '' })
     const before = getDb().prepare('SELECT COUNT(*) n FROM coach_message').get().n
-    const res = await request(app).post('/api/v1/ai/chat').send({ message: 'devrait échouer' })
+    const res = await request(app).post('/api/v1/ai/chat').send({ message: 'should fail' })
     assert.equal(res.status, 503)
     const after = getDb().prepare('SELECT COUNT(*) n FROM coach_message').get().n
     assert.equal(after, before)

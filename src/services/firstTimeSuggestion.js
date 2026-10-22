@@ -1,9 +1,10 @@
+import { message } from '../utils/messages.js'
 import { calculateAchievableLoads, roundDownToAchievable } from './equipmentCalc.js'
 
 /**
- * Table de suggestion premier essai.
- * [goal][level][mechanic] = { pct: % du poids de corps, reps: répétitions suggérées }
- * pct = 0 pour les exercices au poids de corps (pas de charge externe)
+ * First-attempt suggestion table.
+ * [goal][level][mechanic] = { pct: % of body weight, reps: suggested repetitions }
+ * pct = 0 for bodyweight exercises (no external load)
  */
 const FIRST_TIME_TABLE = {
   strength: {
@@ -44,7 +45,7 @@ const FIRST_TIME_TABLE = {
   },
 }
 
-// Reps pour exercices au poids du corps (pas de charge externe)
+// Reps for bodyweight exercises (no external load)
 const BODYWEIGHT_REPS = {
   strength:         { beginner: 3,  intermediate: 5,  advanced: 8,  athlete: 12 },
   hypertrophy:      { beginner: 5,  intermediate: 8,  advanced: 12, athlete: 15 },
@@ -55,18 +56,18 @@ const BODYWEIGHT_REPS = {
 }
 
 /**
- * Calcule la suggestion de poids et reps pour un exercice effectué pour la première fois.
+ * Calculate suggested weight and reps for a first-time exercise.
  *
- * Algorithme DÉTERMINISTE — aucun appel LLM.
+ * DETERMINISTIC algorithm — no LLM calls.
  *
  * @param {object} exercise      - { id, mechanic, equipment_required, is_unilateral }
  * @param {object} userProfile   - { weight_kg, fitness_level, primary_goal }
  * @param {object} templateExercise - { target_reps_min, target_reps_max }
- * @param {object[]} equipmentItems - inventaire complet
+ * @param {object[]} equipmentItems - complete inventory
  * @returns {{
  *   weight_kg: number,
  *   reps: number,
- *   reasoning: string     // texte affiché dans la bulle
+ *   reasoning: string     // text displayed in the tooltip
  * }}
  */
 export function suggestFirstTime(exercise, userProfile, templateExercise, equipmentItems) {
@@ -75,13 +76,13 @@ export function suggestFirstTime(exercise, userProfile, templateExercise, equipm
   const goal         = userProfile?.primary_goal  || 'general_fitness'
   const mechanic     = exercise.mechanic === 'compound' ? 'compound' : 'isolation'
 
-  // ── Exercice sans charge externe (poids du corps) ───────────
+  // ── Exercise without external load (bodyweight) ───────────
   const isBodyweight = !exercise.equipment_required ||
                        exercise.equipment_required.length === 0
 
   if (isBodyweight) {
     const reps = (BODYWEIGHT_REPS[goal] || BODYWEIGHT_REPS.general_fitness)[level] || 8
-    // Utiliser les reps de la fourchette du template si disponibles
+    // Use the template rep range when available
     const templateReps = templateExercise?.target_reps_min || reps
     return {
       weight_kg: 0,
@@ -90,7 +91,7 @@ export function suggestFirstTime(exercise, userProfile, templateExercise, equipm
     }
   }
 
-  // ── Exercice avec charge ─────────────────────────────────────
+  // ── Exercise with external load ─────────────────────────────────────
   const table = (FIRST_TIME_TABLE[goal] || FIRST_TIME_TABLE.general_fitness)[level]
   const config = table?.[mechanic] || { pct: 0.25, reps: 10 }
 
@@ -101,15 +102,15 @@ export function suggestFirstTime(exercise, userProfile, templateExercise, equipm
 
   let weight
   if (loadsResult.loads_kg.length === 0) {
-    // Aucune charge disponible (matériel manquant)
+    // No load available (missing equipment)
     weight = 0
   } else {
     weight = roundDownToAchievable(rawWeight, loadsResult.loads_kg)
-    // Si la charge suggérée est la charge minimale, l'utiliser quand même
+    // Use the suggested load even when it is the minimum available
     if (weight <= 0) weight = loadsResult.loads_kg[0]
   }
 
-  // Utiliser les reps de la fourchette du template si disponibles
+  // Use the template rep range when available
   const reps = templateExercise?.target_reps_min || config.reps
 
   return {
@@ -120,28 +121,28 @@ export function suggestFirstTime(exercise, userProfile, templateExercise, equipm
 }
 
 /**
- * Construit le texte d'explication pour la bulle.
+ * Build the explanation text for the tooltip.
  */
 function buildReasoning(goal, level, mechanic, weightKg, reps, bodyweightKg, isBodyweight) {
   const goalLabels = {
-    strength: 'force', hypertrophy: 'hypertrophie', endurance: 'endurance',
-    weight_loss: 'perte de poids', general_fitness: 'forme générale',
-    sport_performance: 'performance sportive',
+    strength: message('suggestion.goal_strength'), hypertrophy: message('suggestion.goal_hypertrophy'), endurance: 'endurance',
+    weight_loss: message('suggestion.goal_weight_loss'), general_fitness: message('suggestion.goal_general_fitness'),
+    sport_performance: message('suggestion.goal_sport_performance'),
   }
   const levelLabels = {
-    beginner: 'débutant', intermediate: 'intermédiaire',
-    advanced: 'avancé', athlete: 'athlète',
+    beginner: message('suggestion.level_beginner'), intermediate: message('suggestion.level_intermediate'),
+    advanced: message('suggestion.level_advanced'), athlete: message('suggestion.level_athlete'),
   }
-  const mechanicLabel = mechanic === 'compound' ? 'composé' : 'isolation'
+  const mechanicLabel = mechanic === 'compound' ? message('suggestion.mechanic_compound') : 'isolation'
 
   if (isBodyweight) {
-    return `Premier essai · Niveau ${levelLabels[level] || level}, objectif ${goalLabels[goal] || goal}. ` +
-           `Exercice au poids du corps : commencez avec ${reps} répétitions propres. ` +
-           `Ajustez selon votre ressenti.`
+    return message('suggestion.introduction', { level: levelLabels[level] || level, goal: goalLabels[goal] || goal }) +
+           message('suggestion.bodyweight', { reps: reps }) +
+           message('suggestion.adjust_by_feel')
   }
 
   const pct = Math.round((weightKg / bodyweightKg) * 100)
-  return `Premier essai · Niveau ${levelLabels[level] || level}, objectif ${goalLabels[goal] || goal}. ` +
-         `Exercice ${mechanicLabel} : ${weightKg} kg (≈ ${pct}% de votre poids de corps) × ${reps} reps. ` +
-         `C'est une charge prudente pour trouver votre niveau — ajustez à votre ressenti.`
+  return message('suggestion.introduction', { level: levelLabels[level] || level, goal: goalLabels[goal] || goal }) +
+         message('suggestion.weighted', { mechanic: mechanicLabel, weightKg: weightKg, pct: pct, reps: reps }) +
+         message('suggestion.conservative_load')
 }

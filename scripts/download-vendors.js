@@ -21,20 +21,20 @@ async function download() {
   for (const { url, dest } of FILES) {
     const destPath = path.join(VENDOR_DIR, dest)
     if (fs.existsSync(destPath)) {
-      console.log(`✓ Déjà présent : ${dest}`)
+      console.log(`✓ Already present: ${dest}`)
       continue
     }
-    console.log(`Téléchargement : ${url}`)
+    console.log(`Downloading: ${url}`)
     const res = await fetch(url)
-    if (!res.ok) throw new Error(`HTTP ${res.status} pour ${url}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`)
     const text = await res.text()
     fs.writeFileSync(destPath, text, 'utf8')
-    console.log(`✓ Enregistré : ${dest}`)
+    console.log(`✓ Saved: ${dest}`)
   }
-  console.log('Vendors prêts.')
+  console.log('Vendor libraries ready.')
 }
 
 download().catch(err => {
-  console.error('Erreur download-vendors :', err.message)
+  console.error('download-vendors error:', err.message)
   process.exit(1)
 })

@@ -2,14 +2,14 @@ import { ref, onMounted, onUnmounted, watch } from '/vendor/vue.esm-browser.prod
 import { getTimerWorker } from '../../timer-worker-singleton.js'
 import { t } from '../../i18n.js'
 
-// Son de fin de repos — initialisé une seule fois
+// Rest-end sound, initialized once
 let audioCtx = null
 function playBeep() {
   try {
-    // Essayer d'abord le fichier MP3
+    // Try the MP3 file first
     const audio = new Audio('/sounds/timer-end.mp3')
     audio.play().catch(() => {
-      // Fallback : bip synthétique via Web Audio API
+      // Fallback: synthesized beep through the Web Audio API
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       const osc = audioCtx.createOscillator()
       const gain = audioCtx.createGain()
@@ -21,7 +21,7 @@ function playBeep() {
       osc.start(audioCtx.currentTime)
       osc.stop(audioCtx.currentTime + 0.5)
     })
-  } catch (_) { /* silencieux si tout échoue */ }
+  } catch (_) { /* silently ignore if everything fails */ }
 }
 
 function vibrate() {
@@ -29,13 +29,13 @@ function vibrate() {
     if ('vibrate' in navigator) {
       navigator.vibrate([200, 100, 200, 100, 200])
     }
-  } catch (_) { /* silencieux */ }
+  } catch (_) { /* silently ignore */ }
 }
 
 export default {
   name: 'RestTimer',
   props: {
-    duration:      { type: Number, required: true },  // secondes
+    duration:      { type: Number, required: true },  // seconds
     deadline:      { type: Number, default: null },
     active:        { type: Boolean, default: false },
     soundEnabled:  { type: Boolean, default: true },
@@ -58,7 +58,7 @@ export default {
           if (disposed || !props.active) await lock.release()
           else wakeLock = lock
         }
-      } catch (_) { /* Wake Lock non supporté, silencieux */ }
+      } catch (_) { /* silently ignore unsupported Wake Lock */ }
     }
 
     function releaseWakeLock() {
@@ -127,7 +127,7 @@ export default {
     }
     const formatted=()=>`${Math.floor(remaining.value/60)}:${String(remaining.value%60).padStart(2,'0')}`
 
-    // Cercle SVG
+    // SVG circle
     const RADIUS = 28
     const circumference = 2 * Math.PI * RADIUS
     const dashOffset = () => {
@@ -147,7 +147,7 @@ export default {
   template: `
     <div v-if="active" class="rest-timer">
       <svg width="80" height="80" viewBox="0 0 80 80">
-        <!-- Fond -->
+        <!-- Background -->
         <circle cx="40" cy="40" :r="RADIUS"
           fill="none" stroke="var(--color-border)" stroke-width="5"/>
         <!-- Progression -->
@@ -161,7 +161,7 @@ export default {
           transform="rotate(-90 40 40)"
           style="transition: stroke-dashoffset 0.9s linear, stroke 0.3s"
         />
-        <!-- Texte -->
+        <!-- Text -->
         <text x="40" y="45" text-anchor="middle"
           fill="var(--color-text)" font-size="16" font-weight="700">
           {{ formatted() }}

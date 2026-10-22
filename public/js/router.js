@@ -1,6 +1,6 @@
 import { reactive } from '/vendor/vue.esm-browser.prod.js'
 
-// Toutes les routes définies — ordre important : spécifiques avant génériques
+// All routes: specific routes must precede generic routes
 const ROUTE_DEFS = [
   { re: /^#\/?$/,                          name: 'DashboardView',         params: [] },
   { re: /^#\/exercises\/new$/,             name: 'ExerciseListView',      params: [] },
@@ -51,7 +51,7 @@ export const router = reactive({
   },
 
   replace(hash) {
-    // Remplace sans ajouter d'entrée dans l'historique
+    // Replace without adding a history entry
     const url = window.location.href.split('#')[0] + hash
     window.history.replaceState(null, '', url)
     this._update()

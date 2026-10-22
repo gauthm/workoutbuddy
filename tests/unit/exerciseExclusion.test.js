@@ -10,7 +10,7 @@ function createDb() {
   const db = new Database(':memory:')
   db.pragma('foreign_keys = ON')
   migrate(db)
-  seedExercises(db)  // charge les ~800 exercices réels
+  seedExercises(db)  // load the ~800 real exercises
   return db
 }
 
@@ -30,18 +30,18 @@ function parseEx(ex) {
   }
 }
 
-describe('Exclusion d\'exercices — unité', () => {
+describe('Exercise exclusion — unit tests', () => {
 
-  it('un exercice exclu n\'apparaît pas dans la génération de programme', () => {
+  it('an excluded exercise does not appear in program generation', () => {
     const db = createDb()
 
-    // Récupérer un exercice barbell chest et l'exclure
+    // Fetch a barbell chest exercise and exclude it
     const target = db.prepare(`
       SELECT id FROM exercise
       WHERE primary_muscles LIKE '%"chest"%' AND equipment_required LIKE '%"barbell"%'
       AND is_custom = 0 LIMIT 1
     `).get()
-    if (!target) return // skip si aucun exercice barbell chest dans la DB
+    if (!target) return // skip if no barbell chest exercise exists in the DB
 
     db.prepare('UPDATE exercise SET is_excluded = 1 WHERE id = ?').run(target.id)
 
@@ -49,7 +49,7 @@ describe('Exclusion d\'exercices — unité', () => {
     const all    = allRaw.map(parseEx)
     const equip  = [
       { category: 'barbell', weight_kg: 20, count: 1 },
-      { category: 'bench',   name: 'Banc', count: 1 },
+      { category: 'bench',   name: 'Bench', count: 1 },
       { category: 'plate',   weight_kg: 5, count: 4 },
     ]
 
@@ -62,14 +62,14 @@ describe('Exclusion d\'exercices — unité', () => {
     const allIds = draft.templates.flatMap(t => t.exercises.map(e => e.exercise_id))
     assert.ok(
       !allIds.includes(target.id),
-      `L'exercice exclu "${target.id}" ne doit pas être dans le programme`
+      `Excluded exercise "${target.id}" must not appear in the program`
     )
   })
 
-  it('un exercice exclu n\'est pas candidat pour la rotation', () => {
+  it('an excluded exercise is not a rotation candidate', () => {
     const db = createDb()
 
-    // Prendre un exercice push_horizontal comme base
+    // Use a push_horizontal exercise as the base
     const base = db.prepare(
       "SELECT * FROM exercise WHERE movement_pattern='push_horizontal' AND is_custom=0 LIMIT 1"
     ).get()
@@ -77,7 +77,7 @@ describe('Exclusion d\'exercices — unité', () => {
 
     const parsedBase = parseEx(base)
 
-    // Exclure tous les autres exercices push_horizontal
+    // Exclude all other push_horizontal exercises
     db.prepare(`
       UPDATE exercise SET is_excluded = 1
       WHERE movement_pattern = 'push_horizontal' AND id != ?
@@ -88,7 +88,7 @@ describe('Exclusion d\'exercices — unité', () => {
     const equip  = [
       { category: 'barbell', weight_kg: 20, count: 1 },
       { category: 'dumbbell_fixed', weight_kg: 15, count: 2 },
-      { category: 'bench', name: 'Banc', count: 1 },
+      { category: 'bench', name: 'Bench', count: 1 },
     ]
 
     const candidates = findRotationCandidates(parsedBase, all, equip)
@@ -96,11 +96,11 @@ describe('Exclusion d\'exercices — unité', () => {
 
     assert.ok(
       nonBase.every(c => !c.is_excluded),
-      'Aucun exercice exclu ne doit apparaître comme candidat de rotation'
+      'No excluded exercise must appear as a rotation candidate'
     )
   })
 
-  it('réactiver un exercice le remet dans la sélection', () => {
+  it('re-enabling an exercise returns it to selection', () => {
     const db  = createDb()
     const ex  = getRandomExercise(db)
     assert.ok(ex, 'Doit avoir au moins un exercice en DB')
@@ -114,11 +114,11 @@ describe('Exclusion d\'exercices — unité', () => {
     assert.equal(row.is_excluded, 0)
   })
 
-  it('tous les exercices ont is_excluded = 0 par défaut', () => {
+  it('all exercises default to is_excluded = 0', () => {
     const db = createDb()
     const excluded = db.prepare(
       'SELECT COUNT(*) as n FROM exercise WHERE is_excluded = 1'
     ).get()
-    assert.equal(excluded.n, 0, 'Aucun exercice ne doit être exclu par défaut')
+    assert.equal(excluded.n, 0, 'No exercise must be excluded by default')
   })
 })

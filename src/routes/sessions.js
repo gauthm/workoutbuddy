@@ -1,3 +1,4 @@
+import { message } from '../utils/messages.js'
 import { resetSession } from '../services/sessionReset.js'
 import { invalidateSessionReview } from '../services/trainingHistory.js'
 import { isIsoDate } from '../services/validation.js'
@@ -26,7 +27,7 @@ const db = getDb()
 
 function autoBackup(options) {
   try { return createBackup(db, getDbPath(),options) }
-  catch (err) { console.warn('[backup] Erreur :', err.message) }
+  catch (err) { console.warn('[backup] Error:', err.message) }
 }
 
 // ── GET /sessions ─────────────────────────────────────────────
@@ -52,7 +53,7 @@ router.get('/', (req, res) => {
 })
 
 // ── POST /sessions/from-template/:templateId ─────────────────
-// IMPORTANT : déclarée AVANT /:id
+// IMPORTANT: declared BEFORE /:id
 router.post('/from-template/:templateId', (req, res) => {
   try {
     const tpl = db.prepare('SELECT * FROM workout_template WHERE id = ?').get(req.params.templateId)
@@ -71,7 +72,7 @@ router.post('/from-template/:templateId', (req, res) => {
       : null
 
     if (program && cannotStartProgram(program,scheduled_date)) return res.status(409).json({error:'PROGRAM_FINISHED'})
-    // Préparer la rotation hors transaction
+    // Prepare rotation outside the transaction
     const useRotation = apply_rotation === true
     let allExercises = []
     let equipmentItems = []
@@ -115,7 +116,7 @@ router.post('/from-template/:templateId', (req, res) => {
       return sid
     }).immediate()
 
-    // Retourner session complète
+    // Return the complete session
     const session = db.prepare('SELECT * FROM session WHERE id = ?').get(sessionId)
     const exercises = db.prepare(
       'SELECT se.*, e.name_fr, e.name_en FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
@@ -198,14 +199,14 @@ router.post('/:id/start', (req, res) => {
     }
     const programForStart=session.program_id ? db.prepare('SELECT * FROM program WHERE id=?').get(session.program_id) : null
     if (programForStart && cannotStartProgram(programForStart,session.scheduled_date)) return res.status(409).json({error:'PROGRAM_FINISHED'})
-    // Vérifier qu'il n'y a pas déjà une séance in_progress
+    // Check that no session is already in_progress
     const existing = db.prepare(
       "SELECT id FROM session WHERE status = 'in_progress' AND id != ?"
     ).get(req.params.id)
     if (existing) {
       return res.status(409).json({
         error: 'SESSION_ALREADY_IN_PROGRESS',
-        detail: `Séance ${existing.id} déjà en cours.`
+        detail: message('session.already_started', { sessionId: existing.id })
       })
     }
 
@@ -234,7 +235,7 @@ router.post('/:id/start', (req, res) => {
       for (const row of db.prepare('SELECT template_exercise_id FROM session_exercise WHERE session_id=? AND template_exercise_id IS NOT NULL').all(session.id)) {
         synchronizeTemplateProgression(db,row.template_exercise_id)
       }
-      // ── Calcul des ajustements coach (déterministe, lecture seule) ──
+      // ── Calculate coach adjustments (deterministic, read-only) ──
       const started = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
       return { ...started, adjustments: computeSessionAdjustments(db,started) }
     })()
@@ -246,15 +247,15 @@ router.post('/:id/start', (req, res) => {
 })
 
 /**
- * Calcule les cibles actualisées pour chaque exercice de la séance
- * et retourne la liste des ajustements par rapport à la dernière performance.
+ * Calculate updated targets for each exercise in the session
+ * and return adjustments compared with the last performance.
  *
- * Un ajustement est significatif si :
- * - Le poids a changé de plus de 0.1 kg
- * - Les reps cibles ont changé
- * - C'est un premier essai (weight_kg = 0 → suggestion)
+ * An adjustment is significant if:
+ * - Weight changed by more than 0.1 kg
+ * - Target reps changed
+ * - This is a first attempt (weight_kg = 0 → suggestion)
  *
- * Lit uniquement — ne modifie jamais progression_state.
+ * Read-only — never modify progression_state.
  *
  * @returns {Array<{
  *   exercise_id: string,
@@ -319,7 +320,7 @@ function computeSessionAdjustments(db, session) {
       ? loadsResult.loads_kg
       : [state?.current_weight_kg || 0]
 
-    // Séries de travail de la DERNIÈRE séance complétée pour ce template_exercise
+    // Working sets from the LAST completed session for this template_exercise
     const lastSets = db.prepare(`
       SELECT sl.*, s.id AS session_id
       FROM set_log sl
@@ -356,7 +357,7 @@ function computeSessionAdjustments(db, session) {
         )
       } catch (suggestErr) {
         console.warn('[computeSessionAdjustments] suggestion:', suggestErr.message)
-        suggestion = { weight_kg: 0, reps: te.target_reps_min, reasoning: 'Commencez léger et ajustez à votre ressenti.' }
+        suggestion = { weight_kg: 0, reps: te.target_reps_min, reasoning: message('suggestion.start_light') }
       }
 
       targetWeight = suggestion.weight_kg
@@ -365,7 +366,7 @@ function computeSessionAdjustments(db, session) {
       changeType   = 'first_time'
 
     } else {
-      // Le calcul a déjà été fait à la complétion → on relit progression_state
+      // The calculation was already performed on completion → reread progression_state
       const learned = db.prepare('SELECT last_session_id FROM exercise_progression WHERE exercise_id=?').get(se.exercise_id)
       const stateUpToDate = learned?.last_session_id === state.last_session_id || relevantSets.length > 0 &&
         state.last_session_id === lastSets[0].session_id
@@ -377,7 +378,7 @@ function computeSessionAdjustments(db, session) {
       targetWeight = nextState?.current_weight_kg ?? state.current_weight_kg
       targetReps   = nextState?.current_target_reps ?? state.current_target_reps ?? te.target_reps_min
 
-      // Référence de comparaison : performance réellement réalisée à la dernière séance
+      // Comparison baseline: actual performance in the last session
       const prevWeight = relevantSets.length > 0 ? relevantSets[0].weight_kg : state.current_weight_kg
       const prevReps   = relevantSets.length > 0
         ? Math.max(...relevantSets.map(s => s.reps))
@@ -386,10 +387,10 @@ function computeSessionAdjustments(db, session) {
       if (nextState) {
         explanation = nextState.explanation
       } else if (relevantSets.length > 0) {
-        explanation = `Dernière séance : ${prevWeight} kg × ${prevReps} reps. ` +
-                      `Cible : ${targetWeight} kg × ${targetReps} reps.`
+        explanation = message('session.previous_performance', { prevWeight: prevWeight, prevReps: prevReps }) +
+                      message('session.target', { targetWeight: targetWeight, targetReps: targetReps })
       } else {
-        explanation = `Charge maintenue : ${targetWeight} kg × ${targetReps} reps.`
+        explanation = message('session.load_maintained', { targetWeight: targetWeight, targetReps: targetReps })
       }
 
       const weightDiff = targetWeight - prevWeight
@@ -407,7 +408,7 @@ function computeSessionAdjustments(db, session) {
       const compatible=compatibleLoads.at(-1)
       if (compatible < targetWeight-.001) {
         targetWeight=compatible
-        explanation += ' Charge adaptée au matériel actuellement disponible.'
+        explanation += message('session.equipment_adjustment')
         changeType='decrease'
       }
     }
@@ -416,7 +417,7 @@ function computeSessionAdjustments(db, session) {
       const target = computeDeloadTargets(te,{ current_weight_kg:targetWeight },program,{},loadsResult.loads_kg)
       targetWeight = loadsResult.resistance_is_approximate ? targetWeight : target.weight_kg
       targetReps = target.reps_min
-      explanation = 'Semaine allégée : mêmes exercices, charge et volume temporairement réduits.'
+      explanation = message('session.deload_targets')
       changeType = 'decrease'
     }
     adjustments.push({
@@ -432,7 +433,7 @@ function computeSessionAdjustments(db, session) {
     })
   }
 
-  // Premier essai + changements réels uniquement
+  // First attempt + actual changes only
   return adjustments.filter(a => a.change_type !== 'unchanged')
 }
 
@@ -448,7 +449,7 @@ router.post('/:id/complete', (req, res) => {
     if (session.status !== 'in_progress') return res.status(409).json({ error: 'SESSION_NOT_IN_PROGRESS' })
 
     const completion = db.transaction(() => {
-      // Calculer les métriques
+      // Calculate metrics
       const volumeRow = db.prepare(`
         SELECT COALESCE(SUM(sl.weight_kg * sl.reps), 0) as vol
         FROM set_log sl
@@ -493,8 +494,8 @@ router.post('/:id/complete', (req, res) => {
           WHERE id=?`).run(session.program_id)
       }
 
-      // ── Mise à jour de la progression après complétion ────────────────────
-      // Récupérer le programme et ses settings
+      // ── Update progression after completion ────────────────────
+      // Fetch the program and its settings
       const program = session.program_id
         ? db.prepare('SELECT * FROM program WHERE id = ?').get(session.program_id)
         : null
@@ -511,7 +512,7 @@ router.post('/:id/complete', (req, res) => {
 
       const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
 
-      // Pour chaque session_exercise rattaché à un template_exercise
+      // For each session_exercise linked to a template_exercise
       const sessionExercises = db.prepare(
         'SELECT * FROM session_exercise WHERE session_id = ? AND template_exercise_id IS NOT NULL'
       ).all(req.params.id)
@@ -528,7 +529,7 @@ router.post('/:id/complete', (req, res) => {
         const exercise = db.prepare('SELECT * FROM exercise WHERE id = ?').get(se.exercise_id)
         if (!exercise) continue
 
-        // Séries de travail complétées
+        // Completed working sets
         const workSets = db.prepare(`
           SELECT * FROM set_log
           WHERE session_exercise_id = ?
@@ -539,7 +540,7 @@ router.post('/:id/complete', (req, res) => {
 
         if (workSets.length === 0) continue
 
-        // Calculer les charges atteignables
+        // Calculate achievable loads
         const exerciseForCalc = {
           equipment_required: JSON.parse(exercise.equipment_required || '[]'),
           is_unilateral: exercise.is_unilateral,
@@ -576,9 +577,9 @@ router.post('/:id/complete', (req, res) => {
         saveExerciseProgression(db,se.exercise_id,nextState,te,Number(session.id))
         saveProgressionEvent(db,se.id,{template:te,program,loads:actualLoads,settings:{...progressionSettings,resistance_is_approximate:loadsResult.resistance_is_approximate}})
       }
-      // ── fin mise à jour progression ───────────────────────────────────────
+      // ── end progression update ───────────────────────────────────────
 
-      // ── Vérification deload ───────────────────────────────────────────────
+      // ── Deload check ───────────────────────────────────────────────
       let deloadTriggered = false
       let deloadReason    = null
 
@@ -605,40 +606,40 @@ router.post('/:id/complete', (req, res) => {
           deloadReason    = deloadCheck.reason
         }
       }
-      // ── fin vérification deload ───────────────────────────────────────────
+      // ── end deload check ───────────────────────────────────────────
 
       return {program,settings,deloadTriggered,deloadReason}
     }).immediate()
     const {program,settings,deloadTriggered,deloadReason}=completion
 
-    // ── Signaux coaching (non bloquant) ───────────────────────────
+    // ── Coaching signals (non-blocking) ───────────────────────────
     try {
       const newAdvice = runAllSignalChecks(db, settings)
       if (newAdvice > 0) {
-        // Génération LLM en arrière-plan
+        // Background LLM generation
         generatePendingAdviceTexts(db).catch(e =>
-          console.warn('[advice] génération arrière-plan:', e.message)
+          console.warn('[advice] background generation:', e.message)
         )
       }
     } catch (err) {
-      console.warn('[coaching] Erreur signaux:', err.message)
-      // Non bloquant
+      console.warn('[coaching] Signal error:', err.message)
+      // Non-blocking
     }
-    // ── fin signaux coaching ──────────────────────────────────────────────
+    // ── end coaching signals ──────────────────────────────────────────────
 
     autoBackup()
 
     try {
       const scheduled = scheduleWeeks(db, session.program_id)
       if (scheduled > 0) {
-        console.log(`[scheduler] ${scheduled} séance(s) planifiée(s) après complétion`)
+        console.log(`[scheduler] ${scheduled} session(s) scheduled after completion`)
       }
     } catch (err) {
-      console.warn('[scheduler] Erreur planification :', err.message)
-      // Non bloquant
+      console.warn('[scheduler] Scheduling error:', err.message)
+      // Non-blocking
     }
 
-    // Retourner session complète
+    // Return the complete session
     const updated = db.prepare('SELECT * FROM session WHERE id = ?').get(req.params.id)
     const exercises = db.prepare(
       'SELECT se.*, e.name_fr, e.name_en FROM session_exercise se JOIN exercise e ON se.exercise_id = e.id WHERE se.session_id = ? ORDER BY se.order_index'
@@ -799,13 +800,13 @@ router.get('/:id/target/:teId', (req, res) => {
     const equipmentItems = db.prepare('SELECT * FROM equipment_item').all()
     const loadsResult    = calculateAchievableLoads(equipmentItems, exerciseForCalc)
 
-    // ── Détection premier essai ───────────────────────────────
+    // ── First-attempt detection ───────────────────────────────
     const isFirstTime = !state || !state.last_session_id && state.current_weight_kg === 0
 
     let weight, targetReps, explanation, suggestion
 
     if (isFirstTime) {
-      // Charger le profil utilisateur
+      // Load the user profile
       const planRow = program ? db.prepare('SELECT parameters FROM program_plan WHERE program_id=?').get(program.id) : null
       const planParams = planRow ? JSON.parse(planRow.parameters) : null
       const profileRow = planParams ? { weight_kg:planParams.weight_kg, fitness_level:program.level, primary_goal:program.goal }
@@ -826,18 +827,18 @@ router.get('/:id/target/:teId', (req, res) => {
         suggestion = suggestFirstTime(parsed, profile, te, equipmentItems)
       } catch (suggestErr) {
         console.warn('[GET /sessions/:id/target/:teId] suggestion:', suggestErr.message)
-        suggestion = { weight_kg: 0, reps: 8, reasoning: 'Aucun profil configuré. Commencez léger.' }
+        suggestion = { weight_kg: 0, reps: 8, reasoning: message('suggestion.missing_profile') }
       }
       weight      = suggestion.weight_kg
       targetReps  = suggestion.reps
       explanation = suggestion.reasoning
 
     } else {
-      // Essais suivants : lire depuis progression_state
+      // Subsequent attempts: read from progression_state
       weight      = state.current_weight_kg
       targetReps  = state.current_target_reps || te.target_reps_min
 
-      // Récupérer la dernière performance réelle
+      // Fetch the last actual performance
       const lastSet = db.prepare(`
         SELECT sl.weight_kg, sl.reps, s.scheduled_date
         FROM set_log sl
@@ -859,39 +860,39 @@ router.get('/:id/target/:teId', (req, res) => {
       const model = resolveProgressionModel(te, program)
 
       const modelLabels = {
-        linear:             'progression linéaire',
-        double_progression: 'double progression',
-        rpe_based:          'progression RPE',
+        linear:             message('progression.model_linear'),
+        double_progression: message('progression.model_double'),
+        rpe_based:          message('progression.model_rpe'),
       }
 
       if (lastSet) {
         const failureInfo = state.consecutive_failures > 0
-          ? ` (${state.consecutive_failures} échec(s) consécutif(s))`
+          ? message('session.failure_count', { failures: state.consecutive_failures })
           : ''
-        explanation = `Dernière séance (${lastSet.scheduled_date}) : ` +
+        explanation = message('session.previous_date', { date: lastSet.scheduled_date }) +
                       `${lastSet.weight_kg} kg × ${lastSet.reps} reps. ` +
-                      `Cible : ${weight} kg × ${targetReps} reps ` +
+                      message('session.target_with_model', { weight: weight, targetReps: targetReps }) +
                       `[${modelLabels[model] || model}]${failureInfo}.`
       } else {
-        explanation = `Charge initiale : ${weight} kg × ${targetReps} reps [${modelLabels[model] || model}].`
+        explanation = message('session.initial_load', { weight: weight, targetReps: targetReps, model: modelLabels[model] || model })
       }
     }
 
     const compatibleLoads=loadsResult.loads_kg.filter(load=>load>0 && load<=weight+.001)
     if (!loadsResult.resistance_is_approximate && compatibleLoads.length && compatibleLoads.at(-1)<weight-.001) {
       weight=compatibleLoads.at(-1)
-      explanation += ' Charge adaptée au matériel actuellement disponible.'
+      explanation += message('session.equipment_adjustment')
     }
 
     if (session.is_deload && program) {
       const target = computeDeloadTargets(te,{ current_weight_kg:weight },program,{},loadsResult.loads_kg)
       weight = loadsResult.resistance_is_approximate ? weight : target.weight_kg
       targetReps = target.reps_min
-      explanation = 'Semaine allégée : mêmes exercices, charge et volume temporairement réduits.'
+      explanation = message('session.deload_targets')
     }
 
-    // ── Calcul du 10RM estimé pour la charge cible ────────────
-    // Conversion inverse de la formule sélectionnée : une série de 10 reps conserve sa charge.
+    // ── Calculate estimated 10RM for the target load ────────────
+    // Invert the selected formula: a set of 10 reps preserves its load.
     const formulaRow = db.prepare("SELECT value FROM settings WHERE key = 'rm_formula'").get()
     const formula    = formulaRow ? JSON.parse(formulaRow.value) : 'epley'
     const est1rm     = weight > 0 && targetReps > 0
@@ -908,13 +909,13 @@ router.get('/:id/target/:teId', (req, res) => {
       explanation,
       achievable_loads_kg: loadsResult.loads_kg,
       is_first_time:       isFirstTime,
-      // Bulle "suggestion premier essai" — null si essai suivant
+      // "First-attempt suggestion" tooltip — null for subsequent attempts
       first_time_suggestion: isFirstTime ? {
         weight_kg: suggestion.weight_kg,
         reps:      suggestion.reps,
         reasoning: suggestion.reasoning,
       } : null,
-      // 10RM estimé de la charge cible
+      // Estimated 10RM for the target load
       estimated_10rm_kg: est10rm,
     })
   } catch (err) {
