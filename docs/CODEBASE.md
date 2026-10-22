@@ -66,6 +66,7 @@ All files below are in `src/routes/`.
 | Dashboard calendar with persistent selection, first day outside the current month, today on return and paginated workouts | `js/components/calendar/CalendarView.js`; resume/scheduled priority, full list on the separate calendar |
 | Keeping the screen awake, saved preference and renewal on return | `js/utils/screenWakeLock.js`, initialization in `js/app.js`, state in `js/store.js`, General in `SettingsView.js`, migration `017_screen_wake_lock.sql` |
 | Navigation and shared components | `js/components/layout/`, `js/components/common/` |
+| Sticky catalog tabs/search and overlay filter panel | `js/components/exercises/ExerciseListView.js`, `ExerciseFilter.js`, `.exercise-toolbar` in `css/components.css`; `tests/e2e/exercises.spec.js` |
 | Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos) |
 | Inventory and equipment registry | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
 | Questionnaire, goal-titled card and single-active-program reminder | `js/components/programs/` |
@@ -77,7 +78,7 @@ All files below are in `src/routes/`.
 | --- | --- |
 | Calendar, statistics, coach, settings | `js/components/calendar/`, `stats/`, `coach/`, `settings/` under `js/components/` |
 | Coach input resizable up to 120 px, Enter to send on desktop, Shift+Enter for a newline; Enter for a newline on mobile | `js/components/coach/CoachView.js`, `.coach-view__input` in `css/components.css` |
-| Chat preserved during navigation, off-screen response and return to the latest message | `KeepAlive` limited to Coach in `js/components/layout/AppShell.js`, activation hooks and dimension observation in `js/components/coach/CoachView.js` |
+| Chat preserved during navigation, off-screen response, return to latest message, document scroll lock and reading position during keyboard resizing | `KeepAlive` limited to Coach in `js/components/layout/AppShell.js`, activation hooks and dimension observation in `js/components/coach/CoachView.js` |
 | Animated thinking indicator, reduced motion and bubbles without avatars | `js/components/coach/ChatMessage.js`, `.chat-msg` styles in `css/components.css` |
 | Single Authelia logout button with confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, Caddy `/auth/logout` route |
 | RM, warm-up, pain, dates, dialogs | `js/utils/` |
@@ -109,7 +110,7 @@ testing. Code paths below are relative to the repository root.
 | `tests/e2e/authProxy.js`, `settings.spec.js` | Saved screen-awake option, navigation/reload, disabling, denial and incompatibility; shared disposable HTTP proxy, confirmed logout and data preservation |
 | `tests/e2e/theme.spec.js`, `security.spec.js` | Light theme and completed-set contrast; icon links and decoding, Apple/manifest dimensions and opacity |
 | `tests/e2e/dashboard.spec.js` | Dashboard across eight sizes/safe areas, buttons below the program, enlarged areas and scrolling on short screens, portrait/landscape, six weeks, all statuses, pagination, completed week; five goals in French/English |
-| `tests/e2e/coach.spec.js` | Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newline, keyboard composition preserved, reduced-motion animation, no avatars; navigation before/during response, off-screen completion, immediate following of long responses, resizing, persistence and return to bottom after navigation/reload; local SSE provider, no external AI |
+| `tests/e2e/coach.spec.js` | Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newline, keyboard composition preserved, reduced-motion animation, no avatars; navigation before/during response, off-screen completion, immediate following of long responses, resizing, persistence and return to bottom after navigation/reload; keyboard resize/pan while reading older messages, scroll containment and restored document scrolling after leaving; local SSE provider, no external AI |
 | `tests/ui/` | Additional Playwright visual scenarios |
 
 ### Deployment and operations

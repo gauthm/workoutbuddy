@@ -53,7 +53,9 @@ and conversation; it does not configure the app or create programs.
 Chat remains active during navigation within the app: the coach continues responding on other
 screens. Returning to chat always displays the end of the conversation, even while a response is
 still streaming. Each addition of text immediately scrolls chat to the bottom, without animation
-delay; it also readjusts when its visible area changes size.
+delay. When already following the latest message, it also readjusts when its visible area changes
+size. Reading older messages preserves the scroll position across keyboard resize and pan events.
+Only the message list scrolls: gestures at its boundaries do not scroll the underlying page.
 
 Creating and deleting conversations is blocked during a response. This continuity applies to
 internal navigation, not closing or reloading the app.

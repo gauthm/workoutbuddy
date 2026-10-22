@@ -85,7 +85,7 @@ test('Enter respects keyboard composition and does not submit an empty message',
  expect(sent).toHaveLength(1)
 })
 
-test('Coach continues off-screen before and during response, then returns to the latest message',async({page,request})=>{
+test('Coach continues off-screen before and during response, then returns to the latest message',async({page,request},info)=>{
  // Only the provider is synthetic; chat, persistence and navigation use the real app.
  let response,requests=0,interrupted=false
  const provider=createServer((req,res)=>{
@@ -182,6 +182,53 @@ test('Coach continues off-screen before and during response, then returns to the
   await expect(page.locator('.chat-msg--assistant .chat-msg__bubble')).toContainText('Last preserved advice.')
   await expect.poll(bottom).toBeLessThan(2)
 
+  // Reproduce keyboard resize/pan while reading older messages, including at scroll boundaries.
+  await input.focus()
+  await page.evaluate(()=>{
+   let height=null,top=0
+   Object.defineProperties(visualViewport,{
+    height:{get:()=>height??innerHeight},offsetTop:{get:()=>top},
+   })
+   window.setChatViewport=(nextHeight,nextTop=0)=>{
+    height=nextHeight;top=nextTop
+    visualViewport.dispatchEvent(new Event('resize'))
+    visualViewport.dispatchEvent(new Event('scroll'))
+   }
+   window.setChatViewport(innerHeight-320)
+  })
+  const mobile=info.project.name==='mobile'
+  if(mobile)await expect(page.locator('.bottom-nav')).toBeHidden()
+  const content=page.locator('.coach-view__content')
+  await expect.poll(bottom).toBeLessThan(2)
+  await content.evaluate(el=>{el.scrollTop=200})
+  await expect.poll(()=>content.evaluate(el=>el.scrollTop)).toBe(200)
+  // Let the scroll event record the user's reading position before viewport changes.
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+  for(const offset of [0,30,60,25,0]){
+   await page.evaluate(offset=>window.setChatViewport(innerHeight-320+(offset%7),offset),offset)
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))
+   expect(await content.evaluate(el=>el.scrollTop)).toBe(200)
+   expect(await page.evaluate(()=>scrollY)).toBe(0)
+   if(mobile)await expect(page.locator('.bottom-nav')).toBeHidden()
+  }
+  // Gestures at the end of the messages must not escape into the document.
+  await content.evaluate(el=>{el.scrollTop=el.scrollHeight})
+  const box=await content.boundingBox()
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2)
+  await page.mouse.wheel(0,600)
+  await page.evaluate(()=>new Promise(requestAnimationFrame))
+  expect(await page.evaluate(()=>scrollY)).toBe(0)
+  await expect(content).toHaveCSS('overscroll-behavior-y','contain')
+  await expect(page.locator('body')).toHaveCSS('position','fixed')
+  await page.screenshot({path:info.outputPath('coach-keyboard-scroll.png')})
+  await input.evaluate(el=>el.blur())
+  await page.evaluate(()=>window.setChatViewport(innerHeight))
+  await expect(page.locator('.bottom-nav')).toBeVisible()
+  await page.getByRole('button',{name:L('nav.exercises')+' '+L('nav.equipment_line'),exact:true}).click()
+  await expect(page.locator('html')).not.toHaveClass(/coach-active/)
+  await expect(page.locator('.exercise-card').first()).toBeVisible()
+  await page.evaluate(()=>scrollTo(0,500))
+  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(100)
   await expect(page.locator('.chat-msg__avatar')).toHaveCount(0)
  } finally {
   provider.closeAllConnections()

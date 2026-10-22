@@ -76,7 +76,8 @@ Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newli
 keyboard composition and narrow desktop window, animated thinking and reduced motion,
 no avatars; navigation before and during a response, off-screen completion, no duplicates,
 immediate tracking of long chunks and resizes, persistence and return to bottom after
-navigation/reload; real API with a disposable local SSE provider.
+navigation/reload; keyboard resize/pan preserves reading position, document scrolling is locked
+inside chat and restored after leaving; real API with a disposable local SSE provider.
 
 ### `programs.spec.js`
 
@@ -204,7 +205,8 @@ to find actions, screenshots and requests for a failure.
 This suite covers functional journeys in Chrome with an emulated mobile viewport. It
 does not validate Safari/Firefox, physical phones, load performance or every possible error.
 Keyboard regression cases simulate visual-viewport resize/pan events to check navigation visibility
-and Coach composer placement on desktop and mobile; they do not open a real system keyboard.
+and Coach composer placement on desktop and mobile, reading-position preservation and scroll
+containment; they do not open a real system keyboard.
 The service worker is blocked by default so tests query the tested version's files and server.
 
 Security and update cases explicitly allow it: installation, reload under CSP, publication

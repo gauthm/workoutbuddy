@@ -40,7 +40,10 @@ in `seed.js`). Tests verify catalog coverage.
 The **Exercises and Equipment** page has three tabs: Exercises, Pain, and Equipment. Search and
 filters let you select a muscle, movement, equipment family, or exercises possible with the
 inventory. The Exercises tab counter shows movements remaining after filters, pain, and exclusions;
-exclusions are indicated separately.
+exclusions are indicated separately. The tabs, search and Filters button stay pinned below the
+page title while scrolling. Filters expand over the exercise list without moving it, remain
+available during scrolling, and collapse using the same button. On short screens, the panel
+scrolls internally.
 
 Opening an exercise and returning preserves filters and scroll position. Two photos alternate
 automatically to show movement positions, both in the details page and in session help. A button

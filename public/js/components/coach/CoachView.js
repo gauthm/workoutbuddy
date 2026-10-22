@@ -42,7 +42,20 @@ export default {
     const messagesEndRef = ref(null)
     let streamController = null
     let isActive = false
-    const chatResizeObserver = new ResizeObserver(() => { scrollToBottom() })
+    let followLatest = true
+    let lastContentHeight = 0
+    function onContentScroll(event) {
+      const content = event.target
+      // A viewport resize can emit a scroll event before ResizeObserver runs.
+      // Keep the previous reading intent when the visible height has changed.
+      if (content.clientHeight === lastContentHeight) {
+        followLatest = content.scrollHeight - content.clientHeight - content.scrollTop < 24
+      }
+      lastContentHeight = content.clientHeight
+    }
+    const chatResizeObserver = new ResizeObserver(() => {
+      if (followLatest) scrollToBottom()
+    })
     watch(messagesEndRef, end => {
       chatResizeObserver.disconnect()
       if (!end) return
@@ -52,22 +65,32 @@ export default {
     onBeforeUnmount(() => {
       streamController?.abort()
       chatResizeObserver.disconnect()
+      document.documentElement.classList.remove('coach-active')
     })
     onActivated(() => {
       isActive = true
+      followLatest = true
+      document.documentElement.classList.add('coach-active')
       scrollToBottom('instant')
       // The profile may have changed in Settings while away.
       if (!state.loadingInit) {
         profileApi.get().then(profile => { state.profile = profile }).catch(() => {})
       }
     })
-    onDeactivated(() => { isActive = false })
+    onDeactivated(() => {
+      isActive = false
+      document.documentElement.classList.remove('coach-active')
+    })
 
     async function scrollToBottom(behavior = 'instant') {
       await nextTick()
       if (!isActive) return
       const content = messagesEndRef.value?.closest('.coach-view__content')
-      content?.scrollTo({ top: content.scrollHeight, behavior })
+      if (content) {
+        followLatest = true
+        lastContentHeight = content.clientHeight
+        content.scrollTo({ top: content.scrollHeight, behavior })
+      }
     }
 
     // ── Initialization ─────────────────────────────────────────
@@ -102,6 +125,7 @@ export default {
       const trimmed = (text || state.input).trim()
       if (!trimmed || state.isStreaming || state.loadingInit) return
       state.isStreaming = true
+      followLatest = true
 
       if (!silent) {
         state.input = ''
@@ -275,7 +299,7 @@ export default {
       newConversation, openHistoryPanel, selectConversation,
       renameConversation, askDeleteConversation, confirmDeleteConversation,
       onAdviceDismissed, onAdvicePurchased,
-      autoResize, onKeydown, t, router,
+      autoResize, onKeydown, onContentScroll, t, router,
     }
   },
 
@@ -294,7 +318,7 @@ export default {
         </template>
       </PageHeader>
 
-      <div class="coach-view__content">
+      <div class="coach-view__content" @scroll.passive="onContentScroll">
         <LoadingSpinner v-if="state.loadingInit" />
 
         <template v-else>

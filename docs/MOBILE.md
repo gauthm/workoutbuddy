@@ -30,7 +30,9 @@ settings can still override these rules.
 When the on-screen keyboard opens, bottom navigation and the floating rest timer stay hidden
 through scrolling on every page. They return when the keyboard closes. The AI Coach fits the
 visible viewport so its message field remains directly above the keyboard, including when Safari
-pans the page. Focusing a field with a hardware keyboard leaves navigation visible.
+pans the page. The chat locks document scrolling while displayed; the message list scrolls
+independently without dragging the page at its boundaries. Keyboard resizing preserves the reading
+position when browsing older messages. Focusing a field with a hardware keyboard leaves navigation visible.
 
 ## Updates and reconnection
 

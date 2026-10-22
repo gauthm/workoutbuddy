@@ -158,27 +158,31 @@ export default {
   },
 
   template: `
-    <div class="view">
+    <div class="view exercise-catalog">
       <PageHeader :title="t('exercises.title')" />
 
-      <!-- Tabs -->
-      <div class="exercise-tabs">
-        <button class="exercise-tabs__btn"
-          :class="{ 'exercise-tabs__btn--active': state.activeTab === 'list' }"
-          @click="selectTab('list')">
-          {{ t('exercises.tab_list') }}
-          <span v-if="excludedCount" class="exercise-tabs__exclusions" :aria-label="t('exercises.excluded_count', {count:excludedCount})">🚫 {{ excludedCount }}</span>
-          <span class="exercise-tabs__badge" :aria-label="t('exercises.remaining_count', {count:displayedExercises.length})">{{ displayedExercises.length }}</span>
-        </button>
-        <button class="exercise-tabs__btn"
-          :class="{ 'exercise-tabs__btn--active': state.activeTab === 'pain' }"
-          @click="selectTab('pain')">
-          {{ t('exercises.tab_pain') }}
-          <span v-if="state.painfulMuscles.length" class="exercise-tabs__badge exercise-tabs__badge--active">{{ state.painfulMuscles.length }}</span>
-        </button>
-        <button class="exercise-tabs__btn"
-          :class="{ 'exercise-tabs__btn--active': state.activeTab === 'material' }"
-          @click="selectTab('material')">{{ t('exercises.tab_material') }}</button>
+      <div class="exercise-toolbar">
+        <!-- Tabs -->
+        <div class="exercise-tabs">
+          <button class="exercise-tabs__btn"
+            :class="{ 'exercise-tabs__btn--active': state.activeTab === 'list' }"
+            @click="selectTab('list')">
+            {{ t('exercises.tab_list') }}
+            <span v-if="excludedCount" class="exercise-tabs__exclusions" :aria-label="t('exercises.excluded_count', {count:excludedCount})">🚫 {{ excludedCount }}</span>
+            <span class="exercise-tabs__badge" :aria-label="t('exercises.remaining_count', {count:displayedExercises.length})">{{ displayedExercises.length }}</span>
+          </button>
+          <button class="exercise-tabs__btn"
+            :class="{ 'exercise-tabs__btn--active': state.activeTab === 'pain' }"
+            @click="selectTab('pain')">
+            {{ t('exercises.tab_pain') }}
+            <span v-if="state.painfulMuscles.length" class="exercise-tabs__badge exercise-tabs__badge--active">{{ state.painfulMuscles.length }}</span>
+          </button>
+          <button class="exercise-tabs__btn"
+            :class="{ 'exercise-tabs__btn--active': state.activeTab === 'material' }"
+            @click="selectTab('material')">{{ t('exercises.tab_material') }}</button>
+        </div>
+
+        <ExerciseFilter v-if="state.activeTab === 'list'" :filters="state.filters" :expanded="state.filtersOpen" @toggle="state.filtersOpen=$event" @change="onFilterChange" />
       </div>
 
       <div class="view__content">
@@ -187,7 +191,6 @@ export default {
         </div>
         <!-- ═══ Exercises tab ═══ -->
         <template v-if="state.activeTab === 'list'">
-          <ExerciseFilter :filters="state.filters" :expanded="state.filtersOpen" @toggle="state.filtersOpen=$event" @change="onFilterChange" />
 
           <div v-if="painFilteredCount > 0" class="exercise-pain-bar">
             <span>🤕 {{ t('exercises.pain_filtered', { count: painFilteredCount }) }}</span>
