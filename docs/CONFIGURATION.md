@@ -69,9 +69,9 @@ supported.
 
 ### Linux hosting and Authelia sessions
 
-The [Red Hat](DEPLOYMENT_REDHAT.md), [Debian/Ubuntu](DEPLOYMENT_DEBIAN.md) and
-[shared configuration](DEPLOYMENT_LINUX.md) guides describe public hosting with Caddy
-and Authelia. Both families provide backups, systemd protections and nightly maintenance
+The [Linux deployment guide](DEPLOYMENT_LINUX.md) covers Red Hat and Debian/Ubuntu,
+including shared public hosting configuration with Caddy and Authelia.
+Both families provide backups, systemd protections and nightly maintenance
 specific to their package manager. npm dependencies remain audited weekly and updated
 after testing.
 

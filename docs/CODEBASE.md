@@ -117,8 +117,7 @@ testing. Code paths below are relative to the repository root.
 | --- | --- |
 | `docs/RELIABILITY_AUDIT.md` | Latest audit: fixes, coverage and limitations |
 | `deploy/docker/`, `docs/DEPLOYMENT_DOCKER.md`, `.dockerignore` | Node 24 image, local/production Compose, SQLite volume, health, backup/restore and isolated test |
-| `docs/DEPLOYMENT_LINUX.md`, `docs/DEPLOYMENT_REDHAT.md`, `deploy/linux/redhat-based/` | Shared Linux configuration and Red Hat variant with DNF 4/5 |
-| `docs/DEPLOYMENT_DEBIAN.md`, `deploy/linux/debian-based/` | Debian/Ubuntu variant with APT and needrestart |
+| `docs/DEPLOYMENT_LINUX.md`, `deploy/linux/redhat-based/`, `deploy/linux/debian-based/` | Unified Linux guide: shared configuration, Red Hat DNF 4/5 and Debian/Ubuntu APT with needrestart |
 | `deploy/linux/test-deployment.py`, `deploy/linux/*/check-platform.py` | Requirement checks, private configuration rendering and shared-file parity |
 | `deploy/linux/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Backup before DNF/APT updates, conditional restart between 04:00 and 06:00 Paris time |
 | `deploy/linux/*/workoutbuddy-audit.*`, `test-maintenance.py` | Weekly npm audit and simulated maintenance tests without touching the server |

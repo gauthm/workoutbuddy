@@ -30,14 +30,14 @@ See the [installation guide](docs/INSTALLATION.md) for details.
 
 | Need | Guide |
 | --- | --- |
-| Create a program and use the calendar | [Programs](docs/PROGRAMMES.md) |
-| Browse exercises and manage equipment and pain | [Exercises and equipment](docs/EXERCICES_MATERIEL.md) |
-| Train, choose weights and track progress | [Workouts and progression](docs/SEANCES_PROGRESSION.md) |
-| Configure the application and AI Coach | [Settings and Coach](docs/REGLAGES_COACH.md) |
+| Create a program and use the calendar | [Programs](docs/PROGRAMS.md) |
+| Browse exercises and manage equipment and pain | [Exercises and equipment](docs/EXERCISES_EQUIPMENT.md) |
+| Train, choose weights and track progress | [Workouts and progression](docs/WORKOUTS_PROGRESSION.md) |
+| Configure the application and AI Coach | [Settings and Coach](docs/SETTINGS_COACH.md) |
 | Use a phone, install the application and receive updates | [Mobile access](docs/MOBILE.md) |
-| Back up, import, export or reset data | [Data](docs/DONNEES.md) |
-| Configure the server or host the application | [Configuration](docs/CONFIGURATION.md) · [Red Hat](docs/DEPLOYMENT_REDHAT.md) · [Debian/Ubuntu](docs/DEPLOYMENT_DEBIAN.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
-| Develop and test | [Development](docs/DEVELOPPEMENT.md) · [Code index](docs/CODEBASE.md) · [Instructions](AGENTS.md) |
+| Back up, import, export or reset data | [Data](docs/DATA.md) |
+| Configure the server or host the application | [Configuration](docs/CONFIGURATION.md) · [Linux (Debian/Ubuntu and Red Hat)](docs/DEPLOYMENT_LINUX.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
+| Develop and test | [Development](docs/DEVELOPMENT.md) · [Code index](docs/CODEBASE.md) · [Instructions](AGENTS.md) |
 
 Guides, audits and task tracking are collected in
 [docs/INDEX.md](docs/INDEX.md).

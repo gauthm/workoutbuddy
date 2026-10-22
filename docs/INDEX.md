@@ -10,12 +10,12 @@ describe application behavior and operations in detail.
 | Guide | Contents |
 | --- | --- |
 | [Installation](INSTALLATION.md) | Requirements, startup, local libraries and photos |
-| [Programs and calendar](PROGRAMMES.md) | Questionnaire, priorities, activation, duration and navigation |
-| [Exercises and equipment](EXERCICES_MATERIEL.md) | Catalog, languages, inventory, pain and replacement |
-| [Workouts and progression](SEANCES_PROGRESSION.md) | Data entry, resuming workouts, weights, calculations and history |
-| [Settings and AI Coach](REGLAGES_COACH.md) | Profile, keeping the screen awake, saving settings, chat and API key |
+| [Programs and calendar](PROGRAMS.md) | Questionnaire, priorities, activation, duration and navigation |
+| [Exercises and equipment](EXERCISES_EQUIPMENT.md) | Catalog, languages, inventory, pain and replacement |
+| [Workouts and progression](WORKOUTS_PROGRESSION.md) | Data entry, resuming workouts, weights, calculations and history |
+| [Settings and AI Coach](SETTINGS_COACH.md) | Profile, keeping the screen awake, saving settings, chat and API key |
 | [Mobile access](MOBILE.md) | Local network, home screen, gestures and updates |
-| [Data](DONNEES.md) | Export, import, backups, permissions and resets |
+| [Data](DATA.md) | Export, import, backups, permissions and resets |
 
 ## Configuration and hosting
 
@@ -23,10 +23,8 @@ describe application behavior and operations in detail.
 | --- | --- |
 | [Docker](DEPLOYMENT_DOCKER.md) | Image, Compose, persistent volume, HTTPS proxy, backup and restore |
 | [Server configuration](CONFIGURATION.md) | Environment variables, HTTP protections and limits |
-| [Red Hat family](DEPLOYMENT_REDHAT.md) | DNF 4/5, RPM, SELinux and firewalld |
-| [Debian and Ubuntu](DEPLOYMENT_DEBIAN.md) | APT, dpkg, needrestart and firewall |
-| [Shared Linux installation](DEPLOYMENT_LINUX.md) | Accounts, private configuration, Caddy, Authelia and systemd |
-| [Authentication](AUTHENTIFICATION.md) | Account, TOTP, logout, Redis sessions and isolated tests |
+| [Linux deployment](DEPLOYMENT_LINUX.md) | Debian/Ubuntu and Red Hat requirements, packages, firewall, accounts, Caddy, Authelia and systemd |
+| [Authentication](AUTHENTICATION.md) | Account, TOTP, logout, Redis sessions and isolated tests |
 | [Operations and maintenance](DEPLOYMENT_OPERATIONS.md) | Backups, restore, logs, DNF/APT and npm audit |
 | [Frontend releases](DEPLOYMENT_RELEASES.md) | Cache, atomic publication, previous version and verification |
 
@@ -34,7 +32,7 @@ describe application behavior and operations in detail.
 
 | Guide | Contents |
 | --- | --- |
-| [Development](DEVELOPPEMENT.md) | Commands, architecture and test selection |
+| [Development](DEVELOPMENT.md) | Commands, architecture and test selection |
 | [Code index](CODEBASE.md) | Files by domain, services, frontend and tests |
 | [Working instructions](../AGENTS.md) | Conventions, targeted validation and deployment after testing |
 | [Browser tests](TESTS_E2E.md) | Playwright, domains, isolation, reports and limitations |

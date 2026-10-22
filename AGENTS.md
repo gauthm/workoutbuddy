@@ -66,8 +66,11 @@ permission; do not globally allow all installation scripts.
 **Language** — English is the default for all repository documentation (including README,
 AGENTS and task files), source code, identifiers, comments, test descriptions and developer-facing
 messages, even when the user speaks French. Keep user-facing localization resources and language-specific
-test fixtures in their intended languages. Preserve existing API, database, migration and file-path
-compatibility; do not translate persisted values or public contracts without an explicit migration.
+test fixtures in their intended languages. Use English for new file and directory names as well;
+when renaming existing files, update every link, import, script and configuration reference.
+Keep standard names such as `README.md` and `AGENTS.md`, locale codes such as `fr.json`, and
+externally required filenames. Preserve existing API, database and migration compatibility;
+do not translate persisted values or public contracts without an explicit migration.
 
 **DB** — every JSON field (`primary_muscles`, `equipment_required`, `signal_data`…):
 `JSON.stringify()` before INSERT, `JSON.parse()` after SELECT. Always.
@@ -90,7 +93,7 @@ template.
 ## 5. Finding information
 
 - [INDEX.md](docs/INDEX.md): guides by topic; [README.md](README.md): quick start.
-- [INSTALLATION.md](docs/INSTALLATION.md), [DEVELOPPEMENT.md](docs/DEVELOPPEMENT.md): installation and test commands.
+- [INSTALLATION.md](docs/INSTALLATION.md), [DEVELOPMENT.md](docs/DEVELOPMENT.md): installation and test commands.
 - [CODEBASE.md](docs/CODEBASE.md): index for finding relevant files.
 - [TASKS.md](docs/TASKS.md): work in progress or remaining tasks.
 - [Browser tests](docs/TESTS_E2E.md) and [User journeys](docs/TESTS_JOURNEYS.md): testing guides.
@@ -158,7 +161,7 @@ After every application change:
 1. Complete development and review the diff.
 2. Run targeted tests for modified code and check affected interface behavior, on desktop and mobile where relevant, following §7. Fix failures before delivery.
 3. Update affected documentation, commit and push to `main`.
-4. Deploy the validated version directly using `docs/DEPLOYMENT_LINUX.md` and the server family guide (`docs/DEPLOYMENT_REDHAT.md` or `docs/DEPLOYMENT_DEBIAN.md`), or `docs/DEPLOYMENT_DOCKER.md` for Docker installations. For frontend-only changes, use `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. For backend changes or migrations, follow the corresponding procedure, with a SQLite backup before migration.
+4. Deploy the validated version directly using the matching distribution section and shared procedure in `docs/DEPLOYMENT_LINUX.md`, or `docs/DEPLOYMENT_DOCKER.md` for Docker installations. For frontend-only changes, use `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. For backend changes or migrations, follow the corresponding procedure, with a SQLite backup before migration.
 5. Verify the files or version actually served in production and service health. Explicitly state in the final response that deployment was completed, or explain the blocker if delivery did not succeed.
 
 A documentation-only change requires neither application tests nor application redeployment.
@@ -176,7 +179,7 @@ it never replaces repository templates. Do not reuse another server's secrets.
    mode; do not migrate it implicitly.
 2. For a native Linux installation, choose based on `ID` and `ID_LIKE`: RHEL/Fedora family
    → `deploy/linux/redhat-based/`; Debian/Ubuntu → `deploy/linux/debian-based/`.
-   Check requirements and packages in that family's guide, then run its `check-platform.py`.
+   Check requirements and packages in that family's section of `docs/DEPLOYMENT_LINUX.md`, then run its `check-platform.py`.
    Do not force a variant onto an incompatible OS.
 3. For Docker, start from `deploy/docker/` and `docs/DEPLOYMENT_DOCKER.md`.
    Do not install application systemd units inside containers. On macOS/Windows,
@@ -229,8 +232,8 @@ exports and databases remain outside Git. Workspace `0700`, private rendered fil
 
 1. Install family-specific requirements and verified binaries. Then follow
    `docs/DEPLOYMENT_LINUX.md` to create dedicated accounts, directories, network rules,
-   configuration and units. Family guides and the shared guide are part of the repository:
-   they provide packages, commands and destinations without depending on a conversation.
+   configuration and units. The guide includes distribution-specific packages and shared
+   commands and destinations without depending on a conversation.
 2. Set `WB_DEPLOY_DIR` to the chosen variant. For a new instance only, render its templates
    into a private subdirectory of `WB_WORK`, then install each rendered file with the specified
    ownership and permissions. Never regenerate keys for an existing instance.
