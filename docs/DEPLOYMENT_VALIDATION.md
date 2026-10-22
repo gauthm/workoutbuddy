@@ -1,6 +1,13 @@
 # Validation du déploiement Rocky
 
+[Accueil de la documentation](INDEX.md) · [README](../README.md)
+
+### Résultats globaux
+
 - 477 tests unitaires, intégration et parcours métier passent, bases isolées.
+
+### Interface et appareils
+
 - Accueil : six formats iPhone simulés, portrait/paysage et zones de sécurité,
   mois de six semaines, aucun programme, semaine accomplie et tous les statuts
   du jour. Grille plafonnée à une hauteur compacte et boutons d’en-tête avec
@@ -26,11 +33,17 @@
   retour au portail et données sauvegardées conservées. Bouton absent sans proxy
   d’authentification. Icônes SVG/ICO décodées, dimensions et opacité des PNG
   Apple/manifeste contrôlées ; fichiers publics limités aux chemins explicites.
+
+### Photos et publication
+
 - Photos : les 1 746 JPEG du catalogue sont présents, environ 101 Mio sur disque,
   avec contrôle de format hors ligne. Installation reproductible à une révision
   source figée, sans modifier le catalogue ni SQLite. Une publication avec photo
   manquante est refusée avant tout échange de répertoire ; garde vérifiée sur
   une copie synthétique, puis livraison complète validée.
+
+### Livraison, authentification et sécurité
+
 - Livraison et sécurité :
   Publication sans hard refresh, API jamais cachée, vraie panne réseau distinguée
   d’un 401, brouillon conservé, rejet des assets de connexion et retour au portail
@@ -48,6 +61,9 @@
   portail réel après installation du worker de réparation. Le worker, le manifeste,
   les icônes listées et les renvois de connexion/déconnexion sont publics ;
   les pages, photos d’exercices, autres assets et API restent protégés.
+
+### Maintenance et exploitation
+
 - Maintenance nocturne : configuration DNF parsée, timer en heure de Paris et
   absence de rattrapage diurne contrôlés. Sept tests simulés vérifient le garde
   horaire, la sauvegarde préalable, le report d’un reboot et la reprise de Node/Redis.
@@ -55,6 +71,9 @@
   Audit npm exécuté sans privilèges, aucun accès aux bases/secrets, aucune
   vulnérabilité de production signalée. Aucun redémarrage réel du VPS effectué
   pour ces tests ; le prochain créneau nocturne reste à observer dans les journaux.
+
+### Contrôles de sécurité et de données
+
 - 12 parcours navigateur de sécurité passent (ordinateur et mobile) : icônes, zone sûre iOS, CSP,
   service worker, origines étrangères, JSON, limitations IA et import interrompu.
 - HTTPS public, redirection HTTP, UI/API/export/IA protégés, en-têtes d'identité
@@ -76,14 +95,16 @@
   et nonce Authelia préservés, CSP de secours testée sur une réponse sans politique.
 - Aucun appel réel au fournisseur du Coach IA validé lors de ces contrôles.
 
-La première exécution navigateur était faussée par l'absence de polices système
-sur le serveur minimal : certains textes n'avaient pas de dimensions. Après
-installation des polices, les parcours de réglages/import, matériel et charges
-de séance précédemment signalés passent. Ce n'étaient pas des régressions de
-l'application démontrées par ces tests.
+### Diagnostic des premiers essais
+
+La première exécution navigateur était faussée par l'absence de polices système sur le serveur
+minimal : certains textes n'avaient pas de dimensions. Après installation des polices, les parcours
+de réglages/import, matériel et charges de séance précédemment signalés passent. Ce n'étaient pas
+des régressions de l'application démontrées par ces tests.
+
+### Limites du navigateur de test
 
 Playwright utilise un Chromium headless de secours sur Rocky, qui ne fait pas partie de ses
-distributions officiellement prises en charge. La marge haute est testée avec
-les safe-area insets simulés au chargement, au défilement, après navigation et
-changement des insets ; le rendu réel d'une webapp Safari iPhone reste à confirmer
-sur un appareil Apple.
+distributions officiellement prises en charge. La marge haute est testée avec les safe-area insets
+simulés au chargement, au défilement, après navigation et changement des insets ; le rendu réel
+d'une webapp Safari iPhone reste à confirmer sur un appareil Apple.

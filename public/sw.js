@@ -1,8 +1,8 @@
-const CACHE_NAME = 'workoutbuddy-v84'
+const CACHE_NAME = 'workoutbuddy-v85'
 
 // Assets à mettre en cache immédiatement lors de l'installation.
 // ⚠️ Toute modification de public/ exige de bump CACHE_NAME (vN → vN+1).
-// Règle complète : AGENT.md §14.
+// Règle complète : docs/AGENT.md §4.
 const PRECACHE_URLS = [
   '/css/main.css',
   '/css/components.css',

@@ -1,6 +1,13 @@
 # Index du code
 
-Installation, fonctionnement et tests : [README.md](README.md). Règles de développement : [AGENT.md](AGENT.md). Suivi : [TASKS.md](TASKS.md).
+[Accueil de la documentation](INDEX.md) · [README](../README.md)
+
+- [Serveur et données](#serveur-et-données)
+- [API — `/api/v1`](#api--apiv1)
+- [Logique métier — `src/services/`](#logique-métier--srcservices)
+- [Interface — `public/`](#interface--public)
+- [Tests et documentation](#tests-et-documentation)
+Installation, fonctionnement et tests : [README.md](../README.md). Règles de développement : [AGENT.md](AGENT.md). Suivi : [TASKS.md](TASKS.md).
 
 ## Serveur et données
 
@@ -61,6 +68,11 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | Inventaire et registre du matériel | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
 | Questionnaire, fiche titrée par objectif et rappel d’un seul programme actif | `js/components/programs/` |
 | Séance, séries, historique et repos | `js/components/session/`, `js/timer-worker*.js` |
+
+### Écrans et interactions
+
+| Domaine | Emplacement |
+| --- | --- |
 | Calendrier, statistiques, coach, réglages | `js/components/calendar/`, `stats/`, `coach/`, `settings/` sous `js/components/` |
 | Saisie du Coach ajustable jusqu’à 120 px, Entrée pour envoyer sur desktop, Maj+Entrée pour une ligne ; Entrée pour une ligne sur mobile | `js/components/coach/CoachView.js`, `.coach-view__input` dans `css/components.css` |
 | Chat conservé pendant la navigation, réponse hors écran et retour au dernier message | `KeepAlive` limité au Coach dans `js/components/layout/AppShell.js`, hooks d’activation et observation des dimensions dans `js/components/coach/CoachView.js` |
@@ -73,14 +85,22 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 
 ## Tests et documentation
 
+Les guides sont regroupés dans [INDEX.md](INDEX.md) : utilisation, configuration, déploiement et
+tests. Les chemins de code ci-dessous partent de la racine du dépôt.
+
 | Emplacement | Contenu |
 | --- | --- |
 | `scripts/test-selection.js`, `test-affected.js` | Sélection Node par imports et domaines API, commande `test:affected`, fichiers explicites et aperçu `--list` |
 | `scripts/e2e-selection.js`, `test-e2e-affected.js`, `pre-push.js` | Domaines navigateur concernés, surcharge explicite après lecture du diff, numéro de cache seul ignoré, hook Node et navigateur ciblé ; tests `tests/unit/e2eSelection.test.js` |
 | `tests/unit/`, `tests/integration/` | Logique métier et API ; `reliabilityStress.test.js` pour les simulations de durée et incidents |
-| `tests/journeys/` | Parcours complets ; [guide](tests/journeys/README.md) |
+| `tests/journeys/` | Parcours complets ; [guide](TESTS_JOURNEYS.md) |
 | `tests/helpers/` | Exécution isolée des requêtes |
-| `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](tests/e2e/README.md) |
+| `tests/e2e/` | Parcours Playwright contre serveur et base isolés ; [guide](TESTS_E2E.md) |
+
+### Couverture de l’interface
+
+| Emplacement | Contenu |
+| --- | --- |
 | `tests/e2e/updates.spec.js` | Livraison sur copie isolée : rechargement, brouillon, panne réseau et proxy HTTP de session expirée, y compris ancien worker |
 | `tests/unit/screenWakeLock.test.js` | Acquisition unique, libération, arrière-plan/retour, requête en cours, refus du navigateur et absence de prise en charge |
 | `tests/e2e/authProxy.js`, `settings.spec.js` | Option écran allumé enregistrée, navigation/rechargement, désactivation, refus et incompatibilité ; proxy HTTP jetable partagé, déconnexion avec confirmation et préservation des données |
@@ -88,6 +108,11 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `tests/e2e/dashboard.spec.js` | Accueil sur huit tailles/zones sûres, boutons sous le programme, zones agrandies et défilement sur les écrans courts, portrait/paysage, six semaines, tous les statuts, pagination, semaine complète ; cinq objectifs FR/EN |
 | `tests/e2e/coach.spec.js` | Saisie ajustable, Entrée desktop pour envoyer, Maj+Entrée et Entrée mobile pour une ligne, composition du clavier préservée, animation avec mouvement réduit, absence d’avatars ; navigation avant/pendant la réponse, fin hors écran, suivi immédiat de réponses longues, redimensionnement, persistance et retour en bas après navigation/rechargement ; fournisseur SSE local, aucune IA externe |
 | `tests/ui/` | Scénarios visuels Playwright complémentaires |
+
+### Déploiement et exploitation
+
+| Emplacement | Contenu |
+| --- | --- |
 | `docs/RELIABILITY_AUDIT.md` | Dernier audit : corrections, couverture et limites |
 | `docs/DEPLOYMENT_ROCKY.md`, `deploy/rocky/` | Caddy/Authelia, systemd, sauvegardes et configuration reproductible Rocky |
 | `deploy/rocky/workoutbuddy-maintenance`, `dnf-automatic-*.conf` | Sauvegarde avant mises à jour RPM, redémarrage conditionnel entre 4 h et 6 h, heure de Paris |
@@ -96,6 +121,14 @@ Tous les fichiers ci-dessous sont dans `src/routes/`.
 | `deploy/rocky/workoutbuddy-sessions.*`, `authelia-sessions.conf` | Stockage Redis privé et persistant des sessions Authelia, par socket Unix |
 | `deploy/rocky/test-auth-sessions.py`, `test-auth-recovery.mjs` | Test intégral jetable Caddy/Authelia/Redis/Node : TOTP, cookie 60 jours, persistance, révocation par le bouton Réglages, icônes publiques, en-têtes et activation HTTPS du worker |
 
-Sécurité des contenus et de l’historique Git : [docs/REPOSITORY_SECURITY.md](docs/REPOSITORY_SECURITY.md).
+Sécurité des contenus et de l’historique Git :
+[docs/REPOSITORY_SECURITY.md](REPOSITORY_SECURITY.md).
 
-Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Dans `public/js/components/session/ExerciseHelp.js`, la note de saisie est séparée des instructions (`exerciseInstructions(exercise, false)`), suivie de conseils concis sur la charge de départ avant le tableau RM. Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en séance dans `motion.spec.js`.
+Les consignes partagées de `public/js/i18n.js` rappellent la saisie du poids de **1 haltère** pour
+chaque exercice utilisant des haltères, dans la fiche et l’aide en séance, en FR/EN. Dans
+`public/js/components/session/ExerciseHelp.js`, la note de saisie est séparée des instructions
+(`exerciseInstructions(exercise, false)`), suivie de conseils concis sur la charge de départ avant
+le tableau RM.
+
+Vérification du catalogue entier et des deux langues dans `tests/e2e/exercises.spec.js`, aide en
+séance dans `motion.spec.js`.

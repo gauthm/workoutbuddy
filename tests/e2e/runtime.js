@@ -19,7 +19,7 @@ function resolveRuntime() {
       return {...test,cli:join(dirname(require.resolve('playwright/package.json')),'cli.js'),version:require('playwright/package.json').version}
     } catch {}
   }
-  throw new Error('Playwright introuvable. Voir tests/e2e/README.md ; WB_PLAYWRIGHT_PATH peut désigner son package.json ou celui de @playwright/mcp.')
+  throw new Error('Playwright introuvable. Voir docs/TESTS_E2E.md ; WB_PLAYWRIGHT_PATH peut désigner son package.json ou celui de @playwright/mcp.')
 }
 const runtime=resolveRuntime()
 export const {test,expect,defineConfig,devices,cli,version}=runtime

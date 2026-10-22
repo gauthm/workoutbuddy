@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// DB isolée (règle AGENT.md §8.3 : ne jamais toucher data/workoutbuddy.db)
+// DB isolée (règle docs/AGENT.md §3 : ne jamais toucher data/workoutbuddy.db)
 process.env.DB_PATH = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wb-t41-')), 'test.db')
 
 const { migrate }       = await import('../../src/db/migrate.js')

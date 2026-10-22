@@ -10,7 +10,7 @@ test('shared and unknown application dependencies cannot silently skip browser c
  for(const file of ['server.js','src/db/migrations/017_example.sql','public/js/api.js','public/css/components.css','src/services/newFeature.js','tests/e2e/helpers.js'])assert.deepEqual(selectSuites([file]),SUITES,file)
 })
 test('docs alone select no browser tests and several domains combine without duplicates',()=>{
- assert.deepEqual(selectSuites(['README.md','TASKS.md']),[])
+ assert.deepEqual(selectSuites(['README.md','docs/TASKS.md']),[])
  assert.deepEqual(selectSuites(['src/routes/settings.js','public/js/components/settings/AIProviderForm.js']),['settings','data'])
 })
 
@@ -32,7 +32,7 @@ test('la version seule du cache ne relance pas tous les parcours',()=>{
  assert.deepEqual(filterReleaseBump(['public/sw.js'],()=>{throw Error('missing')},()=>old),['public/sw.js'])
 })
 test('sélection Node : documentation, interface, imports transitifs et fichier explicite',()=>{
- assert.deepEqual(selectNodeTests(['AGENT.md','tests/e2e/coach.spec.js']),[])
+ assert.deepEqual(selectNodeTests(['docs/AGENT.md','tests/e2e/coach.spec.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/views/DashboardView.js']),[])
  assert.deepEqual(selectNodeTests(['public/js/components/coach/CoachView.js']),['tests/integration/apiExports.test.js'])
  assert.deepEqual(selectNodeTests(['tests/unit/date.test.js']),['tests/unit/date.test.js'])
