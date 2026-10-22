@@ -77,12 +77,15 @@ keyboard composition and narrow desktop window, animated thinking and reduced mo
 no avatars; navigation before and during a response, off-screen completion, no duplicates,
 immediate tracking of long chunks and resizes, persistence and return to bottom after
 navigation/reload; keyboard resize/pan preserves reading position, document scrolling is locked
-inside chat and restored after leaving; real API with a disposable local SSE provider.
+inside chat and restored after leaving, including actual emulated touch gestures; history sheets
+track the panned keyboard viewport without
+applying its offset twice; real API with a disposable local SSE provider.
 
 ### `programs.spec.js`
 
 Questionnaire, preview, activation, unlimited duration, valid/invalid days, compatible
-replacement.
+replacement; nested equipment sheets, focus trap/restoration, independent dismissal and preserved
+questionnaire choices.
 
 ### `sessions.spec.js`
 
@@ -98,7 +101,9 @@ resetting a completed workout.
 
 ### `equipment.spec.js`
 
-Adding quantity/weight, persistent saving, invalid input and draft cancellation.
+Adding quantity/weight, persistent saving, invalid input and draft cancellation; custom equipment
+sheets with long pasted names across portrait, landscape and keyboard resize/pan, reachable actions
+and clean cancellation/reopening.
 
 ### `settings.spec.js`
 
@@ -112,7 +117,8 @@ JSON download, RESET confirmation, reset/import and resumption, rollback on inva
 ### `exercises.spec.js`
 
 Search, filters, equipment availability, return from details, exclusion and counter;
-per-dumbbell weight instructions across the entire catalog, in French and English.
+pinned catalog controls and overlay filters without layout shifts; per-dumbbell weight instructions
+across the entire catalog, in French and English.
 
 ### `motion.spec.js`
 

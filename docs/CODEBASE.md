@@ -65,6 +65,7 @@ All files below are in `src/routes/`.
 | Balanced dashboard, buttons below the active program, goal and frequency | `js/views/DashboardView.js`, `.dashboard-view` styles in `css/components.css` |
 | Dashboard calendar with persistent selection, first day outside the current month, today on return and paginated workouts | `js/components/calendar/CalendarView.js`; resume/scheduled priority, full list on the separate calendar |
 | Keeping the screen awake, saved preference and renewal on return | `js/utils/screenWakeLock.js`, initialization in `js/app.js`, state in `js/store.js`, General in `SettingsView.js`, migration `017_screen_wake_lock.sql` |
+| Keyboard-aware modal sheets, nested focus trap and focus restoration | `js/components/common/ModalDialog.js`, `ConfirmModal.js`, `js/utils/dialog.js`, `.modal-overlay` in `css/components.css`; regression cases in `tests/e2e/equipment.spec.js`, `programs.spec.js`, `coach.spec.js` |
 | Navigation and shared components | `js/components/layout/`, `js/components/common/` |
 | Sticky catalog tabs/search and overlay filter panel | `js/components/exercises/ExerciseListView.js`, `ExerciseFilter.js`, `.exercise-toolbar` in `css/components.css`; `tests/e2e/exercises.spec.js` |
 | Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos) |

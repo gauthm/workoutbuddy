@@ -34,6 +34,9 @@ pans the page. The chat locks document scrolling while displayed; the message li
 independently without dragging the page at its boundaries. Keyboard resizing preserves the reading
 position when browsing older messages. Focusing a field with a hardware keyboard leaves navigation visible.
 
+Dialog sheets also fit the visible area above the keyboard, including after rotation or viewport
+panning. Long forms scroll inside the sheet so their Save and Cancel buttons remain reachable.
+
 ## Updates and reconnection
 
 Over HTTPS, Safari and the home-screen app check for new versions on opening, on returning to the

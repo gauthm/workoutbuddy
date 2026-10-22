@@ -211,6 +211,19 @@ test('Coach continues off-screen before and during response, then returns to the
    expect(await page.evaluate(()=>scrollY)).toBe(0)
    if(mobile)await expect(page.locator('.bottom-nav')).toBeHidden()
   }
+  if(mobile){
+   const touch=await page.context().newCDPSession(page)
+   const area=await content.boundingBox(),x=area.x+area.width/2,y=area.y+area.height/2+60
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]})
+   for(let distance=20;distance<=120;distance+=20){
+    await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:y-distance}]})
+    await page.evaluate(()=>new Promise(requestAnimationFrame))
+   }
+   await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
+   await expect.poll(()=>content.evaluate(el=>el.scrollTop)).toBeGreaterThan(200)
+   expect(await page.evaluate(()=>scrollY)).toBe(0)
+   await touch.detach()
+  }
   // Gestures at the end of the messages must not escape into the document.
   await content.evaluate(el=>{el.scrollTop=el.scrollHeight})
   const box=await content.boundingBox()
@@ -234,4 +247,30 @@ test('Coach continues off-screen before and during response, then returns to the
   provider.closeAllConnections()
   await new Promise(resolve=>provider.close(resolve))
  }
+})
+
+test('history sheet follows the keyboard viewport once even when chat is already panned',async({page},info)=>{
+ await page.goto('/#/coach')
+ const input=page.locator('.coach-view__input')
+ await expect(input).toBeEnabled()
+ await input.focus()
+ await page.evaluate(()=>{
+  Object.defineProperties(visualViewport,{
+   height:{configurable:true,get:()=>innerHeight-320},offsetTop:{configurable:true,get:()=>80},
+  })
+  visualViewport.dispatchEvent(new Event('resize'))
+ })
+ const mobile=info.project.name==='mobile'
+ if(mobile)await expect(page.locator('.bottom-nav')).toBeHidden()
+ await page.getByRole('button',{name:L('coach.history_title'),exact:true}).click()
+ await expect(page.getByRole('dialog')).toBeVisible()
+ const overlay=await page.locator('.modal-overlay').boundingBox()
+ expect(Math.round(overlay.y)).toBe(mobile?80:0)
+ expect(Math.round(overlay.height)).toBe(page.viewportSize().height-(mobile?320:0))
+ const dialog=await page.getByRole('dialog').boundingBox()
+ expect(dialog.y).toBeGreaterThanOrEqual(overlay.y)
+ expect(dialog.y+dialog.height).toBeLessThanOrEqual(overlay.y+overlay.height)
+ await page.getByRole('dialog').getByRole('button',{name:L('common.close'),exact:true}).click()
+ await expect(page.getByRole('dialog')).toHaveCount(0)
+ await expect(page.getByRole('button',{name:L('coach.history_title'),exact:true})).toBeFocused()
 })
