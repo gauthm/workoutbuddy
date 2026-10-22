@@ -90,6 +90,7 @@ Si un fichier source dépasse 500 lignes, copier seulement les sections pertinen
 - [ ] Si `public/` modifié → `CACHE_NAME` bumpé dans `sw.js`
 - [ ] Après développement et tests, mettre `README.md` et l’index `CODEBASE.md` à jour pour refléter le fonctionnement et les fichiers actuels
 - [ ] Une fois les vérifications terminées, committer les changements et les pousser sur `main`
+- [ ] Pour un changement applicatif, déployer en production après validation, puis vérifier la version servie et le bon fonctionnement du service (§8)
 
 ## 7. Parcours navigateur isolés
 
@@ -103,3 +104,17 @@ Pour chaque modification, lire le diff et tester uniquement les comportements to
 - En cas d’échec, analyser la cause, puis relancer le cas concerné après correction. Ne pas recommencer toute la suite par défaut.
 
 Les tests de `tests/e2e/` utilisent Playwright déjà installé, le vrai serveur et une base SQLite **temporaire créée par la fixture**, sur un port local libre. Cette base fichier est nécessaire aux tests de redémarrage ; ne jamais leur fournir la base personnelle, une URL externe ou un serveur déjà lancé. Les autres tests conservent leurs règles d’isolation existantes. Guide : `tests/e2e/README.md`. Le hook local `.githooks/pre-push`, installable avec `npm run hooks:install`, lance uniquement les fichiers Node et les domaines navigateur concernés par les commits poussés : tests Node sans ports TCP éphémères, puis navigateur contre de vrais serveurs HTTP.
+
+## 8. Déploiement après validation
+
+L’utilisateur est le seul utilisateur de l’application et autorise durablement le déploiement direct en production des changements demandés. **Ne pas attendre un nouveau « go » ni demander une confirmation de déploiement**, sauf instruction explicite contraire de sa part pour la demande en cours.
+
+Après chaque changement applicatif :
+
+1. Terminer le développement et relire le diff.
+2. Exécuter les tests ciblés du code modifié et vérifier les comportements de l’interface touchés, sur ordinateur et mobile si concernés, selon le §7. Corriger les échecs avant livraison.
+3. Actualiser la documentation concernée, committer et pousser sur `main`.
+4. Déployer directement la version validée selon `docs/DEPLOYMENT_ROCKY.md`. Pour une modification de l’interface uniquement, utiliser `/usr/local/sbin/workoutbuddy-deploy-assets /usr/local/src/workoutbuddy/public`. Pour le backend ou des migrations, suivre la procédure correspondante, avec sauvegarde SQLite avant migration.
+5. Vérifier les fichiers ou la version réellement servis en production et l’état du service. Indiquer explicitement dans la réponse finale que le déploiement a été effectué, ou expliquer le blocage si la livraison n’a pas abouti.
+
+Une modification purement documentaire ne nécessite ni tests applicatifs ni redéploiement de l’application.
