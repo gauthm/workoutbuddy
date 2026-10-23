@@ -40,7 +40,7 @@ See the [installation guide](docs/INSTALLATION.md) for details.
 | Use a phone, install the application and receive updates | [Mobile access](docs/MOBILE.md) |
 | Back up, import, export or reset data | [Data](docs/DATA.md) |
 | Configure the server or host the application | [Configuration](docs/CONFIGURATION.md) · [Linux (Debian/Ubuntu and Red Hat)](docs/DEPLOYMENT_LINUX.md) · [Docker](docs/DEPLOYMENT_DOCKER.md) |
-| Maintain the server and enable weekly Authelia release notices at SSH login | [Deployment operations](docs/DEPLOYMENT_OPERATIONS.md) |
+| Maintain the server and enable weekly Authelia/npm/browser library version notices at SSH login | [Deployment operations](docs/DEPLOYMENT_OPERATIONS.md) |
 | Develop and test | [Development](docs/DEVELOPMENT.md) · [Code index](docs/CODEBASE.md) · [Instructions](AGENTS.md) |
 
 Guides, audits and task tracking are collected in

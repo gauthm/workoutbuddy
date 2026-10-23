@@ -1,17 +1,76 @@
 #!/usr/bin/python3
-"""Cache the latest stable Authelia release; show status without network access."""
+"""Cache Authelia and production dependency versions; show status offline."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
+import urllib.parse
 import urllib.request
 
 STATE = Path('/var/lib/authelia-update-check/status.json')
 API = 'https://api.github.com/repos/authelia/authelia/releases/latest'
 RELEASES = 'https://github.com/authelia/authelia/releases'
+APP = Path('/usr/local/lib/workoutbuddy')
+
+
+def inventory():
+    """Read deployed versions, including transitive npm and browser dependencies."""
+    packages = json.loads((APP / 'package-lock.json').read_text())['packages']
+    items = {}
+    for location, package in packages.items():
+        if not location or package.get('dev'):
+            continue
+        manifest = APP / location / 'package.json'
+        if not manifest.exists() and package.get('optional'):
+            continue
+        installed = json.loads(manifest.read_text())
+        items[location] = {'name': installed['name'], 'current': installed['version']}
+    vendors = [('vue', 'vue.esm-browser.prod.js', r'vue v(\d+\.\d+\.\d+)'),
+               ('chart.js', 'chart.umd.min.js', r'Chart\.js v(\d+\.\d+\.\d+)')]
+    known_files = {filename for _, filename, _ in vendors}
+    unknown_files = {path.relative_to(APP / 'public/vendor').as_posix()
+                     for path in (APP / 'public/vendor').rglob('*.js')} - known_files
+    if unknown_files:
+        raise ValueError('Browser libraries missing version tracking: ' + ', '.join(sorted(unknown_files)))
+    for name, filename, pattern in vendors:
+        with (APP / 'public/vendor' / filename).open() as stream:
+            match = re.search(pattern, stream.read(4096))
+        if not match:
+            raise ValueError('Cannot identify deployed browser library: ' + name)
+        items['public/vendor/' + filename] = {'name': name, 'current': match.group(1)}
+    return items
+
+
+def registry_latest(name):
+    url = 'https://registry.npmjs.org/' + urllib.parse.quote(name, safe='') + '/latest'
+    request = urllib.request.Request(url, headers={'User-Agent': 'workoutbuddy-update-check'})
+    with urllib.request.urlopen(request, timeout=12) as response:
+        latest = json.load(response)['version']
+    version(latest)
+    return latest
+
+
+def check_dependencies(state):
+    previous = state.get('dependencies', {})
+    try:
+        items = {key: dict(item) for key, item in inventory().items()}
+        names = sorted({item['name'] for item in items.values()})
+        with ThreadPoolExecutor(max_workers=8) as workers:
+            latest = dict(zip(names, workers.map(registry_latest, names)))
+        for item in items.values():
+            version(item['current'])
+            item['latest'] = latest[item['name']]
+        state['dependencies'] = dict(items=items, failed=False,
+                                     checked_at=datetime.now(timezone.utc).isoformat())
+        return False
+    except Exception as error:
+        state['dependencies'] = dict(previous, failed=True)
+        print('Production dependency version check failed: ' + str(error), flush=True)
+        return True
 
 
 def version(value):
@@ -47,16 +106,16 @@ def check():
     except Exception as error:
         state['failed'] = True
         print('Authelia release check failed: ' + str(error), flush=True)
+    dependencies_failed = check_dependencies(state)
     STATE.parent.mkdir(parents=True, exist_ok=True)
     temporary = STATE.with_suffix('.tmp')
     temporary.write_text(json.dumps(state) + '\n')
     temporary.chmod(0o644)
     os.replace(temporary, STATE)
-    return 1 if state['failed'] else 0
+    return 1 if state['failed'] or dependencies_failed else 0
 
 
-def status():
-    state = read_state()
+def authelia_status(state):
     if state.get('failed'):
         print('Authelia: latest weekly check failed; see journalctl -u authelia-update-check.')
     try:
@@ -77,6 +136,39 @@ def status():
         print(RELEASES + '/tag/' + state['latest'])
     else:
         print(f'Authelia: {installed}; latest known stable {state["latest"]} (checked {date}).')
+
+
+def dependency_status(state):
+    data = state.get('dependencies', {})
+    if data.get('failed'):
+        print('Dependencies: latest weekly check failed; see journalctl -u authelia-update-check.')
+    try:
+        checked = datetime.fromisoformat(data['checked_at'])
+        if datetime.now(timezone.utc) - checked > timedelta(days=8):
+            print('Dependencies: version information is more than 8 days old.')
+        installed = inventory()
+        cached = {key: {'name': item['name'], 'current': item['current']}
+                  for key, item in data['items'].items()}
+        if installed != cached:
+            print('Dependencies: deployed files changed since the last check; refresh with systemctl start authelia-update-check.')
+            return
+        updates = []
+        for location, item in data['items'].items():
+            if version(item['latest']) > version(item['current']):
+                major = ' [MAJOR]' if version(item['latest'])[0] > version(item['current'])[0] else ''
+                updates.append(f'  {item["name"]}: {item["current"]} -> {item["latest"]}{major} ({location})')
+    except (KeyError, TypeError, ValueError, OSError):
+        print('Dependencies: version status unavailable; see journalctl -u authelia-update-check.')
+        return
+    print(f'Dependencies: {len(updates)} update(s) available / {len(installed)} checked (npm production + browser libraries; {checked:%Y-%m-%d}).')
+    for line in sorted(updates):
+        print(line)
+
+
+def status():
+    state = read_state()
+    authelia_status(state)
+    dependency_status(state)
 
 
 if __name__ == '__main__':

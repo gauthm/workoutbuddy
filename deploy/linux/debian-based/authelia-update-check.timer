@@ -1,5 +1,5 @@
 [Unit]
-Description=Weekly Authelia release check
+Description=Weekly Authelia and production dependency version check
 
 [Timer]
 OnCalendar=Sun *-*-* 06:00:00 Europe/Paris

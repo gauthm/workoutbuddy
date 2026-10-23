@@ -1,5 +1,5 @@
 [Unit]
-Description=Check the latest stable Authelia release without installing it
+Description=Check Authelia and production dependency versions without installing them
 Wants=network-online.target
 After=network-online.target
 
@@ -16,5 +16,5 @@ PrivateDevices=true
 NoNewPrivileges=true
 CapabilityBoundingSet=
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-TimeoutStartSec=45s
-MemoryMax=96M
+TimeoutStartSec=3min
+MemoryMax=192M

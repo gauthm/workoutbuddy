@@ -146,7 +146,7 @@ journalctl -u workoutbuddy-maintenance -u workoutbuddy-audit --since '7 days ago
 systemctl disable --now workoutbuddy-maintenance.timer
 ```
 
-### Weekly Authelia release notification
+### Weekly Authelia and dependency version notifications
 
 For native Linux installations, set `WB_DEPLOY_DIR` to the matching family as above,
 then install the files from that variant:
@@ -162,17 +162,49 @@ systemctl start authelia-update-check.service
 /usr/local/sbin/authelia-update-check --status
 ```
 
-The timer checks the official GitHub latest stable release API every Sunday between
-06:00 and 06:15 Europe/Paris, catching up after downtime. It only saves release metadata
-in `/var/lib/authelia-update-check/status.json`; it never installs or restarts Authelia.
+The timer checks the official GitHub latest stable release API and the npm registry
+every Sunday between 06:00 and 06:15 Europe/Paris, catching up after downtime.
+It inventories the deployed application's production lockfile and installed manifests,
+including transitive dependencies and installed optional packages. Development-only
+packages are excluded. Vue and Chart.js are checked separately using the version headers
+of the files actually served from `public/vendor/`. An untracked JavaScript library in that
+directory fails the check explicitly. Registry requests use eight workers and bounded
+timeouts. No npm commands or lifecycle scripts are executed.
+
+The check only saves release metadata in `/var/lib/authelia-update-check/status.json`;
+it never installs packages, changes the application, or restarts services.
 Interactive SSH login shells using `/etc/profile.d/*.sh` display the cached result,
-comparing it with the currently installed binary. Logins make no network request.
-A newer release includes a link to its release notes. Failed checks and information
-older than eight days are reported explicitly. Check logs with
+comparing it with the currently installed binary and dependencies. Logins make no network
+request. Authelia includes a link to release notes; dependency updates show installed/latest
+versions, installation paths, and a `[MAJOR]` marker for major upgrades. npm's `latest`
+tag may exceed the ranges supported by the application: this is a version notification,
+not an instruction to upgrade transitive packages independently. Keep the separate weekly
+npm security audit: newer versions do not necessarily mean vulnerabilities.
+
+Failed checks preserve previous successful results; failures and information older than
+eight days are reported explicitly. A changed dependency inventory invalidates the cached
+comparison and requests a refresh. Check logs with
 `journalctl -u authelia-update-check`; run the service manually to refresh the cache.
 
 Validate notification behavior without network access or production changes:
 `python3 "$WB_DEPLOY_DIR/test-authelia-update-check.py"`.
+
+Coverage of the current native server:
+
+| Components | Update coverage |
+| --- | --- |
+| Rocky packages, OpenSSH, OpenSSL, Python, firewall, fail2ban, Caddy, Redis | Nightly DNF maintenance through enabled repositories |
+| Node.js and bundled npm | Nightly DNF maintenance, NodeSource 24 LTS stream |
+| Authelia binary | Weekly stable release check and SSH status |
+| Production npm dependencies, including transitive packages and bundled SQLite via better-sqlite3 | Weekly registry version check and separate npm security audit |
+| Vue and Chart.js browser files | Weekly registry version check based on deployed file headers |
+| Application code, local administration scripts and pinned exercise data/images | Maintained and deployed from this repository; no automatic upstream replacement |
+| LXC host kernel, hypervisor and host firmware | Provider responsibility; cannot be verified or patched from the container |
+
+DNF updates supported distribution/stream versions, not every upstream major release.
+Review OS and Node support lifecycles before their support ends; major migrations remain
+planned maintenance. The notification covers production software, not development tools
+in the source checkout or externally hosted AI services.
 
 ### Manual updates
 
