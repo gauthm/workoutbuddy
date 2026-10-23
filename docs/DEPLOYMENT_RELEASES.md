@@ -21,7 +21,8 @@ bootstrap, worker, and `offline.html`.
 
 In the foreground, the application checks connectivity and looks for a version at startup,
 then every five minutes. Browsing screens reload automatically; data entry or a workout
-postpones reloading and displays a button with confirmation.
+postpones reloading. A single banner saves settings or inventory before updating; other
+forms wait for manual saving and navigation to a browsing screen. Failed saves never reload.
 
 ### Publish validated files
 

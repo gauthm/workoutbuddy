@@ -1,5 +1,6 @@
 import { reactive, onMounted, inject, ref, computed } from '/vendor/vue.esm-browser.prod.js'
 import { settings as settingsApi, authentication } from '../../api.js'
+import { useUpdateSaver } from '../../appUpdates.js'
 import { t, i18n } from '../../i18n.js'
 import PageHeader       from '../layout/PageHeader.js'
 import LoadingSpinner   from '../common/LoadingSpinner.js'
@@ -80,6 +81,14 @@ export default {
       finally { state.saving = false }
     }
 
+    useUpdateSaver({
+      dirty: () => dirty.value,
+      busy: () => busy.value || state.loading || !state.settings,
+      save: async () => {
+        await saveAll()
+        return !dirty.value && !busy.value && !state.loading && !!state.settings
+      },
+    })
     onMounted(load)
     return { state, store, profile, ai, dirty, busy, canLogout, showLogout, logout, load, updateSetting, saveAll, discard, t }
   },

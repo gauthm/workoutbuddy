@@ -1,17 +1,44 @@
-import { reactive, watch } from '/vendor/vue.esm-browser.prod.js'
+import { reactive, watch, shallowRef, onBeforeUnmount } from '/vendor/vue.esm-browser.prod.js'
 import { router } from './router.js'
 import { store } from './store.js'
 import { onRequestActivity, settings as settingsApi } from './api.js'
 
-export const appUpdates = reactive({ ready: false })
-let started = false, edited = false, reloading = false, idleTimer
+export const appUpdates = reactive({ ready: false, edited: false, saving: false, error: false })
+export const updateSaver = shallowRef(null)
+let started = false, reloading = false, idleTimer
+
+// Screens own validation and persistence; a failed save must never reload the page.
+export function useUpdateSaver(saver) {
+  updateSaver.value = saver
+  onBeforeUnmount(() => { if (updateSaver.value === saver) updateSaver.value = null })
+}
+
+export async function saveAndApplyUpdate() {
+  if (reloading || appUpdates.saving || !appUpdates.ready || store.pendingRequests > 0 ||
+      store.activeSession || document.querySelector('.modal-overlay')) return
+  const saver = updateSaver.value
+  if (!saver && !canApplyUpdate()) return
+  const route = JSON.stringify(router.currentRoute)
+  appUpdates.saving = true
+  appUpdates.error = false
+  clearTimeout(idleTimer)
+  try {
+    if (saver && (saver.busy() || await saver.save() !== true || saver.dirty())) {
+      appUpdates.error = true
+      return
+    }
+    if (route !== JSON.stringify(router.currentRoute) || saver !== updateSaver.value) return
+    applyAppUpdate()
+  } catch { appUpdates.error = true }
+  finally { appUpdates.saving = false }
+}
 const readOnlyViews = new Set(['DashboardView', 'StatsDashboardView', 'ExerciseProgressView', 'SessionHistoryView', 'CalendarView'])
 
 export function canApplyUpdate() {
   const route = router.currentRoute
   const reading = readOnlyViews.has(route.name) ||
     (route.name === 'ExerciseListView' && !['material', 'pain'].includes(route.params.tab))
-  return reading && !edited && !store.activeSession && store.pendingRequests === 0 &&
+  return reading && !appUpdates.edited && !appUpdates.saving && !store.activeSession && store.pendingRequests === 0 &&
     !document.querySelector('.modal-overlay, .settings-save-dock') &&
     !document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')
 }
@@ -41,9 +68,9 @@ export function startAppUpdates() {
     if (controlled) { appUpdates.ready = true; scheduleUpdate() }
     controlled = true
   })
-  document.addEventListener('input', () => { edited = true; clearTimeout(idleTimer) }, true)
-  document.addEventListener('change', () => { edited = true; clearTimeout(idleTimer) }, true)
-  watch(() => JSON.stringify(router.currentRoute), () => { edited = false; scheduleUpdate() }, { flush: 'post' })
+  document.addEventListener('input', () => { appUpdates.edited = true; clearTimeout(idleTimer) }, true)
+  document.addEventListener('change', () => { appUpdates.edited = true; clearTimeout(idleTimer) }, true)
+  watch(() => JSON.stringify(router.currentRoute), () => { appUpdates.edited = false; appUpdates.error = false; scheduleUpdate() }, { flush: 'post' })
   watch(() => [store.pendingRequests, store.activeSession], scheduleUpdate, { flush: 'post' })
 
   navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(reg => {

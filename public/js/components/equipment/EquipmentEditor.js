@@ -1,5 +1,6 @@
 import { reactive, onMounted, inject, computed } from '/vendor/vue.esm-browser.prod.js'
 import { equipment as api } from '../../api.js'
+import { useUpdateSaver } from '../../appUpdates.js'
 import { t, i18n } from '../../i18n.js'
 import DumbbellInventory from './DumbbellInventory.js'
 import DumbbellRows, { createDraftItem } from './DumbbellRows.js'
@@ -81,6 +82,14 @@ export default {
     })))
     const familyVisible = family => !state.search || matches(t('equipment.family_' + family.id)) || family.categories.some(c => matches(t('equipment.category_' + c))) || (family.id === 'custom' && otherItems().some(i => matches(i.name)))
     const familyCount = family => new Set(state.items.filter(i => family.categories.includes(i.category)).map(i => i.category === 'other' ? 'other:' + i.id : i.category)).size
+    useUpdateSaver({
+      dirty: () => dirty.value,
+      busy: () => state.saving || state.loading || !!state.error || state.form || !!state.deleteTarget,
+      save: async () => {
+        await save()
+        return !dirty.value && !state.loading && !state.error
+      },
+    })
     onMounted(load)
     return {state, t, groups, families, categoryVisible, familyVisible, familyCount, matches, dirty, discard, setRows, itemsFor, saved, deleted, toggle, save, load, formSaved, removeOther,
       otherItems}

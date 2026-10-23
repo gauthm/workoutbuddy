@@ -26,6 +26,7 @@ Open [localhost:3000](http://localhost:3000). No frontend build is required.
 Libraries and photos are installed once, then served locally.
 Catalog tabs and search stay visible while scrolling, with filters expanding over the list.
 On mobile, bottom navigation stays hidden while the keyboard is open; the Coach message field stays above it and only the conversation scrolls. Dialog actions stay within the visible area.
+A single update banner can save settings and equipment before reloading; failed saves keep your input.
 See the [installation guide](docs/INSTALLATION.md) for details.
 
 ## Documentation

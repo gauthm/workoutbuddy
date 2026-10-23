@@ -2,7 +2,7 @@ import {test as base,expect} from './fixtures.js'
 import {isolatedApp} from './environment.js'
 import {readFile,writeFile} from 'node:fs/promises'
 import {join} from 'node:path'
-import {L,pending} from './helpers.js'
+import {L} from './helpers.js'
 import {authenticationProxy} from './authProxy.js'
 
 const test=base.extend({
@@ -15,7 +15,7 @@ test.use({serviceWorkers:'allow'})
 
 async function controlled(page,path='/#/stats') {
   await page.goto(path)
-  await page.waitForFunction(()=>navigator.serviceWorker.controller && window.__store)
+  await page.waitForFunction(()=>navigator.serviceWorker.controller && window.__store,null,{timeout:20000})
   await page.evaluate(()=>{window.updateTestMarker=true})
 }
 async function publish(app) {
@@ -46,24 +46,77 @@ test('automatic update without hard refresh, API outside cache and foreign cache
   await context.setOffline(false)
 })
 
-test('input remains intact, cancellation possible, then update after save and navigation',async({page,request,app})=>{
+test('one update banner saves settings before reload',async({page,request,app})=>{
   await controlled(page,'/#/settings')
   await page.getByText(L('settings.section_profile'),{exact:true}).click()
   const name=page.getByLabel(L('settings.profile_display_name'),{exact:true})
   await name.fill('Synthetic update draft')
   await publish(app);await update(page)
-  await expect(page.locator('.app-update')).toBeVisible()
-  await page.locator('.app-update button').click()
-  await expect(page.getByRole('dialog')).toBeVisible()
-  await page.getByRole('dialog').getByRole('button',{name:L('common.cancel'),exact:true}).click()
-  await expect(name).toHaveValue('Synthetic update draft')
-  expect(await page.evaluate(()=>window.updateTestMarker)).toBe(true)
-  expect(await release(page)).toBe('')
-  await pending(page).getByRole('button',{name:L('common.save'),exact:true}).click()
-  await expect(pending(page)).toHaveCount(0)
-  expect((await(await request.get('/api/v1/user-profile')).json()).display_name).toBe('Synthetic update draft')
-  await page.locator('.bottom-nav button').first().click()
+  const banner=page.locator('.app-update')
+  await expect(banner).toContainText(L('updates.will_save'))
+  await expect(banner.getByRole('button')).toHaveText(L('updates.save_apply'))
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await banner.getByRole('button').click()
   await expect(page.locator('html')).toHaveCSS('--update-test-release',/deployed/)
+  expect((await(await request.get('/api/v1/user-profile')).json()).display_name).toBe('Synthetic update draft')
+  expect(await page.evaluate(()=>window.updateTestMarker)).toBeUndefined()
+})
+
+test('failed settings save keeps the draft and allows retry without reload',async({page,app,context})=>{
+  await controlled(page,'/#/settings')
+  await page.getByText(L('settings.section_profile'),{exact:true}).click()
+  const name=page.getByLabel(L('settings.profile_display_name'),{exact:true})
+  await name.fill('Retry update draft')
+  await publish(app);await update(page)
+  await context.route('**/api/v1/settings/save',route=>route.abort())
+  await page.locator('.app-update button').click()
+  await expect(page.locator('.app-update')).toContainText(L('updates.save_failed'))
+  await expect(name).toHaveValue('Retry update draft')
+  expect(await page.evaluate(()=>window.updateTestMarker)).toBe(true)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await context.unroute('**/api/v1/settings/save')
+  await page.locator('.app-update button').click()
+  await expect(page.locator('html')).toHaveCSS('--update-test-release',/deployed/)
+})
+
+test('update saves inventory and hides behind an open custom form',async({page,request,app})=>{
+  await controlled(page,'/#/exercises/material')
+  await page.locator('[data-family="free_weights"] > summary').click()
+  const group=page.locator('[data-category="dumbbell_fixed"]')
+  await group.getByRole('button').last().click()
+  const row=group.locator('.dumbbell-row').last()
+  await row.locator('input').nth(0).fill('2')
+  await row.locator('input').nth(1).fill('8')
+  await publish(app);await update(page)
+  await expect(page.locator('.app-update button')).toHaveText(L('updates.save_apply'))
+  await page.getByRole('button',{name:L('equipment.add_other'),exact:true}).click()
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+  await expect(page.locator('.app-update')).toBeHidden()
+  await page.getByRole('dialog').getByRole('button',{name:L('common.cancel'),exact:true}).click()
+  await page.locator('.app-update button').click()
+  await expect(page.locator('html')).toHaveCSS('--update-test-release',/deployed/)
+  const items=(await(await request.get('/api/v1/equipment')).json()).items
+  expect(items.filter(item=>item.category==='dumbbell_fixed')).toMatchObject([{count:2,weight_kg:8}])
+})
+
+test('an invalid inventory cannot reload and an unsupported form waits',async({page,app})=>{
+  await controlled(page,'/#/exercises/material')
+  await page.locator('[data-family="free_weights"] > summary').click()
+  const group=page.locator('[data-category="dumbbell_fixed"]')
+  await group.getByRole('button').last().click()
+  const row=group.locator('.dumbbell-row').last()
+  await row.locator('input').nth(0).fill('0')
+  await row.locator('input').nth(1).fill('8')
+  await publish(app);await update(page)
+  await page.locator('.app-update button').click()
+  await expect(page.locator('.app-update')).toContainText(L('updates.save_failed'))
+  await expect(row.locator('input').nth(0)).toHaveValue('0')
+  expect(await page.evaluate(()=>window.updateTestMarker)).toBe(true)
+  await page.goto('/#/programs/new')
+  await page.evaluate(()=>import('/js/appUpdates.js').then(({appUpdates})=>{appUpdates.ready=true}))
+  await expect(page.locator('.app-update')).toContainText(L('updates.finish'))
+  await expect(page.locator('.app-update button')).toBeDisabled()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('an authentication redirect does not replace assets and blocks an incomplete version',async({page,app,context})=>{

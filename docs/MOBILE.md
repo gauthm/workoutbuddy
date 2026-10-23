@@ -41,8 +41,11 @@ panning. Long forms scroll inside the sheet so their Save and Cancel buttons rem
 
 Over HTTPS, Safari and the home-screen app check for new versions on opening, on returning to the
 foreground, and every five minutes during use. A complete release loads automatically on a
-read-only screen. During a session or data entry, a notification offers **Update**, with confirmation
-before losing unsaved input.
+read-only screen. A single banner offers **Save and update** for settings (including profile and AI
+configuration) and equipment inventory. It saves through the screen's usual validation, then reloads
+only after success. A failed save keeps the draft and offers a retry. Open dialogs hide the banner.
+Other data-entry screens and active workouts wait until the user saves and returns to a read-only
+screen; the update never validates a workout set or submits a questionnaire on the user's behalf.
 
 No hard refresh or clearing of site data is needed. The cache speeds up static files, but
 navigations use the network: an expired session redirects to the authentication portal without a

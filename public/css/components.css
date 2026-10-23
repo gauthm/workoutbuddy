@@ -1563,3 +1563,9 @@ body:has(.settings-save-dock) .app-update { bottom: calc(var(--nav-space) + 6rem
 
 .program-activation-hint { margin: .75rem 0; font-size: .8rem; line-height: 1.4; color: var(--color-text-muted); }
 .program-activation-hint--list { padding-inline: 1rem; }
+
+/* Keep a single update prompt and leave open forms unobstructed. */
+body:has(.modal-overlay) .app-update { display: none; }
+/* Leave room to scroll editing actions above the update banner and save dock. */
+body:has(.app-update) :is(.settings-view, .equipment-editor) { padding-bottom: calc(var(--nav-space) + 16rem); }
+html:has(.app-update) { scroll-padding-bottom: calc(var(--nav-space) + 16rem); }

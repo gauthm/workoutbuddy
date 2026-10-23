@@ -61,7 +61,7 @@ All files below are in `src/routes/`.
 | Domain | Location |
 | --- | --- |
 | Initialization, navigation, state, API, translations | `js/app.js`, `js/router.js`, `js/store.js`, `js/api.js`, `js/i18n.js` |
-| Version detection, input protection and return to portal after expiry | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
+| Version detection, single update banner, screen-owned settings/inventory saving and input protection | `js/appUpdates.js`, `js/api.js`, `js/components/common/AppUpdateBanner.js`, `sw.js` |
 | Balanced dashboard, buttons below the active program, goal and frequency | `js/views/DashboardView.js`, `.dashboard-view` styles in `css/components.css` |
 | Dashboard calendar with persistent selection, first day outside the current month, today on return and paginated workouts | `js/components/calendar/CalendarView.js`; resume/scheduled priority, full list on the separate calendar |
 | Keeping the screen awake, saved preference and renewal on return | `js/utils/screenWakeLock.js`, initialization in `js/app.js`, state in `js/store.js`, General in `SettingsView.js`, migration `017_screen_wake_lock.sql` |

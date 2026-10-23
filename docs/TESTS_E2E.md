@@ -138,7 +138,8 @@ Counters and chart after a workout, grouping, empty state.
 ### `updates.spec.js`
 
 Publishing a copy of assets: foreground detection, reload without hard refresh,
-draft preserved, real network failure, login assets rejected; HTTP proxy with expired
+settings/profile and inventory saved by one update banner, retry after a failed save,
+open form without a second update prompt, login assets rejected; HTTP proxy with expired
 session during navigation, API calls, foregrounding and upgrade of an old worker.
 
 ### `theme.spec.js`
