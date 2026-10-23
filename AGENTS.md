@@ -32,8 +32,8 @@ resources, `npm start` starts the application.
 | Runtime | Node.js | 24.x LTS |
 | HTTP | Express | 4.22.3 |
 | DB | better-sqlite3 | 13.0.3 |
-| UI | Vue 3 (local file) | 3.5.13 |
-| Charts | Chart.js (local file) | 4.4.4 |
+| UI | Vue 3 (local file) | 3.5.44 |
+| Charts | Chart.js (local file) | 4.6.1 |
 | API tests | supertest | 7.3.1 |
 | Unit tests | node:test + assert | built-in |
 

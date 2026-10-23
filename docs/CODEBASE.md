@@ -21,6 +21,7 @@ Installation, behavior and testing: [README.md](../README.md). Development rules
 | `src/db/backup.js`, `src/db/privateStorage.js` | Private SQLite backups and permissions |
 | `src/seed/` | Source catalog, `exercises.fr.json` translations, loading and synchronization |
 | `scripts/` | Library downloads and exercise imports |
+| `scripts/download-vendors.js`, `tests/unit/downloadVendors.test.js` | Pinned Vue/Chart.js installation, version-aware refresh, and preservation of existing files on failed downloads |
 | `scripts/download-exercise-images.js` | Photo installation/resumption at a pinned source revision, offline checks with `--check`, without catalog import or SQLite access |
 
 ## API — `/api/v1`

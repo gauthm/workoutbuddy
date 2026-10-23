@@ -20,7 +20,9 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000). `npm start` starts the server and applies
 migrations and the bundled catalog. No frontend build is required. Vue and Chart.js libraries
-are downloaded once, then served locally.
+are pinned to Vue 3.5.44 and Chart.js 4.6.1, then served locally. Rerun
+`node scripts/download-vendors.js` after updating the repository: it replaces older
+versions, reuses matching files offline, and preserves an existing file if its download fails.
 
 ## Exercise photos
 
