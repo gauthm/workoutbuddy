@@ -162,28 +162,46 @@ systemctl start authelia-update-check.service
 /usr/local/sbin/authelia-update-check --status
 ```
 
-The timer checks the official GitHub latest stable release API and the npm registry
+The timer checks the official GitHub release history and the npm registry
 every Sunday between 06:00 and 06:15 Europe/Paris, catching up after downtime.
 It inventories the deployed application's production lockfile and installed manifests,
 including transitive dependencies and installed optional packages. Development-only
 packages are excluded. Vue and Chart.js are checked separately using the version headers
 of the files actually served from `public/vendor/`. An untracked JavaScript library in that
-directory fails the check explicitly. Registry requests use eight workers and bounded
-timeouts. No npm commands or lifecycle scripts are executed.
+directory fails the check explicitly. Registry requests use two workers, compressed
+installation metadata and bounded timeouts. GitHub releases are paginated (up to 20 pages
+of 100 entries; exceeding the limit fails explicitly). No npm commands or lifecycle
+scripts are executed.
 
 The check only saves release metadata in `/var/lib/authelia-update-check/status.json`;
 it never installs packages, changes the application, or restarts services.
 Interactive SSH login shells using `/etc/profile.d/*.sh` display the cached result,
 comparing it with the currently installed binary and dependencies. Logins make no network
-request. Authelia includes a link to release notes; dependency updates show installed/latest
-versions, installation paths, and a `[MAJOR]` marker for major upgrades. npm's `latest`
-tag may exceed the ranges supported by the application: this is a version notification,
-not an instruction to upgrade transitive packages independently. Keep the separate weekly
+request. Authelia includes links to the release notes for each available category;
+dependency updates show their installed version and installation path. Both checks inspect
+all published stable versions, ignoring prereleases, and report three independent targets:
+
+| Marker | Available target relative to the installed version |
+| --- | --- |
+| `[FIX]` | Highest patch with the same major and minor numbers |
+| `[MINOR]` | Highest stable version in a newer minor of the same major |
+| `[MAJOR]` | Highest stable version in a newer major |
+
+For example, an installed `3.0.2` can show `[FIX] 3.0.5 | [MINOR] 3.2.1 | [MAJOR] 4.0.0`
+on the same line. A new major does not hide backported fixes to the installed branch.
+The summary counts packages with updates once, then lists counts for each category;
+one package may contribute to all three category counts. Versions are compared numerically,
+independently of the registry's `latest` tag.
+
+These markers describe version numbers, not security severity or confirmed compatibility.
+In particular, `[FIX]` is not a guarantee of a security fix; minor updates within `0.x`
+may be breaking, and exact pins or parent ranges can exclude any reported version.
+Check parent requirements before updating transitive packages. Keep the separate weekly
 npm security audit: newer versions do not necessarily mean vulnerabilities.
 
 Failed checks preserve previous successful results; failures and information older than
-eight days are reported explicitly. A changed dependency inventory invalidates the cached
-comparison and requests a refresh. Check logs with
+eight days are reported explicitly. A changed dependency inventory or old cache format
+invalidates the cached comparison and requests a refresh. Check logs with
 `journalctl -u authelia-update-check`; run the service manually to refresh the cache.
 
 Validate notification behavior without network access or production changes:

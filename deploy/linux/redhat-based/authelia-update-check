@@ -3,6 +3,7 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
+import gzip
 import json
 import os
 from pathlib import Path
@@ -12,7 +13,7 @@ import urllib.parse
 import urllib.request
 
 STATE = Path('/var/lib/authelia-update-check/status.json')
-API = 'https://api.github.com/repos/authelia/authelia/releases/latest'
+API = 'https://api.github.com/repos/authelia/authelia/releases'
 RELEASES = 'https://github.com/authelia/authelia/releases'
 APP = Path('/usr/local/lib/workoutbuddy')
 
@@ -45,13 +46,64 @@ def inventory():
     return items
 
 
-def registry_latest(name):
-    url = 'https://registry.npmjs.org/' + urllib.parse.quote(name, safe='') + '/latest'
-    request = urllib.request.Request(url, headers={'User-Agent': 'workoutbuddy-update-check'})
+def fetch_json(url, accept='application/json'):
+    request = urllib.request.Request(url, headers={
+        'User-Agent': 'workoutbuddy-update-check', 'Accept': accept,
+        'Accept-Encoding': 'gzip',
+    })
     with urllib.request.urlopen(request, timeout=12) as response:
-        latest = json.load(response)['version']
-    version(latest)
-    return latest
+        stream = gzip.GzipFile(fileobj=response) if response.headers.get('Content-Encoding') == 'gzip' else response
+        return json.load(stream)
+
+
+def stable_versions(candidates):
+    stable = []
+    for candidate in candidates:
+        try:
+            version(candidate)
+        except (TypeError, ValueError):
+            continue
+        stable.append(candidate)
+    if not stable:
+        raise ValueError('No published stable versions found')
+    return stable
+
+
+def registry_versions(name):
+    url = 'https://registry.npmjs.org/' + urllib.parse.quote(name, safe='')
+    metadata = fetch_json(url, 'application/vnd.npm.install-v1+json')
+    return stable_versions(metadata['versions'])
+
+
+def authelia_versions():
+    candidates = []
+    for page in range(1, 21):
+        releases = fetch_json(f'{API}?per_page=100&page={page}', 'application/vnd.github+json')
+        if not isinstance(releases, list):
+            raise ValueError('Expected a release list')
+        candidates.extend(release['tag_name'] for release in releases
+                          if not release.get('draft') and not release.get('prerelease'))
+        if len(releases) < 100:
+            return stable_versions(candidates)
+    raise ValueError('Release history exceeds the pagination limit; refusing an incomplete check')
+
+
+def release_levels(current, candidates):
+    """Find independent patch, minor and major targets, including older branches."""
+    installed = version(current)
+    targets = {}
+    for candidate in stable_versions(candidates):
+        available = version(candidate)
+        if available <= installed:
+            continue
+        level = 'MAJOR' if available[0] != installed[0] else 'MINOR' if available[1] != installed[1] else 'FIX'
+        if level not in targets or available > version(targets[level]):
+            targets[level] = candidate
+    return targets
+
+
+def format_levels(targets):
+    return ' | '.join(f'[{level}] {targets[level]}' for level in ('FIX', 'MINOR', 'MAJOR') if level in targets)
 
 
 def check_dependencies(state):
@@ -59,13 +111,12 @@ def check_dependencies(state):
     try:
         items = {key: dict(item) for key, item in inventory().items()}
         names = sorted({item['name'] for item in items.values()})
-        with ThreadPoolExecutor(max_workers=8) as workers:
-            latest = dict(zip(names, workers.map(registry_latest, names)))
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            published = dict(zip(names, workers.map(registry_versions, names)))
         for item in items.values():
-            version(item['current'])
-            item['latest'] = latest[item['name']]
+            item['updates'] = release_levels(item['current'], published[item['name']])
         state['dependencies'] = dict(items=items, failed=False,
-                                     checked_at=datetime.now(timezone.utc).isoformat())
+                                     checked_at=datetime.now(timezone.utc).isoformat(), format=2)
         return False
     except Exception as error:
         state['dependencies'] = dict(previous, failed=True)
@@ -92,17 +143,9 @@ def check():
     state = read_state()
     state['attempted_at'] = datetime.now(timezone.utc).isoformat()
     try:
-        request = urllib.request.Request(API, headers={
-            'Accept': 'application/vnd.github+json',
-            'User-Agent': 'authelia-update-check',
-        })
-        with urllib.request.urlopen(request, timeout=15) as response:
-            release = json.load(response)
-        tag = release['tag_name']
-        version(tag)
-        if release.get('draft') or release.get('prerelease'):
-            raise ValueError('Expected a published stable release')
-        state.update(latest=tag, checked_at=state['attempted_at'], failed=False)
+        published = authelia_versions()
+        state.update(latest=max(published, key=version), versions=published,
+                     checked_at=state['attempted_at'], failed=False)
     except Exception as error:
         state['failed'] = True
         print('Authelia release check failed: ' + str(error), flush=True)
@@ -120,20 +163,21 @@ def authelia_status(state):
         print('Authelia: latest weekly check failed; see journalctl -u authelia-update-check.')
     try:
         checked = datetime.fromisoformat(state['checked_at'])
-        latest = version(state['latest'])
         if datetime.now(timezone.utc) - checked > timedelta(days=8):
             print('Authelia: release information is more than 8 days old.')
         result = subprocess.run(['/usr/local/bin/authelia', '--version'],
                                 capture_output=True, text=True, check=True, timeout=2)
         installed = re.search(r'\bv\d+\.\d+\.\d+\b', result.stdout).group()
-        current = version(installed)
+        targets = release_levels(installed, state['versions'])
     except (KeyError, ValueError, AttributeError, OSError, subprocess.SubprocessError):
         print('Authelia: version status unavailable; see journalctl -u authelia-update-check.')
         return
     date = checked.strftime('%Y-%m-%d')
-    if latest > current:
-        print(f'Authelia: UPDATE AVAILABLE {installed} -> {state["latest"]} (checked {date}).')
-        print(RELEASES + '/tag/' + state['latest'])
+    if targets:
+        print(f'Authelia: UPDATE AVAILABLE {installed} | {format_levels(targets)} (checked {date}).')
+        for level in ('FIX', 'MINOR', 'MAJOR'):
+            if level in targets:
+                print(RELEASES + '/tag/' + targets[level])
     else:
         print(f'Authelia: {installed}; latest known stable {state["latest"]} (checked {date}).')
 
@@ -146,6 +190,9 @@ def dependency_status(state):
         checked = datetime.fromisoformat(data['checked_at'])
         if datetime.now(timezone.utc) - checked > timedelta(days=8):
             print('Dependencies: version information is more than 8 days old.')
+        if data.get('format') != 2:
+            print('Dependencies: branch-level version information unavailable; refresh with systemctl start authelia-update-check.')
+            return
         installed = inventory()
         cached = {key: {'name': item['name'], 'current': item['current']}
                   for key, item in data['items'].items()}
@@ -153,14 +200,18 @@ def dependency_status(state):
             print('Dependencies: deployed files changed since the last check; refresh with systemctl start authelia-update-check.')
             return
         updates = []
+        counts = dict.fromkeys(('FIX', 'MINOR', 'MAJOR'), 0)
         for location, item in data['items'].items():
-            if version(item['latest']) > version(item['current']):
-                major = ' [MAJOR]' if version(item['latest'])[0] > version(item['current'])[0] else ''
-                updates.append(f'  {item["name"]}: {item["current"]} -> {item["latest"]}{major} ({location})')
+            targets = item['updates']
+            if targets:
+                for level in targets:
+                    counts[level] += 1
+                updates.append(f'  {item["name"]}: {item["current"]} | {format_levels(targets)} ({location})')
     except (KeyError, TypeError, ValueError, OSError):
         print('Dependencies: version status unavailable; see journalctl -u authelia-update-check.')
         return
-    print(f'Dependencies: {len(updates)} update(s) available / {len(installed)} checked (npm production + browser libraries; {checked:%Y-%m-%d}).')
+    print(f'Dependencies: {len(updates)} package(s) with updates / {len(installed)} checked '
+          f'(FIX {counts["FIX"]}, MINOR {counts["MINOR"]}, MAJOR {counts["MAJOR"]}; {checked:%Y-%m-%d}).')
     for line in sorted(updates):
         print(line)
 
