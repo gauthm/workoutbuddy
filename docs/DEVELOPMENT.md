@@ -64,7 +64,9 @@ API responses. Browser tests remain separate from `npm test`.
 ## Architecture and migrations
 
 The frontend uses JavaScript modules and Vue components with templates, without `.vue` files
-or compilation. The backend uses Express and synchronous SQLite. Existing migrations
+or compilation. The backend uses Express 5 and synchronous SQLite. The SPA fallback uses a
+named wildcard that also matches the root path; skipped JSON parsing retains an empty
+object for API validation. Existing migrations
 remain immutable; new schema changes take the form of numbered migrations.
 Every change to `public/` must update the service worker cache.
 

@@ -22,7 +22,7 @@ node scripts/download-exercise-images.js
 npm start
 ```
 
-Open [localhost:3000](http://localhost:3000). No frontend build is required.
+Open [localhost:3000](http://localhost:3000). The server uses Express 5.3.0; no frontend build is required.
 
 Browser libraries are pinned to Vue 3.5.44 and Chart.js 4.6.1. Rerun
 `node scripts/download-vendors.js` after repository updates to refresh older local copies.

@@ -30,7 +30,7 @@ resources, `npm start` starts the application.
 | Role | Technology | Version |
 |---|---|---|
 | Runtime | Node.js | 24.x LTS |
-| HTTP | Express | 4.22.3 |
+| HTTP | Express | 5.3.0 |
 | DB | better-sqlite3 | 13.0.3 |
 | UI | Vue 3 (local file) | 3.5.44 |
 | Charts | Chart.js (local file) | 4.6.1 |

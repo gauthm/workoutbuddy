@@ -15,8 +15,27 @@ describe('T1.1 — Scaffolding', () => {
     assert.ok(res.text.includes('<div id="app">'))
   })
 
-  it('GET /api/v1/unknown returns 404 or falls through to the next handler', async () => {
+  it('GET nested client routes returns index.html (SPA fallback)', async () => {
+    const res = await request(app).get('/client/nested/route')
+    assert.equal(res.status, 200)
+    assert.ok(res.text.includes('<div id="app">'))
+  })
+
+  it('missing static files return 404 instead of the SPA', async () => {
+    const res = await request(app).get('/vendor/missing.js')
+    assert.equal(res.status, 404)
+    assert.ok(!res.text.includes('<div id="app">'))
+  })
+
+  it('GET /api/v1/unknown returns a JSON 404', async () => {
     const res = await request(app).get('/api/v1/route-inconnue')
-    assert.ok([404, 500].includes(res.status))
+    assert.equal(res.status, 404)
+    assert.deepEqual(res.body, { error: 'NOT_FOUND' })
+  })
+
+  it('a missing JSON body retains API validation instead of causing a server error', async () => {
+    const res = await request(app).post('/api/v1/bodyweight')
+    assert.equal(res.status, 400)
+    assert.deepEqual(res.body, { error: 'MISSING_DATE' })
   })
 })

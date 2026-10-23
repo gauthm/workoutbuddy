@@ -14,7 +14,7 @@ Installation, behavior and testing: [README.md](../README.md). Development rules
 
 | Location | Role |
 | --- | --- |
-| `server.js` | Startup, routes, static files |
+| `server.js` | Express 5 startup, routes, empty-body compatibility, static files and named SPA fallback |
 | `src/db/database.js` | SQLite connection |
 | `src/utils/messages.js`, `src/locales/` | Backend message keys and French/English resources; French default preserves API responses and saved explanations |
 | `src/db/migrate.js`, `src/db/migrations/` | Migrations |

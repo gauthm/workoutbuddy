@@ -16,6 +16,8 @@ export default function request(app) {
           promise ||= new Promise((done, fail) => {
             const raw = payload === undefined ? '' : JSON.stringify(payload)
             const req = Readable.from(raw ? [Buffer.from(raw)] : [])
+            // IncomingMessage marks a fully received body complete before parsers continue.
+            req.once('end', () => { req.complete = true })
             const socket = new Duplex({ read() {}, write(_chunk, _encoding, callback) { callback() } })
             Object.assign(req, { method: method.toUpperCase(), url, socket, connection: socket,
               headers: {...(raw ? { 'content-type':'application/json', 'content-length':Buffer.byteLength(raw), host:'localhost' } : {host:'localhost'}), ...extraHeaders} })

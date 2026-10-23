@@ -30,6 +30,11 @@ app.use('/api/v1', expensiveRequests())
 
 app.use('/api/v1/import', express.json({ limit: '20mb', inflate: false }))
 app.use(express.json({ limit: '100kb', inflate: false }))
+// Keep the API's empty-body validation behavior when Express skips JSON parsing.
+app.use((req, _res, next) => {
+  if (req.body === undefined) req.body = {}
+  next()
+})
 app.use(express.static(path.join(__dirname, 'public')))
 
 // ── Route registration ──────────
@@ -48,7 +53,7 @@ app.use('/api/v1/ai', aiRouter)
 app.use('/api/v1', exportImportRouter)
 
 // ── SPA fallback ──────────────────────────────────────────────
-app.get('*', (req, res, next) => {
+app.get('/{*splat}', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next()
   if (path.extname(req.path)) return res.status(404).end()
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
