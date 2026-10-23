@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly Authelia release check
+
+[Timer]
+OnCalendar=Sun *-*-* 06:00:00 Europe/Paris
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -146,6 +146,33 @@ journalctl -u workoutbuddy-maintenance -u workoutbuddy-audit --since '7 days ago
 systemctl disable --now workoutbuddy-maintenance.timer
 ```
 
+### Weekly Authelia release notification
+
+For native Linux installations, install the shared files from `deploy/linux/`:
+
+```sh
+install -o root -g root -m 0755 deploy/linux/authelia-update-check /usr/local/sbin/authelia-update-check
+install -o root -g root -m 0644 deploy/linux/authelia-update-check.service /etc/systemd/system/
+install -o root -g root -m 0644 deploy/linux/authelia-update-check.timer /etc/systemd/system/
+install -o root -g root -m 0644 deploy/linux/authelia-update-status.sh /etc/profile.d/
+systemctl daemon-reload
+systemctl enable --now authelia-update-check.timer
+systemctl start authelia-update-check.service
+/usr/local/sbin/authelia-update-check --status
+```
+
+The timer checks the official GitHub latest stable release API every Sunday between
+06:00 and 06:15 Europe/Paris, catching up after downtime. It only saves release metadata
+in `/var/lib/authelia-update-check/status.json`; it never installs or restarts Authelia.
+Interactive SSH login shells using `/etc/profile.d/*.sh` display the cached result,
+comparing it with the currently installed binary. Logins make no network request.
+A newer release includes a link to its release notes. Failed checks and information
+older than eight days are reported explicitly. Check logs with
+`journalctl -u authelia-update-check`; run the service manually to refresh the cache.
+
+Validate notification behavior without network access or production changes:
+`python3 deploy/linux/test-authelia-update-check.py`.
+
 ### Manual updates
 
 No automatic `npm update` or `npm audit fix`: update the lockfile in the repository, test,

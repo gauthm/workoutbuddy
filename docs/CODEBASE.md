@@ -124,6 +124,7 @@ testing. Code paths below are relative to the repository root.
 | `deploy/linux/test-deployment.py`, `deploy/linux/*/check-platform.py` | Requirement checks, private configuration rendering and shared-file parity |
 | `deploy/linux/*/workoutbuddy-maintenance`, `workoutbuddy-maintenance.*` | Backup before DNF/APT updates, conditional restart between 04:00 and 06:00 Paris time |
 | `deploy/linux/*/workoutbuddy-audit.*`, `test-maintenance.py` | Weekly npm audit and simulated maintenance tests without touching the server |
+| `deploy/linux/authelia-update-check*`, `authelia-update-status.sh`, `test-authelia-update-check.py` | Weekly stable Authelia release check, cached SSH login notification and isolated tests |
 | `deploy/linux/*/workoutbuddy-deploy-assets` | Mandatory photo checks, atomic frontend publication and previous-version retention |
 | `deploy/linux/*/workoutbuddy-sessions.*`, `authelia-sessions.conf`, `valkey-sessions.conf` | Private persistent Redis/Valkey storage for Authelia sessions over a Unix socket |
 | `deploy/linux/*/test-auth-sessions.py`, `test-auth-recovery.mjs` | Disposable full-stack Caddy/Authelia/Redis/Node test: TOTP, 60-day cookie, persistence, revocation through Settings button, public icons, headers and HTTPS worker activation |

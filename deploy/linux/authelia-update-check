@@ -1,0 +1,90 @@
+#!/usr/bin/python3
+"""Cache the latest stable Authelia release; show status without network access."""
+import argparse
+from datetime import datetime, timezone, timedelta
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import urllib.request
+
+STATE = Path('/var/lib/authelia-update-check/status.json')
+API = 'https://api.github.com/repos/authelia/authelia/releases/latest'
+RELEASES = 'https://github.com/authelia/authelia/releases'
+
+
+def version(value):
+    match = re.fullmatch(r'v?(\d+)\.(\d+)\.(\d+)', value)
+    if not match:
+        raise ValueError('Expected a stable version')
+    return tuple(map(int, match.groups()))
+
+
+def read_state():
+    try:
+        value = json.loads(STATE.read_text())
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def check():
+    state = read_state()
+    state['attempted_at'] = datetime.now(timezone.utc).isoformat()
+    try:
+        request = urllib.request.Request(API, headers={
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'authelia-update-check',
+        })
+        with urllib.request.urlopen(request, timeout=15) as response:
+            release = json.load(response)
+        tag = release['tag_name']
+        version(tag)
+        if release.get('draft') or release.get('prerelease'):
+            raise ValueError('Expected a published stable release')
+        state.update(latest=tag, checked_at=state['attempted_at'], failed=False)
+    except Exception as error:
+        state['failed'] = True
+        print('Authelia release check failed: ' + str(error), flush=True)
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = STATE.with_suffix('.tmp')
+    temporary.write_text(json.dumps(state) + '\n')
+    temporary.chmod(0o644)
+    os.replace(temporary, STATE)
+    return 1 if state['failed'] else 0
+
+
+def status():
+    state = read_state()
+    if state.get('failed'):
+        print('Authelia: latest weekly check failed; see journalctl -u authelia-update-check.')
+    try:
+        checked = datetime.fromisoformat(state['checked_at'])
+        latest = version(state['latest'])
+        if datetime.now(timezone.utc) - checked > timedelta(days=8):
+            print('Authelia: release information is more than 8 days old.')
+        result = subprocess.run(['/usr/local/bin/authelia', '--version'],
+                                capture_output=True, text=True, check=True, timeout=2)
+        installed = re.search(r'\bv\d+\.\d+\.\d+\b', result.stdout).group()
+        current = version(installed)
+    except (KeyError, ValueError, AttributeError, OSError, subprocess.SubprocessError):
+        print('Authelia: version status unavailable; see journalctl -u authelia-update-check.')
+        return
+    date = checked.strftime('%Y-%m-%d')
+    if latest > current:
+        print(f'Authelia: UPDATE AVAILABLE {installed} -> {state["latest"]} (checked {date}).')
+        print(RELEASES + '/tag/' + state['latest'])
+    else:
+        print(f'Authelia: {installed}; latest known stable {state["latest"]} (checked {date}).')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument('--check', action='store_true')
+    modes.add_argument('--status', action='store_true')
+    args = parser.parse_args()
+    if args.check:
+        raise SystemExit(check())
+    status()

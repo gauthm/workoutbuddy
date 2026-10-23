@@ -1,0 +1,20 @@
+[Unit]
+Description=Check the latest stable Authelia release without installing it
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/authelia-update-check --check
+StateDirectory=authelia-update-check
+StateDirectoryMode=0755
+UMask=0022
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+TimeoutStartSec=45s
+MemoryMax=96M
