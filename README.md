@@ -24,6 +24,9 @@ npm start
 
 Open [localhost:3000](http://localhost:3000). The server uses Express 5.3.0; no frontend build is required.
 
+`npm ci` installs the exact reviewed dependency versions from the lockfile; see the
+[maintenance guide](docs/DEPLOYMENT_OPERATIONS.md) for dependency updates.
+
 Browser libraries are pinned to Vue 3.5.44 and Chart.js 4.6.1. Rerun
 `node scripts/download-vendors.js` after repository updates to refresh older local copies.
 Libraries and photos are installed once, then served locally.

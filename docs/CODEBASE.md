@@ -14,6 +14,7 @@ Installation, behavior and testing: [README.md](../README.md). Development rules
 
 | Location | Role |
 | --- | --- |
+| `package.json`, `package-lock.json` | Direct requirements and exact reviewed dependency tree; transitive patch selection policy in `docs/DEPLOYMENT_OPERATIONS.md` |
 | `server.js` | Express 5 startup, routes, empty-body compatibility, static files and named SPA fallback |
 | `src/db/database.js` | SQLite connection |
 | `src/utils/messages.js`, `src/locales/` | Backend message keys and French/English resources; French default preserves API responses and saved explanations |

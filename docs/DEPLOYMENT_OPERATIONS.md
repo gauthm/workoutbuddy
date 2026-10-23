@@ -230,3 +230,11 @@ No automatic `npm update` or `npm audit fix`: update the lockfile in the reposit
 then install with `npm ci --omit=dev`. The Authelia binary is installed outside the package
 manager: check its official releases, configuration, and migrations, back up, and test before
 replacement. It is not updated without validation.
+
+An explicitly reviewed transitive patch can be locked even when npm's `latest` tag still
+points to an older version. The lockfile currently selects `get-intrinsic@1.3.1`, accepted
+by all its parent ranges, for the native Node 24 runtime. Its three function-constructor
+helpers are normal transitive dependencies; no direct dependency or permanent override
+is added. This release's native CommonJS/ESM loading and query parsing must be validated
+on Node 24 before deployment. Use `npm ci` to reproduce the reviewed lockfile; do not
+replace this selection solely because the `latest` tag points to 1.3.0.
