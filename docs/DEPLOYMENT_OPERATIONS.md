@@ -148,13 +148,14 @@ systemctl disable --now workoutbuddy-maintenance.timer
 
 ### Weekly Authelia release notification
 
-For native Linux installations, install the shared files from `deploy/linux/`:
+For native Linux installations, set `WB_DEPLOY_DIR` to the matching family as above,
+then install the files from that variant:
 
 ```sh
-install -o root -g root -m 0755 deploy/linux/authelia-update-check /usr/local/sbin/authelia-update-check
-install -o root -g root -m 0644 deploy/linux/authelia-update-check.service /etc/systemd/system/
-install -o root -g root -m 0644 deploy/linux/authelia-update-check.timer /etc/systemd/system/
-install -o root -g root -m 0644 deploy/linux/authelia-update-status.sh /etc/profile.d/
+install -o root -g root -m 0755 "$WB_DEPLOY_DIR/authelia-update-check" /usr/local/sbin/authelia-update-check
+install -o root -g root -m 0644 "$WB_DEPLOY_DIR/authelia-update-check.service" /etc/systemd/system/
+install -o root -g root -m 0644 "$WB_DEPLOY_DIR/authelia-update-check.timer" /etc/systemd/system/
+install -o root -g root -m 0644 "$WB_DEPLOY_DIR/authelia-update-status.sh" /etc/profile.d/
 systemctl daemon-reload
 systemctl enable --now authelia-update-check.timer
 systemctl start authelia-update-check.service
@@ -171,7 +172,7 @@ older than eight days are reported explicitly. Check logs with
 `journalctl -u authelia-update-check`; run the service manually to refresh the cache.
 
 Validate notification behavior without network access or production changes:
-`python3 deploy/linux/test-authelia-update-check.py`.
+`python3 "$WB_DEPLOY_DIR/test-authelia-update-check.py"`.
 
 ### Manual updates
 
