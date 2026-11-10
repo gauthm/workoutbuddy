@@ -78,6 +78,8 @@ export default {
       }
     })
     onDeactivated(() => {
+      state.showHistory = false
+      state.deleteTarget = null
       isActive = false
       document.documentElement.classList.remove('coach-active')
     })
@@ -370,7 +372,8 @@ export default {
         </template>
       </div>
 
-      <!-- Conversation history panel -->
+      <!-- Keep sheets outside the transformed chat stacking context. -->
+      <Teleport to="body">
       <ModalDialog v-if="state.showHistory" :title="t('coach.history_title')" @close="state.showHistory = false">
 
           <div v-if="!state.conversations.length && !state.loadingHistory"
@@ -404,6 +407,8 @@ export default {
         @confirm="confirmDeleteConversation()"
         @cancel="state.deleteTarget = null"
       />
+
+      </Teleport>
 
       <!-- Input area -->
       <div class="coach-view__input-area">

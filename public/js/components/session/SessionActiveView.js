@@ -91,6 +91,11 @@ export default {
     const activeRest = computed(()=>store.activeRest?.sessionId === state.session?.id ? store.activeRest : null)
     function setsChanged(item,data) {item.sessionExercise.sets=data.sets;item.plannedSets=data.planned}
     function startRest(item,data) {
+      if (doneCount(item) >= item.plannedSets) {
+        getTimerWorker().postMessage({type:'STOP_REST'})
+        clearRest()
+        return
+      }
       const {seconds,setId}=data
       state.restSequence++
       store.activeRestExerciseId=item.sessionExercise.id
@@ -232,11 +237,11 @@ export default {
 
       </div>
 
-      <div v-if="activeRest && state.session" class="session-rest-dock">
-        <div class="session-rest-dock__heading"><strong>{{ t('session.rest_title') }}</strong><span>{{exerciseName(activeRest)}}</span></div>
+      <div v-if="activeRest && state.session" class="session-rest-dock" :class="{'session-rest-dock--complete':activeRest.completed}">
+        <div class="session-rest-dock__heading"><strong>{{ t(activeRest.completed ? 'session.rest_done' : 'session.rest_title') }}</strong><span>{{exerciseName(activeRest)}}</span></div>
         <RestTimer :key="state.restSequence" :duration="activeRest.duration" :deadline="activeRest.deadline" :active="true"
           :sound-enabled="store.getSetting('timer_sound_enabled',true)" :vibr-enabled="store.getSetting('timer_vibration_enabled',true)"
-          @adjust="adjustRest" @complete="clearRest" @skip="clearRest" />
+          @adjust="adjustRest" @complete="activeRest.completed = true" @skip="clearRest" />
       </div>
       <ModalDialog v-if="state.showCompleteConfirm" :title="t('session.exit_title')"
         @close="!state.completing && (state.showCompleteConfirm=false)">

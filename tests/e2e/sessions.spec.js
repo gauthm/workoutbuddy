@@ -1,5 +1,5 @@
 import {test,expect} from './fixtures.js'
-import {L,get,planned,startThroughUI,trainThroughUI} from './helpers.js'
+import {L,call,get,planned,startThroughUI,trainThroughUI} from './helpers.js'
 
 test('enter data → undo a set → resume after reload and real server restart',async({page,request,app})=>{
  const p=await planned(request)
@@ -168,4 +168,53 @@ test('leave without saving recovers a lost response after reset',async({page,req
  expect(reset.status).toBe('planned');expect(reset.started_at).toBeNull()
  expect(reset.exercises.every(ex=>!ex.sets.length)).toBe(true)
  expect((await get(request,'/sessions?status=in_progress')).sessions).toHaveLength(0)
+})
+
+test('rest completion stays visible, skip stays silent, and final exercise set starts no rest',async({page,request})=>{
+ const p=await planned(request)
+ for(const template of p.templates)for(const ex of template.exercises)await call(request,'put',`/template-exercises/${ex.id}`,{rest_seconds:2})
+ await startThroughUI(page,p)
+ const block=page.locator('.exercise-block--active')
+ const rows=block.locator('.set-row:not(.set-row--warmup)')
+ await rows.first().getByRole('button',{name:/Valider la série/}).click()
+ const dock=page.locator('.session-rest-dock')
+ await expect(dock).toBeVisible()
+ await expect(dock.locator('.rest-timer__complete')).toContainText(L('session.rest_done'))
+ await expect(dock).toHaveClass(/session-rest-dock--complete/)
+ await page.screenshot({path:test.info().outputPath('rest-complete.png')})
+ await dock.getByRole('button',{name:L('session.rest_resume'),exact:true}).click()
+ await expect(dock).toHaveCount(0)
+ const count=await rows.count()
+ for(let i=1;i<count;i++){
+  await rows.nth(i).getByRole('button',{name:/Valider la série/}).click()
+  if(i<count-1){
+   await expect(dock).toBeVisible()
+   await dock.getByRole('button',{name:L('session.rest_skip'),exact:true}).click()
+   await expect(dock).toHaveCount(0)
+  }
+ }
+ await expect(block).toHaveClass(/exercise-block--complete/)
+ await expect(dock).toHaveCount(0)
+ // Undo and replay the final set: it remains free of rest.
+ await rows.last().getByRole('button',{name:/Annuler la série/}).click()
+ await rows.last().getByRole('button',{name:/Valider la série/}).click()
+ await expect(dock).toHaveCount(0)
+})
+
+test('starting another workout explains the active session conflict in French and English',async({page,request})=>{
+ const p=await planned(request);await startThroughUI(page,p)
+ const sessions=(await get(request,'/sessions?active_program=1')).sessions
+ const next=sessions.find(s=>s.status==='planned')
+ for(const language of ['fr','en']){
+  await request.put('/api/v1/settings',{data:{language}})
+  await page.goto('/#/calendar');await page.reload()
+  await expect(page.locator('.calendar-grid')).toBeVisible()
+  const day=page.getByRole('button',{name:next.scheduled_date,exact:true})
+  if(!await day.count())await page.locator('.calendar-nav button').last().click()
+  await day.click()
+  const startLabel=language==='fr'?L('calendar.start'):'Start'
+  await page.locator('.calendar-day-session').filter({hasText:next.name}).getByRole('button',{name:startLabel,exact:true}).click()
+  await expect(page.locator('.toast--error')).toContainText(language==='fr'?'Une séance est déjà en cours.':'A workout is already in progress.')
+  await expect(page.locator('.toast--error')).not.toContainText('SESSION_ALREADY_IN_PROGRESS')
+ }
 })

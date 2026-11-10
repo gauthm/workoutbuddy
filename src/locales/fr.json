@@ -1,4 +1,5 @@
 {
+  "suggestion.similar_exercise": "Premier essai : estimation basée sur vos séries réalisées de {{exercise}}, adaptée à {{reps}} répétitions avec une réduction de 20 % pour cette nouvelle variante. Commencez à {{weightKg}} kg × {{reps}} répétitions et ajustez selon vos sensations.",
   "suggestion.goal_strength": "force",
   "suggestion.goal_hypertrophy": "hypertrophie",
   "suggestion.goal_weight_loss": "perte de poids",

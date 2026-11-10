@@ -50,7 +50,7 @@ All files below are in `src/routes/`.
 | --- | --- |
 | Program creation | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
 | Scheduling and duration | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
-| Progression and exercise memory | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
+| Progression and exercise memory across programs, compatible variation starting estimates | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
 | Replacement and constraints | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |
 | Reviews, deload, plateaus | `programReview.js`, `deloadEngine.js`, `plateauDetector.js` |
 | Equipment and calculations | `equipmentCalc.js`, `rmCalculator.js`, `personalRecords.js`, `streakCalculator.js` |
@@ -73,7 +73,7 @@ All files below are in `src/routes/`.
 | Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos) |
 | Inventory and equipment registry | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
 | Questionnaire, goal-titled card and single-active-program reminder | `js/components/programs/` |
-| Workout, sets, history and rest | `js/components/session/`, `js/timer-worker*.js` |
+| Workout, sets, history and rest: persistent completion cue, no rest after final exercise set | `js/components/session/`, `js/timer-worker*.js` |
 
 ### Screens and interactions
 
@@ -82,6 +82,7 @@ All files below are in `src/routes/`.
 | Calendar, statistics, coach, settings | `js/components/calendar/`, `stats/`, `coach/`, `settings/` under `js/components/` |
 | Coach input resizable up to 120 px, Enter to send on desktop, Shift+Enter for a newline; Enter for a newline on mobile | `js/components/coach/CoachView.js`, `.coach-view__input` in `css/components.css` |
 | Chat preserved during navigation, off-screen response, return to latest message, document scroll lock and reading position during keyboard resizing | `KeepAlive` limited to Coach in `js/components/layout/AppShell.js`, activation hooks and dimension observation in `js/components/coach/CoachView.js` |
+| Coach history and deletion sheets above navigation | `Teleport` in `js/components/coach/CoachView.js`; regression cases in `tests/e2e/coach.spec.js` |
 | Animated thinking indicator, reduced motion and bubbles without avatars | `js/components/coach/ChatMessage.js`, `.chat-msg` styles in `css/components.css` |
 | Single Authelia logout button with confirmation | `js/components/settings/SettingsView.js`, `js/api.js`, Caddy `/auth/logout` route |
 | RM, warm-up, pain, dates, dialogs | `js/utils/` |
@@ -99,6 +100,7 @@ testing. Code paths below are relative to the repository root.
 | --- | --- |
 | `scripts/test-selection.js`, `test-affected.js` | Node selection by imports and API domains, `test:affected` command, explicit files and `--list` preview |
 | `scripts/e2e-selection.js`, `test-e2e-affected.js`, `pre-push.js` | Affected browser domains, explicit override after diff review, cache version alone ignored, targeted Node/browser hook; tests in `tests/unit/e2eSelection.test.js` |
+| `tests/integration/exerciseStartingLoads.test.js` | Cross-program targets, repetition conversion, compatible variation estimates and excluded resistance/history |
 | `tests/unit/`, `tests/integration/` | Business logic and API; `reliabilityStress.test.js` for duration and incident simulations |
 | `tests/journeys/` | Complete journeys; [guide](TESTS_JOURNEYS.md) |
 | `tests/helpers/` | Isolated request execution |

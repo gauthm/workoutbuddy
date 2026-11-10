@@ -76,3 +76,5 @@ sends on all devices.
 
 The key is stored server-side, masked in the interface, and excluded from API responses and JSON
 exports. An existing key is preserved when a save does not provide a new one.
+
+Conversation history and deletion confirmations open above the bottom navigation. Long history lists scroll within the sheet, including while the mobile keyboard is open.

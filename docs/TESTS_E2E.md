@@ -78,7 +78,7 @@ no avatars; navigation before and during a response, off-screen completion, no d
 immediate tracking of long chunks and resizes, persistence and return to bottom after
 navigation/reload; keyboard resize/pan preserves reading position, document scrolling is locked
 inside chat and restored after leaving, including actual emulated touch gestures; history sheets
-track the panned keyboard viewport without
+cover navigation with the final row reachable and track the panned keyboard viewport without
 applying its offset twice; real API with a disposable local SSE provider.
 
 ### `programs.spec.js`
@@ -92,7 +92,8 @@ questionnaire choices.
 Set completion/undo, resumption after reload and restart, full workout, next target for
 the same exercise, request interrupted before/after write without duplication, retry
 conflict, completion blocked during save, lost completion/cancellation responses, abrupt
-shutdown, continue/leave without saving.
+shutdown, continue/leave without saving; rest completion and dismissal, no rest after the final
+exercise set, and localized active-workout conflicts.
 
 ### `history.spec.js`
 

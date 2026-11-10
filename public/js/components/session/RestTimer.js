@@ -46,6 +46,7 @@ export default {
   setup(props, { emit }) {
     const initialRemaining=()=>props.deadline ? Math.max(0,Math.ceil((props.deadline-Date.now())/1000)) : props.duration
     const remaining   = ref(initialRemaining())
+    const finished = ref(false)
     const worker = getTimerWorker()
     let wakeLock = null
     let disposed = false
@@ -69,7 +70,8 @@ export default {
       if (e.data.type === 'REST_TICK') {
         remaining.value = e.data.remaining
       }
-      if (e.data.type === 'REST_COMPLETE') {
+      if (e.data.type === 'REST_COMPLETE' && !finished.value) {
+        finished.value = true
         remaining.value = 0
         releaseWakeLock()
         if (props.soundEnabled) playBeep()
@@ -89,6 +91,7 @@ export default {
 
     watch(() => props.active, async (val) => {
       if (val) {
+        finished.value = false
         remaining.value = initialRemaining()
         worker.postMessage({ type: 'START_REST', payload: { duration_seconds: initialRemaining() } })
         await acquireWakeLock()
@@ -115,7 +118,7 @@ export default {
     })
 
     function skip() {
-      worker.postMessage({ type: 'SKIP_REST' })
+      if (!finished.value) worker.postMessage({ type: 'STOP_REST' })
       emit('skip')
     }
 
@@ -141,12 +144,17 @@ export default {
       return 'var(--color-danger)'
     }
 
-    return { remaining, skip, adjust, formatted, circumference, RADIUS, dashOffset, strokeColor, t }
+    return { remaining, finished, skip, adjust, formatted, circumference, RADIUS, dashOffset, strokeColor, t }
   },
 
   template: `
     <div v-if="active" class="rest-timer">
-      <svg width="80" height="80" viewBox="0 0 80 80">
+      <div v-if="finished" class="rest-timer__complete" role="status" aria-live="polite">
+        <span class="rest-timer__check" aria-hidden="true">✓</span>
+        <strong>{{ t('session.rest_done') }}</strong>
+        <button type="button" class="btn btn--primary" @click="skip()">{{ t('session.rest_resume') }}</button>
+      </div>
+      <svg v-else width="80" height="80" viewBox="0 0 80 80">
         <!-- Background -->
         <circle cx="40" cy="40" :r="RADIUS"
           fill="none" stroke="var(--color-border)" stroke-width="5"/>
@@ -167,7 +175,7 @@ export default {
           {{ formatted() }}
         </text>
       </svg>
-      <div class="rest-timer__actions">
+      <div v-if="!finished" class="rest-timer__actions">
         <button type="button" class="btn btn--secondary btn--sm" :aria-label="t('session.rest_less')" @click="adjust(-15)">−15 s</button>
         <button type="button" class="btn btn--secondary btn--sm" :aria-label="t('session.rest_more')" @click="adjust(15)">+15 s</button>
         <button type="button" class="btn btn--secondary btn--sm" @click="skip()">{{ t('session.rest_skip') }}</button>

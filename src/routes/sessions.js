@@ -17,7 +17,7 @@ import { computeDeloadTargets } from '../services/deloadEngine.js'
 import { shouldDeload }             from '../services/deloadEngine.js'
 import { detectPlateau }            from '../services/plateauDetector.js'
 import { getExerciseForWeek }       from '../services/rotationEngine.js'
-import { suggestFirstTime }         from '../services/firstTimeSuggestion.js'
+import { suggestFirstTimeWithHistory } from '../services/firstTimeSuggestion.js'
 import { runAllSignalChecks }       from '../services/coachingAdvisor.js'
 import { generatePendingAdviceTexts } from '../services/adviceTextGenerator.js'
 import { scheduleWeeks }              from '../services/sessionScheduler.js'
@@ -349,7 +349,7 @@ function computeSessionAdjustments(db, session) {
 
       let suggestion
       try {
-        suggestion = suggestFirstTime(
+        suggestion = suggestFirstTimeWithHistory(db,
           { ...exerciseForCalc, id: se.exercise_id },
           profile,
           te,
@@ -824,7 +824,7 @@ router.get('/:id/target/:teId', (req, res) => {
       }
 
       try {
-        suggestion = suggestFirstTime(parsed, profile, te, equipmentItems)
+        suggestion = suggestFirstTimeWithHistory(db, parsed, profile, te, equipmentItems)
       } catch (suggestErr) {
         console.warn('[GET /sessions/:id/target/:teId] suggestion:', suggestErr.message)
         suggestion = { weight_kg: 0, reps: 8, reasoning: message('suggestion.missing_profile') }

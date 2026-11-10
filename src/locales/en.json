@@ -14,6 +14,7 @@
   "suggestion.adjust_by_feel": "Adjust according to how it feels.",
   "suggestion.weighted": "{{mechanic}} exercise: {{weightKg}} kg (≈ {{pct}}% of your body weight) × {{reps}} reps. ",
   "suggestion.conservative_load": "This is a conservative load to find your level — adjust according to how it feels.",
+  "suggestion.similar_exercise": "First attempt: based on your completed sets of {{exercise}}, adjusted to {{reps}} reps with a 20% reduction for this new variation. Start with {{weightKg}} kg × {{reps}} reps and adjust according to how it feels.",
   "progression.hold_at_limit": "Sets performed at the limit: keep the load and aim for controlled repetitions with some in reserve.",
   "progression.linear_increase": "Target reached ({{sets}}×{{targetReps}} reps). Next load: {{weight}} kg.",
   "progression.hold_without_increment": "Target reached. Keep {{weight}} kg: no sufficiently gradual increment is available.",

@@ -3,7 +3,7 @@
 // The caller (component or store) handles errors.
 
 const BASE = '/api/v1'
-const securityErrors = {RATE_LIMITED: 'errors.rate_limited', AI_BUSY: 'errors.ai_busy', IMPORT_BUSY: 'errors.import_busy'}
+const securityErrors = {RATE_LIMITED: 'errors.rate_limited', AI_BUSY: 'errors.ai_busy', IMPORT_BUSY: 'errors.import_busy', SESSION_ALREADY_IN_PROGRESS: 'errors.session_already_in_progress'}
 let pendingRequests = 0
 const activityListeners = new Set()
 export function onRequestActivity(listener) {

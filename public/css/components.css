@@ -217,8 +217,6 @@
   padding-top: .5rem;
 }
 .keyboard-open .modal { max-height: 100%; padding-bottom: 1rem; }
-/* Chat already follows the visual viewport and is the fixed containing block. */
-.keyboard-open .coach-view .modal-overlay { top: 0; }
 .modal__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .modal__heading .modal__title { flex: 1; min-width: 0; }
 .modal__title   { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; }
@@ -1569,3 +1567,11 @@ body:has(.modal-overlay) .app-update { display: none; }
 /* Leave room to scroll editing actions above the update banner and save dock. */
 body:has(.app-update) :is(.settings-view, .equipment-editor) { padding-bottom: calc(var(--nav-space) + 16rem); }
 html:has(.app-update) { scroll-padding-bottom: calc(var(--nav-space) + 16rem); }
+
+/* Keep rest completion visible until dismissed or the next set starts. */
+.session-rest-dock--complete { border: 2px solid var(--color-success); animation: rest-ready 650ms ease-out 3; }
+.rest-timer__complete { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; width: 100%; }
+.rest-timer__complete strong { flex: 1; }
+.rest-timer__check { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--color-success); color: #fff; font-size: 1.6rem; }
+@keyframes rest-ready { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-success) 30%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .session-rest-dock--complete { animation: none; } }

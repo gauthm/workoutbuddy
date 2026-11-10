@@ -201,7 +201,7 @@
   "session.validate": "Log",
   "session.validated": "Done",
   "session.rest": "Rest",
-  "session.rest_done": "Rest done",
+  "session.rest_done": "Rest complete!",
   "session.target": "Target",
   "session.pr_toast": "🏆 New PR! {{weight}}kg × {{reps}} — 1RM: {{rm}}kg",
   "session.help": "Exercise help",
@@ -871,5 +871,7 @@
   "calendar.day_6": "Sun",
   "settings.import_invalid_format": "Invalid format",
   "errors.export_json": "JSON export failed",
-  "errors.export_csv": "CSV export failed"
+  "errors.export_csv": "CSV export failed",
+  "errors.session_already_in_progress": "A workout is already in progress. Resume it from the Workout tab, then save it or leave without saving before starting another one.",
+  "session.rest_resume": "Ready to go"
 }

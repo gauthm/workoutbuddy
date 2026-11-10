@@ -31,6 +31,8 @@ confirmed by mistake can be undone. Leaving a session without finishing keeps it
 preserves confirmed sets. Unconfirmed input may be lost on reload. The Session tab lets you resume;
 another session cannot start while the first remains in progress.
 
+Between sets, the rest timer can be shortened, extended or skipped. Completion shows a green animated cue that stays visible until dismissed or the next set starts; reduced-motion preferences disable the pulse. The final working set of each exercise starts no rest.
+
 The timer measures time since the start, including while the app is closed, and progression waits
 until the session ends. The Warm-up button displays instructions without adding a set to the program.
 
@@ -64,6 +66,13 @@ maintaining continuity between exercises; reviews may suggest a lighter week. Th
 not decide these changes. Finishing a session and saving progress form a single transaction: if
 calculation fails, the session remains in progress and can be finished again.
 
+The next load/repetition target is calculated when a session is finished, using confirmed
+working sets only. Progress belongs to the exercise, across all programs. Starting the next
+session synchronizes its targets with that shared progress, including sessions planned before
+the previous workout. A different repetition range converts the learned load with the Epley
+estimate and rounds down to available equipment. Planned sessions keep their exercise selection
+and set counts; this synchronization updates load and repetition targets.
+
 ## Starting and adjusting loads
 
 For beginners, the engine limits each exercise to three sets and uses double progression,
@@ -71,6 +80,15 @@ including for strength goals, with an initial range of 8–12 repetitions. Dumbb
 expressed per dumbbell. Instructions repeat this on the details page and in session help
 (2 dumbbells of 10 kg → enter 10 kg). Starting-load calculation distinguishes a two-dumbbell
 movement from a one-arm movement.
+
+For an unfamiliar exercise, completed working sets from a similar exercise take precedence over
+the generic profile estimate. A compatible variation must share its main muscle, movement pattern,
+mechanic, force, unilateral convention and free-weight family (barbell, EZ bar, dumbbell or
+kettlebell). The most recent compatible performance is converted to the new repetition target,
+reduced by 20% for the unfamiliar variation and rounded down to an available load. This remains
+a first-attempt estimate, explained in the session, and does not create learned progress until
+the new exercise is performed. Warm-ups, unfinished sessions and deloads are excluded. Different
+weight families, machines, bands and bodyweight movements retain the generic starting estimate.
 
 Automatic increases remain limited to 10% of the load or 1 kg for small loads; if equipment
 requires a larger jump, the load stays unchanged. A set taken to failure (RPE ≥ 9.5 or RIR = 0)

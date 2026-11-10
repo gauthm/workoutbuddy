@@ -1,6 +1,61 @@
 import { message } from '../utils/messages.js'
 import { calculateAchievableLoads, roundDownToAchievable } from './equipmentCalc.js'
 
+// Keep load conventions comparable: no conversion between bars, per-dumbbell loads,
+// bodyweight, bands or machines with unknown leverage.
+function loadFamily(exercise) {
+  const equipment = exercise.equipment_required
+  const supports = ['bench','bench_adjustable','bench_decline','preacher_bench','rack','chair','plyo_box','press_board','plate']
+  const families = new Set()
+  for (const category of equipment) {
+    if (supports.includes(category)) continue
+    if (['dumbbell_fixed','dumbbell_adjustable','dumbbell_loadable'].includes(category)) families.add('dumbbell')
+    else if (['barbell','ez_bar','kettlebell'].includes(category)) families.add(category)
+    else return null
+  }
+  return families.size===1 ? [...families][0] : null
+}
+
+/** Use actual performance on a compatible variation before the generic profile estimate. */
+export function suggestFirstTimeWithHistory(db, exercise, profile, template, equipment) {
+  const fallback = () => suggestFirstTime(exercise, profile, template, equipment)
+  const row = db.prepare('SELECT * FROM exercise WHERE id=?').get(exercise.id)
+  if (!row) return fallback()
+  const target = {...row, equipment_required:JSON.parse(row.equipment_required), primary_muscles:JSON.parse(row.primary_muscles)}
+  const family = loadFamily(target)
+  if (!family || !target.movement_pattern || !target.primary_muscles.length) return fallback()
+
+  const history = db.prepare(`SELECT e.*,se.id AS session_exercise_id,s.completed_at,s.id AS session_id,
+      MIN(sl.weight_kg) AS performed_weight,MIN(sl.reps) AS performed_reps
+    FROM exercise e JOIN session_exercise se ON se.exercise_id=e.id
+    JOIN session s ON s.id=se.session_id JOIN set_log sl ON sl.session_exercise_id=se.id
+    WHERE e.id!=? AND s.status='completed' AND s.is_deload=0
+      AND sl.is_completed=1 AND sl.is_warmup=0 AND sl.reps>0
+    GROUP BY se.id ORDER BY s.completed_at DESC,s.id DESC,se.id DESC`).all(target.id)
+  const seen = new Set()
+  const source = history.find(row => {
+    if (seen.has(row.id)) return false
+    seen.add(row.id)
+    const candidate = {...row,equipment_required:JSON.parse(row.equipment_required),primary_muscles:JSON.parse(row.primary_muscles)}
+    return candidate.performed_weight>0 && candidate.performed_reps<=30 &&
+      candidate.category===target.category && candidate.movement_pattern===target.movement_pattern &&
+      candidate.mechanic===target.mechanic && candidate.force===target.force &&
+      !!candidate.is_unilateral===!!target.is_unilateral && loadFamily(candidate)===family &&
+      candidate.primary_muscles[0]===target.primary_muscles[0]
+  })
+  if (!source) return fallback()
+
+  const reps = template?.target_reps_min || fallback().reps
+  // Estimated rep conversion, then a 20% reduction for an unfamiliar variation.
+  const estimate = source.performed_weight*(1+source.performed_reps/30)/(1+reps/30)*0.8
+  const loads = calculateAchievableLoads(equipment,target).loads_kg.filter(w => w>0 && w<=estimate+0.001)
+  if (!loads.length) return fallback()
+  const weight = roundDownToAchievable(estimate,loads)
+  return {weight_kg:weight,reps,reasoning:message('suggestion.similar_exercise', {
+    exercise:source.name_fr || source.name_en,weightKg:weight,reps,
+  })}
+}
+
 /**
  * First-attempt suggestion table.
  * [goal][level][mechanic] = { pct: % of body weight, reps: suggested repetitions }

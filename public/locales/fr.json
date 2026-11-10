@@ -201,7 +201,7 @@
   "session.validate": "Valider",
   "session.validated": "Validée",
   "session.rest": "Repos",
-  "session.rest_done": "Repos terminé",
+  "session.rest_done": "Repos terminé !",
   "session.target": "Cible",
   "session.pr_toast": "🏆 Nouveau record ! {{weight}}kg × {{reps}} — RM : {{rm}}kg",
   "session.help": "Aide exercice",
@@ -871,5 +871,7 @@
   "calendar.day_6": "Dim",
   "settings.import_invalid_format": "Format invalide",
   "errors.export_json": "Erreur export",
-  "errors.export_csv": "Erreur export CSV"
+  "errors.export_csv": "Erreur export CSV",
+  "errors.session_already_in_progress": "Une séance est déjà en cours. Reprenez-la depuis l’onglet Séance, puis enregistrez-la ou quittez-la sans enregistrer avant d’en commencer une autre.",
+  "session.rest_resume": "C’est reparti"
 }
