@@ -70,7 +70,7 @@ All files below are in `src/routes/`.
 | Keyboard-aware modal sheets, nested focus trap and focus restoration | `js/components/common/ModalDialog.js`, `ConfirmModal.js`, `js/utils/dialog.js`, `.modal-overlay` in `css/components.css`; regression cases in `tests/e2e/equipment.spec.js`, `programs.spec.js`, `coach.spec.js` |
 | Navigation and shared components | `js/components/layout/`, `js/components/common/` |
 | Sticky catalog tabs/search and overlay filter panel | `js/components/exercises/ExerciseListView.js`, `ExerciseFilter.js`, `.exercise-toolbar` in `css/components.css`; `tests/e2e/exercises.spec.js` |
-| Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos) |
+| Exercises, pain, filters | `js/components/exercises/` (`ExerciseMotion.js` for animated photos shown only after full decoding, with loading and failure handling) |
 | Inventory and equipment registry | `js/components/equipment/` (`EquipmentEditor.js`, `inventoryCatalog.js`) |
 | Questionnaire, goal-titled card and single-active-program reminder | `js/components/programs/` |
 | Workout, sets, history and rest: persistent completion cue, no rest after final exercise set | `js/components/session/`, `js/timer-worker*.js` |
@@ -115,6 +115,7 @@ testing. Code paths below are relative to the repository root.
 | `tests/e2e/authProxy.js`, `settings.spec.js` | Saved screen-awake option, navigation/reload, disabling, denial and incompatibility; shared disposable HTTP proxy, confirmed logout and data preservation |
 | `tests/e2e/theme.spec.js`, `security.spec.js` | Light theme and completed-set contrast; icon links and decoding, Apple/manifest dimensions and opacity |
 | `tests/e2e/dashboard.spec.js` | Dashboard across eight sizes/safe areas, buttons below the program, enlarged areas and scrolling on short screens, portrait/landscape, six weeks, all statuses, pagination, completed week; five goals in French/English |
+| `tests/e2e/motion.spec.js` | Progressive JPEG streaming, decoding delays/failures, cached reopening, full-catalog browser decoding, playback and in-workout help |
 | `tests/e2e/coach.spec.js` | Resizable input, desktop Enter to send, Shift+Enter and mobile Enter for a newline, keyboard composition preserved, reduced-motion animation, no avatars; navigation before/during response, off-screen completion, immediate following of long responses, resizing, persistence and return to bottom after navigation/reload; keyboard resize/pan while reading older messages, scroll containment and restored document scrolling after leaving; local SSE provider, no external AI |
 | `tests/ui/` | Additional Playwright visual scenarios |
 

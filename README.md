@@ -31,6 +31,7 @@ Browser libraries are pinned to Vue 3.5.44 and Chart.js 4.6.1. Rerun
 `node scripts/download-vendors.js` after repository updates to refresh older local copies.
 Libraries and photos are installed once, then served locally.
 Catalog tabs and search stay visible while scrolling, with filters expanding over the list.
+Exercise photos appear after full decoding, avoiding blurry progressive previews on slower connections.
 On mobile, bottom navigation stays hidden while the keyboard is open; the Coach message field stays above it and only the conversation scrolls. Dialog actions stay within the visible area.
 Exercise progress carries across programs; new compatible variations can use a conservative estimate from recorded performance.
 Rest completion stays visible, and the final set of an exercise starts no rest. Coach history opens above navigation.

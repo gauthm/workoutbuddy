@@ -48,7 +48,10 @@ scrolls internally.
 Opening an exercise and returning preserves filters and scroll position. Two photos alternate
 automatically to show movement positions, both in the details page and in session help. A button
 pauses or resumes playback; images load only once and animation stops off-screen, when the tab is
-hidden, or when closed.
+hidden, or when closed. Each photo becomes visible only after its full download and decoding,
+so progressive JPEG previews cannot appear blurry or gray. A loading message stays in the photo
+area until a frame is ready; if a photo fails, the other remains usable. If both fail, the
+image-unavailable message replaces the demonstration. Reopening help also handles cached photos.
 
 The reduced-motion preference is respected.
 

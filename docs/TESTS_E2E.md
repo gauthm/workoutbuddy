@@ -124,7 +124,9 @@ across the entire catalog, in French and English.
 ### `motion.spec.js`
 
 Alternating real photos, pause/resume, reduced animations, stopping off-screen and
-in-workout help.
+in-workout help; real streamed progressive JPEGs stay hidden until decoded, including slower
+first frames, cached reopening, failed downloads and decoding. All 1,746 catalog photos are
+decoded by the browser on desktop and mobile.
 
 ### `security.spec.js`
 
