@@ -4,7 +4,7 @@
 
 <h1 align="center">WorkoutBuddy</h1>
 
-A single-user strength-training application with personalized programs, workout tracking and exercise progression. Algorithms create programs and calculate progression; an optional AI Coach provides advice.
+A single-user strength-training application with personalized programs, workout tracking and exercise progression. Programs support one to six training days per week. Algorithms create programs and calculate progression; an optional AI Coach provides advice.
 
 Data is stored in SQLite on the machine running the server. When the AI Coach is enabled, the information needed for its answers is sent to the configured provider.
 

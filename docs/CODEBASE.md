@@ -18,7 +18,7 @@ Installation, behavior and testing: [README.md](../README.md). Development rules
 | `server.js` | Express 5 startup, routes, empty-body compatibility, static files and named SPA fallback |
 | `src/db/database.js` | SQLite connection |
 | `src/utils/messages.js`, `src/locales/` | Backend message keys and French/English resources; French default preserves API responses and saved explanations |
-| `src/db/migrate.js`, `src/db/migrations/` | Migrations |
+| `src/db/migrate.js`, `src/db/migrations/` | Transactional migrations; marked table rebuilds disable foreign keys temporarily and check references before commit |
 | `src/db/backup.js`, `src/db/privateStorage.js` | Private SQLite backups and permissions |
 | `src/seed/` | Source catalog, `exercises.fr.json` translations, loading and synchronization |
 | `scripts/` | Library downloads and exercise imports |
@@ -48,7 +48,7 @@ All files below are in `src/routes/`.
 
 | Domain | Files |
 | --- | --- |
-| Program creation | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
+| Program creation (one to six days per week; single-day constraint in `018_single_day_programs.sql`) | `programGenerator.js`, `programPlanner.js`, `programExerciseCatalog.js` |
 | Scheduling and duration | `sessionScheduler.js`, `programLifecycle.js`, `programWeeklyProgress.js` |
 | Progression and exercise memory across programs, compatible variation starting estimates | `progressionEngine.js`, `exerciseProgression.js`, `firstTimeSuggestion.js`, `sessionReset.js`, `trainingHistory.js` |
 | Replacement and constraints | `exerciseReplacement.js`, `exerciseConstraints.js`, `exerciseEquipment.js` |

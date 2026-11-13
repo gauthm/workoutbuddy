@@ -10,11 +10,11 @@ function createMemoryDb() {
 }
 
 describe('T1.2 — Migrations', () => {
-  it('applies all 17 migrations to a fresh DB', () => {
+  it('applies all 18 migrations to a fresh DB', () => {
     const db = createMemoryDb()
     migrate(db)
     const versions = db.prepare('SELECT version FROM schema_version ORDER BY version').all()
-    assert.deepEqual(versions.map(r => r.version), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+    assert.deepEqual(versions.map(r => r.version), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
   })
 
   it('is idempotent — rerunning migrate() raises no error', () => {

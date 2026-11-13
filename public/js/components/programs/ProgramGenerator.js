@@ -29,7 +29,7 @@ export default {
           const current = await api.get(active.programs[0].id)
           const previous = {goal:current.goal,level:current.level,days_per_week:current.days_per_week,...(current.plan?.parameters || {})}
           for (const key of Object.keys(state.form)) if (previous[key] !== undefined) state.form[key] = previous[key]
-          if (!previous.training_days) state.form.training_days = ({2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5]})[state.form.days_per_week] || [0,2,4]
+          if (!previous.training_days) state.form.training_days = ({1:[0],2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4],6:[0,1,2,3,4,5]})[state.form.days_per_week] || [0,2,4]
         }
       } catch (err) { state.error = t('planner.load_error') }
       finally { state.loading = false }
@@ -49,7 +49,7 @@ export default {
     async function next() {
       if (state.busy) return
       state.error = null
-      if (state.step === 2 && (state.form.training_days.length < 2 || state.form.training_days.length > 6)) { state.error = t('planner.training_days_hint'); return }
+      if (state.step === 2 && (state.form.training_days.length < 1 || state.form.training_days.length > 6)) { state.error = t('planner.training_days_hint'); return }
       if (state.step === 4 && [ ['weight_kg',20,500],['height_cm',50,280] ].some(([key,min,max]) => state.form[key] !== null && state.form[key] !== '' && (typeof state.form[key] !== 'number' || state.form[key] < min || state.form[key] > max))) {
         state.error=t('planner.measurements_invalid'); return
       }

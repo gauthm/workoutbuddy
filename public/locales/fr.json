@@ -771,7 +771,7 @@
   "planner.weekday_4": "Vendredi",
   "planner.weekday_5": "Samedi",
   "planner.weekday_6": "Dimanche",
-  "planner.training_days_hint": "Choisis de 2 à 6 jours. Les séances seront planifiées les jours cochés.",
+  "planner.training_days_hint": "Choisis de 1 à 6 jours. Les séances seront planifiées les jours cochés.",
   "settings.ai_api_key_mask": "••••••••",
   "settings.pending_changes": "Modifications non enregistrées",
   "settings.ai_fields_required": "Renseigne une URL et un modèle pour enregistrer la configuration du Coach IA.",

@@ -13,9 +13,9 @@
 
 ## Create a program
 
-Creation follows a questionnaire with predefined choices: goal, experience level, training days,
-session duration, total duration, muscle priorities, and personal measurements. Muscle priorities
-are grouped into upper and lower body, with support for selecting an entire group or multiple
+Creation follows a questionnaire with predefined choices: goal, experience level, training days
+(one to six days per week), session duration, total duration, muscle priorities, and personal
+measurements. One-day programs use a single full-body workout. Muscle priorities are grouped into upper and lower body, with support for selecting an entire group or multiple
 muscles without a two-muscle limit.
 
 The engine aims to use the selected session time with suitable additional sets and exercises,
@@ -24,7 +24,7 @@ explanations, and a preview lets you review sessions before creating the program
 
 ## Distribute muscle priorities
 
-A focus preserves basic work for the other part of the body. With two or three days, sessions
+A focus preserves basic work for the other part of the body. With one to three days, sessions
 first reserve a push or pull and leg work, alternating across the week; remaining time goes to
 priorities, distributed between sessions according to the direct work already planned. Four- to
 six-day formats keep their upper/lower or push/pull/legs sessions.

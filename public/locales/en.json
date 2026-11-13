@@ -771,7 +771,7 @@
   "planner.weekday_4": "Friday",
   "planner.weekday_5": "Saturday",
   "planner.weekday_6": "Sunday",
-  "planner.training_days_hint": "Choose 2 to 6 days. Workouts will be scheduled on the selected days.",
+  "planner.training_days_hint": "Choose 1 to 6 days. Workouts will be scheduled on the selected days.",
   "settings.ai_api_key_mask": "••••••••",
   "settings.pending_changes": "Unsaved changes",
   "settings.ai_fields_required": "Enter a URL and model to save the AI coach configuration.",

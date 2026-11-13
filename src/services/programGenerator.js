@@ -6,6 +6,9 @@ import { isEquipmentAvailable } from './rotationEngine.js'
 import { calculateAchievableLoads } from './equipmentCalc.js'
 
 const SPLIT_TEMPLATES = {
+  full_body_1: [
+    { name: 'Full Body', muscles: ['chest','back','quads','hamstrings','shoulders','core'] },
+  ],
   full_body_2: [
     { name: 'Full Body A', muscles: ['chest','back','quads','shoulders','biceps','triceps'] },
     { name: 'Full Body B', muscles: ['back','chest','hamstrings','glutes','shoulders','core'] },
@@ -73,6 +76,7 @@ const DEFAULT_MODEL = {
 }
 
 function selectSplit(daysPerWeek) {
+  if (daysPerWeek === 1) return 'full_body_1'
   if (daysPerWeek === 2) return 'full_body_2'
   if (daysPerWeek === 3) return 'full_body_3'
   if (daysPerWeek === 4) return 'upper_lower'
@@ -89,7 +93,7 @@ export function validateProgramParams(params) {
   const errors = []
   if (!PROGRAM_GOALS.includes(params.goal)) errors.push('goal')
   if (!PROGRAM_LEVELS.includes(params.level)) errors.push('level')
-  if (!Number.isInteger(params.days_per_week) || params.days_per_week < 2 || params.days_per_week > 6) errors.push('days_per_week')
+  if (!Number.isInteger(params.days_per_week) || params.days_per_week < 1 || params.days_per_week > 6) errors.push('days_per_week')
   if (params.training_days !== undefined && (!Array.isArray(params.training_days) || params.training_days.length !== params.days_per_week || new Set(params.training_days).size !== params.training_days.length || params.training_days.some(day => !Number.isInteger(day) || day < 0 || day > 6))) errors.push('training_days')
   if (![20,30,45,60,90].includes(params.session_duration_min)) errors.push('session_duration_min')
   if (params.duration_weeks !== null && (!Number.isSafeInteger(params.duration_weeks) || params.duration_weeks < 1)) errors.push('duration_weeks')

@@ -1,7 +1,7 @@
 import {test,expect} from './fixtures.js'
 import {L,get,homeGym,planned} from './helpers.js'
 
-test('questionnaire → preview → creation → activation, then persistence after reload',async({page,request})=>{
+for (const singleDay of [false,true]) test(`questionnaire → preview → creation → activation, then persistence after reload (${singleDay ? 'one day' : 'two days'})`,async({page,request})=>{
  await homeGym(request)
  await page.goto('/#/programs')
  await expect(page.locator('.program-activation-hint')).toHaveText(L('programs.single_active_hint'))
@@ -10,7 +10,7 @@ test('questionnaire → preview → creation → activation, then persistence af
  await next();await next()
  await page.getByLabel('Mercredi',{exact:true}).uncheck()
  await page.getByLabel('Vendredi',{exact:true}).uncheck()
- await page.getByLabel('Jeudi',{exact:true}).check()
+ if (!singleDay) await page.getByLabel('Jeudi',{exact:true}).check()
  await next()
  await page.locator('input[name="duration"][value="20"]').check()
  await next()
@@ -28,7 +28,9 @@ test('questionnaire → preview → creation → activation, then persistence af
  expect(list).toHaveLength(1)
  const p=await get(request,`/programs/${list[0].id}`)
  expect(p.is_active).toBe(true);expect(p.duration_weeks).toBeNull()
- expect(p.plan.parameters.training_days).toEqual([0,3])
+ expect(p.plan.parameters.training_days).toEqual(singleDay ? [0] : [0,3])
+ expect(p.days_per_week).toBe(singleDay ? 1 : 2)
+ expect(p.templates).toHaveLength(singleDay ? 1 : 2)
  expect(p.plan.parameters.session_duration_min).toBe(20)
  await expect(page.locator('.program-summary-tags').filter({hasText:'75 kg'})).toHaveCount(0)
  await expect(page.locator('.program-summary-tags').filter({hasText:'175 cm'})).toHaveCount(0)

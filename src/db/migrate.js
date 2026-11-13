@@ -25,10 +25,22 @@ export function migrate(db) {
       continue
     }
     const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8')
-    db.transaction(() => {
-      db.exec(sql)
-      db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(version)
-    })()
+    // SQLite requires foreign keys disabled outside the transaction when rebuilding
+    // a referenced table; otherwise DROP TABLE can cascade into workout history.
+    const rebuild = sql.startsWith('-- foreign-keys: off\n')
+    const foreignKeys = db.pragma('foreign_keys', { simple:true })
+    if (rebuild) db.pragma('foreign_keys = OFF')
+    try {
+      db.transaction(() => {
+        db.exec(sql)
+        if (rebuild && db.pragma('foreign_key_check').length) {
+          throw new Error(`Foreign key violation in migration ${file}`)
+        }
+        db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(version)
+      })()
+    } finally {
+      if (rebuild) db.pragma(`foreign_keys = ${foreignKeys ? 'ON' : 'OFF'}`)
+    }
     console.log(`Migration ${file.slice(0, 3)} applied`)
   }
 }

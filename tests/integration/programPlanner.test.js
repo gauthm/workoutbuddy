@@ -394,3 +394,24 @@ test('ongoing workouts and already logged plans cannot be altered via exercise r
  assert.equal(blocked.status,409);assert.equal(blocked.body.error,'PLANNED_SESSION_HAS_LOGS')
  assert.equal(db.prepare('SELECT exercise_id FROM template_exercise WHERE id=?').get(f.exercise.id).exercise_id,old)
 })
+
+
+test('one weekly workout can be previewed, created, activated and scheduled on Sunday or default Monday',async()=>{
+ for (const training_days of [[6],undefined]) {
+  const input={...params,days_per_week:1,training_days}
+  const preview=await request(app).post('/api/v1/programs/preview').send(input)
+  assert.equal(preview.status,200)
+  assert.equal(preview.body.templates.length,1)
+  const created=await request(app).post('/api/v1/programs/generate').send(input)
+  assert.equal(created.status,201)
+  const id=created.body.id
+  assert.equal((await request(app).post(`/api/v1/programs/${id}/activate`)).status,200)
+  const sessions=db.prepare('SELECT * FROM session WHERE program_id=? ORDER BY scheduled_date').all(id)
+  assert.ok(sessions.length>0)
+  for (const session of sessions) assert.equal((new Date(session.scheduled_date+'T12:00:00Z').getUTCDay()+6)%7,training_days?.[0] ?? 0)
+  for(let i=1;i<sessions.length;i++) assert.equal((new Date(sessions[i].scheduled_date)-new Date(sessions[i-1].scheduled_date))/86400000,7)
+  const {scheduleWeeks}=await import('../../src/services/sessionScheduler.js')
+  assert.equal(scheduleWeeks(db,id),0)
+ }
+ for(const days_per_week of [0,1.5,7]) assert.equal((await request(app).post('/api/v1/programs/generate').send({...params,days_per_week})).status,400)
+})

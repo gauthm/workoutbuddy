@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import fs from 'node:fs'
 import assert from 'node:assert/strict'
 import Database from 'better-sqlite3'
 import { migrate } from '../../src/db/migrate.js'
@@ -20,7 +21,7 @@ test('creation deterministic, duration bounded, stable exercises for every suppo
   const equipment = [{category:'dumbbell_fixed',count:2,weight_kg:10},{category:'bench',count:1},{category:'pullup_bar',count:1}]
   for (const goal of ['strength','hypertrophy','endurance','weight_loss','general_fitness'])
     for (const level of ['beginner','intermediate','advanced'])
-      for (const days_per_week of [2,3,4,5,6])
+      for (const days_per_week of [1,2,3,4,5,6])
         for (const session_duration_min of [20,30,45,60,90]) {
           const input={...params,goal,level,days_per_week,session_duration_min}
           const draft=generateProgram(input,exercises,equipment)
@@ -75,7 +76,7 @@ test('excluded exercises, single dumbbell quantities and unavailable priorities 
 
 test('invalid questionnaire inputs and empty candidates cannot leave a partial program', () => {
   const db=database()
-  for (const input of [{days_per_week:7},{duration_weeks:0},{session_duration_min:0},{goal:'unknown'},{priority_muscles:['unknown']}])
+  for (const input of [{days_per_week:0},{days_per_week:1.5},{days_per_week:7},{duration_weeks:0},{session_duration_min:0},{goal:'unknown'},{priority_muscles:['unknown']}])
     assert.throws(()=>createPlannedProgram(db,{...params,...input}),/INVALID_PROGRAM_PARAMETERS/)
   db.prepare('UPDATE exercise SET is_excluded=1').run()
   assert.throws(()=>createPlannedProgram(db,params),/NO_AVAILABLE_EXERCISES/)
@@ -175,4 +176,30 @@ test('creation and its measurement are atomic if weight recording fails',()=>{
   assert.throws(()=>createPlannedProgram(db,{...params,weight_kg:75}),/TEST_WEIGHT_FAILURE/)
   for(const table of ['program','program_plan','workout_template','template_exercise','progression_state','body_weight'])assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n,0,table)
  } finally {db.close()}
+})
+
+
+test('single-day migration preserves existing programs, workouts and progression', () => {
+  const db = new Database(':memory:')
+  db.pragma('foreign_keys=ON')
+  const directory = new URL('../../src/db/migrations/', import.meta.url)
+  for (const file of fs.readdirSync(directory).filter(f => f.endsWith('.sql') && Number(f.slice(0,3)) < 18).sort()) {
+    db.exec(fs.readFileSync(new URL(file,directory),'utf8'))
+    db.prepare('INSERT INTO schema_version(version) VALUES (?)').run(Number(file.slice(0,3)))
+  }
+  seedExercises(db)
+  const {id} = createPlannedProgram(db,params)
+  logWeek(db,id,[8,9])
+  const tables = ['program','program_plan','workout_template','template_exercise','progression_state','session','session_exercise','set_log']
+  const before = tables.map(table => db.prepare(`SELECT * FROM ${table} ORDER BY id`.replace('program_plan ORDER BY id','program_plan ORDER BY program_id')).all())
+  migrate(db)
+  tables.forEach((table,i) => assert.deepEqual(db.prepare(`SELECT * FROM ${table} ORDER BY id`.replace('program_plan ORDER BY id','program_plan ORDER BY program_id')).all(),before[i]))
+  assert.equal(db.pragma('foreign_keys',{simple:true}),1)
+  assert.deepEqual(db.pragma('foreign_key_check'),[])
+  const single = createPlannedProgram(db,{...params,days_per_week:1,training_days:[6]})
+  assert.equal(db.prepare('SELECT days_per_week FROM program WHERE id=?').get(single.id).days_per_week,1)
+  assert.throws(() => db.prepare('UPDATE program SET days_per_week=0 WHERE id=?').run(single.id),/CHECK/)
+  migrate(db)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM program').get().n,2)
+  db.close()
 })

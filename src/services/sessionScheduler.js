@@ -144,13 +144,14 @@ function getDaysInRange(start, end) {
  * Skip days already in existingDates.
  *
  * @param {string[]} daysInRange   - all days within the range
- * @param {number}   daysPerWeek   - sessions per week (2–6)
+ * @param {number}   daysPerWeek   - sessions per week (1–6)
  * @param {Set}      existingDates - already planned days (to skip)
  * @returns {string[]} dates of sessions to create
  */
 function distributeSlots(daysInRange, daysPerWeek, existingDates, chosenDays = null) {
   // Weekday indices (0=Mon, 6=Sun) according to days_per_week
   const PREFERRED_DAYS = {
+    1: [0],              // Mon
     2: [0, 3],           // Mon, Thu
     3: [0, 2, 4],        // Mon, Wed, Fri
     4: [0, 1, 3, 4],     // Mon, Tue, Thu, Fri

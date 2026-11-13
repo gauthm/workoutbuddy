@@ -89,3 +89,15 @@ test('priorities and counters remain reproducible regardless of catalog and chec
  const reversed=generateProgram({...params,priority_muscles:[...params.priority_muscles].reverse()},catalog,equipment)
  assert.deepEqual(first.templates,reversed.templates)
 })
+
+
+test('one-day programs preserve upper and lower body work when priorities compete for time',()=>{
+ for(const goal of ['general_fitness','strength','hypertrophy','endurance','weight_loss'])
+ for(const priority_muscles of [PROGRAM_MUSCLE_GROUPS[0].muscles,PROGRAM_MUSCLE_GROUPS[1].muscles,['biceps'],PROGRAM_MUSCLES]){
+  const draft=generateProgram({...params,goal,days_per_week:1,session_duration_min:20,priority_muscles},catalog,equipment)
+  assert.equal(draft.templates.length,1)
+  assert.ok(direct(draft,'chest')>=2)
+  assert.ok(direct(draft,'quads')>=2)
+  assert.ok(draft.templates[0].estimated_duration_min<=20)
+ }
+})
